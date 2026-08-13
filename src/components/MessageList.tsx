@@ -1,8 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import {Box, Text, useInput} from 'ink';
+import React, {useEffect, useRef, useState} from 'react';
+import {Box, Text, measureElement, useInput, type DOMElement} from 'ink';
 import type {Message} from '../types/message.js';
 import {FormattedText} from './FormattedText.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
+import {parseTerminalMouse} from '../utils/mouse.js';
 
 interface MessageListProps {
   messages: readonly Message[];
@@ -10,18 +11,58 @@ interface MessageListProps {
 
 export function MessageList({messages}: MessageListProps): React.JSX.Element {
   const [scrollOffset, setScrollOffset] = useState(0);
+  const [trackHeight, setTrackHeight] = useState(1);
+  const isDragging = useRef(false);
+  const viewportRef = useRef<DOMElement>(null);
 
   useEffect(() => {
     setScrollOffset(0);
   }, [messages.length]);
 
-  useInput((_input, key) => {
+  useEffect(() => {
+    if (viewportRef.current === null) return;
+    const measuredHeight = Math.max(1, measureElement(viewportRef.current).height);
+    setTrackHeight((current) => current === measuredHeight ? current : measuredHeight);
+  }, [messages.length, scrollOffset]);
+
+  const maxOffset = Math.max(0, messages.length - 1);
+  const scrollBy = (amount: number): void => {
+    setScrollOffset((current) => Math.max(0, Math.min(maxOffset, current + amount)));
+  };
+
+  const scrollFromMouseY = (mouseY: number): void => {
+    if (viewportRef.current === null || maxOffset === 0) return;
+    const metrics = measureElement(viewportRef.current);
+    const relativeY = Math.max(0, Math.min(metrics.height - 1, mouseY - metrics.y));
+    const ratio = metrics.height <= 1 ? 1 : relativeY / (metrics.height - 1);
+    setScrollOffset(Math.round((1 - ratio) * maxOffset));
+  };
+
+  useInput((input, key) => {
+    const mouse = parseTerminalMouse(input);
+    if (mouse !== undefined) {
+      if (mouse.button === 'wheel-up') scrollBy(1);
+      if (mouse.button === 'wheel-down') scrollBy(-1);
+      if (viewportRef.current !== null) {
+        const metrics = measureElement(viewportRef.current);
+        const onScrollbar = mouse.x >= metrics.x + metrics.width - 1;
+        if (mouse.button === 'left' && mouse.action === 'press' && onScrollbar) {
+          isDragging.current = true;
+          scrollFromMouseY(mouse.y);
+        } else if (mouse.button === 'left' && mouse.action === 'move' && isDragging.current) {
+          scrollFromMouseY(mouse.y);
+        } else if (mouse.action === 'release') {
+          isDragging.current = false;
+        }
+      }
+      return;
+    }
     if (key.pageUp) {
-      setScrollOffset((current) => Math.min(Math.max(0, messages.length - 1), current + 4));
+      scrollBy(4);
       return;
     }
     if (key.pageDown) {
-      setScrollOffset((current) => Math.max(0, current - 4));
+      scrollBy(-4);
     }
   });
 
@@ -38,21 +79,45 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
       flexGrow={1}
       overflow="hidden"
     >
-      <Box
-        flexDirection="column"
-        justifyContent="flex-end"
-        flexBasis={0}
-        flexGrow={1}
-        overflow="hidden"
-      >
-        {visibleMessages.map((message) => (
-          <MessageCard key={message.id} message={message} />
-        ))}
+      <Box ref={viewportRef} flexDirection="row" flexBasis={0} flexGrow={1} overflow="hidden">
+        <Box
+          flexDirection="column"
+          justifyContent="flex-end"
+          flexBasis={0}
+          flexGrow={1}
+          overflow="hidden"
+        >
+          {visibleMessages.map((message) => (
+            <MessageCard key={message.id} message={message} />
+          ))}
+        </Box>
+        <Box width={1} flexDirection="column" flexShrink={0}>
+          {buildScrollbar(trackHeight, messages.length, scrollOffset).map((character, index) => (
+            <Text key={index} color={character === '█' ? 'green' : 'gray'}>{character}</Text>
+          ))}
+        </Box>
       </Box>
       {scrollOffset > 0 && (
         <Text color="yellow">↑ HISTORY · PageDown để về hội thoại mới nhất</Text>
       )}
     </Box>
+  );
+}
+
+export function buildScrollbar(height: number, messageCount: number, scrollOffset: number): string[] {
+  const safeHeight = Math.max(1, height);
+  if (messageCount <= 1) return Array.from({length: safeHeight}, () => '│');
+  const visibleEstimate = Math.max(1, Math.floor(safeHeight / 3));
+  const thumbSize = Math.max(1, Math.min(
+    safeHeight,
+    Math.round(safeHeight * Math.min(1, visibleEstimate / messageCount)),
+  ));
+  const maxTop = safeHeight - thumbSize;
+  const maxOffset = messageCount - 1;
+  const thumbTop = maxTop - Math.round(Math.min(maxOffset, scrollOffset) / maxOffset * maxTop);
+  return Array.from(
+    {length: safeHeight},
+    (_, index) => index >= thumbTop && index < thumbTop + thumbSize ? '█' : '│',
   );
 }
 

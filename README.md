@@ -56,7 +56,10 @@ pxh --provider=custom
 - `Enter`: gửi prompt.
 - `Backspace` hoặc `Delete`: xóa ký tự.
 - `Alt+V` hoặc `/paste`: đính kèm ảnh đang có trong clipboard Windows và hiện thumbnail màu trong TUI.
-- `PageUp` / `PageDown`: xem lịch sử cũ hoặc trở về hội thoại mới nhất.
+- Lăn con lăn chuột hoặc kéo thanh cuộn bên phải: xem lịch sử theo trục dọc.
+- `PageUp` / `PageDown`: xem lịch sử cũ hoặc trở về hội thoại mới nhất bằng bàn phím.
+- `←` / `→` / `Home` / `End`: di chuyển con trỏ soạn thảo; `↑` / `↓` di chuyển theo dòng wrap.
+- Click vào text trong `NEW TARGET`: đặt con trỏ tại vị trí muốn sửa.
 - Khi ô nhập trống, `Backspace` hoặc `Delete`: bỏ ảnh đính kèm cuối cùng (tối đa 4 ảnh mỗi TARGET).
 - `/models`: chọn model/mode.
 - `/agents`: chọn specialist hoặc Economy Router tự động.

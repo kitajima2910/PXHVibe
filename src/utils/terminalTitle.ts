@@ -17,12 +17,12 @@ export interface TerminalScreen {
 
 export function enterTerminalScreen(output: TerminalTitleOutput = process.stdout): TerminalScreen {
   if (output.isTTY !== true) return {restore() {}};
-  output.write('\u001B[?1049h\u001B[2J\u001B[H');
+  output.write('\u001B[?1049h\u001B[?25l\u001B[?1000h\u001B[?1002h\u001B[?1006h\u001B[2J\u001B[H');
   let active = true;
   const restore = (): void => {
     if (!active) return;
     active = false;
-    output.write('\u001B[?1049l');
+    output.write('\u001B[?1006l\u001B[?1002l\u001B[?1000l\u001B[?25h\u001B[?1049l');
     process.off('exit', restore);
   };
   process.once('exit', restore);

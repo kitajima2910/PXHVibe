@@ -11,6 +11,8 @@ interface ClipboardPayload {
   pixels: string[][];
 }
 
+export const thumbnailSize = 50;
+
 const clipboardScript = String.raw`
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
@@ -28,17 +30,20 @@ $folder = Join-Path ([IO.Path]::GetTempPath()) 'pxhvibe-images'
 [IO.Directory]::CreateDirectory($folder) | Out-Null
 $file = Join-Path $folder (('clipboard-{0}.png' -f [guid]::NewGuid().ToString('N')))
 $source.Save($file, [Drawing.Imaging.ImageFormat]::Png)
-$maxWidth = 64
-$maxHeight = 44
-$scale = [Math]::Min($maxWidth / $source.Width, $maxHeight / $source.Height)
-$thumbWidth = [Math]::Max(1, [int][Math]::Round($source.Width * $scale))
-$thumbHeight = [Math]::Max(1, [int][Math]::Round($source.Height * $scale))
+$thumbWidth = ${thumbnailSize}
+$thumbHeight = ${thumbnailSize}
+$scale = [Math]::Min($thumbWidth / $source.Width, $thumbHeight / $source.Height)
+$drawWidth = [Math]::Max(1, [int][Math]::Round($source.Width * $scale))
+$drawHeight = [Math]::Max(1, [int][Math]::Round($source.Height * $scale))
+$drawX = [int][Math]::Floor(($thumbWidth - $drawWidth) / 2)
+$drawY = [int][Math]::Floor(($thumbHeight - $drawHeight) / 2)
 $thumb = [Drawing.Bitmap]::new($thumbWidth, $thumbHeight)
 $graphics = [Drawing.Graphics]::FromImage($thumb)
 $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBilinear
 $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 $graphics.CompositingQuality = [Drawing.Drawing2D.CompositingQuality]::HighQuality
-$graphics.DrawImage($source, 0, 0, $thumbWidth, $thumbHeight)
+$graphics.Clear([Drawing.Color]::FromArgb(24, 24, 24))
+$graphics.DrawImage($source, $drawX, $drawY, $drawWidth, $drawHeight)
 $pixels = @()
 for ($y = 0; $y -lt $thumbHeight; $y++) {
   $row = @()

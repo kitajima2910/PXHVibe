@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Box, Text, useInput} from 'ink';
 import type {CustomApiConfig} from '../providers/CustomAgentProvider.js';
+import {parseTerminalMouse} from '../utils/mouse.js';
 
 interface CustomApiSetupProps {
   onComplete: (config: CustomApiConfig) => void;
@@ -26,6 +27,7 @@ export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): Rea
   const field = fields[fieldIndex] ?? 'baseURL';
 
   useInput((input, key) => {
+    if (parseTerminalMouse(input) !== undefined) return;
     if (key.escape) {
       onCancel();
       return;

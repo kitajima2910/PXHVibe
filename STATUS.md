@@ -253,3 +253,40 @@
 ### Vấn đề còn lại
 
 - Lịch sử chỉ tồn tại trong bộ nhớ của phiên chạy hiện tại; chưa lưu session qua lần khởi động mới.
+
+## Cập nhật: Mouse scrollbar và input editor
+
+### Đã thay đổi gì
+
+- Bật SGR mouse tracking và thêm thanh cuộn dọc ở cạnh phải conversation viewport.
+- Hỗ trợ con lăn chuột, click/kéo thumb, PageUp và PageDown để xem lịch sử.
+- Thumbnail dùng canvas cố định `50×50` pixel màu; ảnh được contain và căn giữa, không méo tỉ lệ.
+- Ẩn con trỏ terminal vật lý ở cuối Footer và khôi phục khi thoát, loại bỏ hiện tượng hai con trỏ.
+- Input có cursor index thật: chèn/xóa giữa chuỗi, Left/Right/Home/End, Up/Down theo dòng wrap và click để đặt vị trí sửa.
+- Chặn mouse escape sequence lọt vào input hoặc form Custom API.
+
+### File đã sửa
+
+- `src/utils/mouse.ts`
+- `src/utils/terminalTitle.ts`
+- `src/utils/imageClipboard.ts`
+- `src/components/MessageList.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/CustomApiSetup.tsx`
+- `src/tests/terminalTitle.test.ts`
+- `src/tests/messageViewport.test.ts`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công.
+- Mouse/scroll tests xác nhận wheel event, thumb ở đầu/cuối track và HISTORY viewport.
+- Editor tests xác nhận click mapping, di chuyển dọc và phím paste không nhận nhầm.
+- Terminal lifecycle test xác nhận mouse mode + cursor hide được bật khi vào TUI và khôi phục đầy đủ khi thoát.
+
+### Vấn đề còn lại
+
+- Khi mouse tracking bật, chọn text native của terminal cần giữ Shift trong VS Code/Windows Terminal.
