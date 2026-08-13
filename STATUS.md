@@ -9,6 +9,7 @@
 - Đổi giao diện sang thương hiệu PXHVibe: Header hiển thị `Mode`, tên model thân thiện và không hiển thị tên engine hoặc model ID nội bộ.
 - Thêm Big Pickle Free và giữ các cloud coding model miễn phí hiện có trong `/models`.
 - Đổi model Free mặc định từ MiMo V2.5 sang Big Pickle vì MiMo không trả dữ liệu trong kiểm tra live, trong khi Big Pickle phản hồi bình thường.
+- Sửa Free mode bị kẹt `Thinking...`: đóng stdin của child process ngay sau khi spawn để runtime nhận EOF và bắt đầu xử lý positional prompt.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -62,6 +63,8 @@
 - `pxh --provider=mock`: bị từ chối; danh sách provider CLI chỉ còn `free, custom`.
 - `pxh.cmd --provider=native`: bị từ chối với danh sách hợp lệ `free, custom`.
 - Live probe trong thư mục Temp rỗng: MiMo V2.5 không có output sau 30 giây; Big Pickle trả lời thành công trong khoảng 6,5 giây.
+- Root-cause probe: cùng lệnh Big Pickle chạy trực tiếp thành công nhưng qua `OpenCodeProvider` timeout vì stdin pipe còn mở.
+- Post-fix live probe qua chính `OpenCodeProvider` tại `D:\test`: trả `xin chào` thành công trong 6,07 giây.
 
 ## Vấn đề còn lại
 

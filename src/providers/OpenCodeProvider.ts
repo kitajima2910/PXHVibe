@@ -39,6 +39,9 @@ export class OpenCodeProvider implements AIProvider {
         shell: false,
         windowsHide: true,
       });
+      // The runtime reads piped stdin before processing positional prompts.
+      // Signal EOF immediately so it does not wait forever on Node's default pipe.
+      child.stdin.end();
       this.activeProcess = child;
 
       let stdout = '';
