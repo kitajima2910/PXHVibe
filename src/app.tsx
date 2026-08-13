@@ -94,6 +94,15 @@ export function App({provider}: AppProps): React.JSX.Element {
     });
   };
 
+  const showCommandList = (): void => {
+    setMessages((currentMessages) => [...currentMessages, {
+      id: createMessageId(),
+      role: 'system',
+      content: 'Commands: /models · /agents · /paste · /copy · /help | Leader: Ctrl+X then A/M/Y/Q',
+      createdAt: new Date(),
+    }]);
+  };
+
   const handleCopyLastResponse = async (): Promise<void> => {
     const response = [...messages].reverse().find((message) => message.role === 'assistant');
     if (response === undefined) return;
@@ -126,12 +135,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     }
 
     if (command === '/help') {
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(),
-        role: 'system',
-        content: 'Lệnh: /models — chọn model; /agents — chọn specialist; /paste — dán ảnh; /copy — copy response; /help — trợ giúp.',
-        createdAt: new Date(),
-      }]);
+      showCommandList();
       return;
     }
 
@@ -339,6 +343,14 @@ export function App({provider}: AppProps): React.JSX.Element {
           onPasteImage={() => void handlePasteImage()}
           onRemoveLastImage={handleRemoveLastImage}
           onCopy={() => void handleCopyLastResponse()}
+          onOpenModels={() => setIsModePickerOpen(true)}
+          onOpenAgents={() => setIsAgentPickerOpen(true)}
+          onHelp={showCommandList}
+          onCycleAgent={(direction) => {
+            const currentIndex = Math.max(0, agents.findIndex((agent) => agent.id === selectedAgentId));
+            const nextAgent = agents[(currentIndex + direction + agents.length) % agents.length];
+            if (nextAgent !== undefined) handleAgentSelect(nextAgent);
+          }}
         />
       )}
       <Footer />

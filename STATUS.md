@@ -393,3 +393,41 @@
 ### Vấn đề còn lại
 
 - `Alt+C`/`/copy` vẫn copy toàn bộ response gần nhất; Shift-select + Ctrl+C dùng để copy một đoạn tùy chọn.
+
+## Cập nhật v0.1.3: Compact UI và OpenCode-style keymap
+
+### Đã thay đổi gì
+
+- Giảm thumbnail cố định từ `20×20` xuống `5×5` pixel màu.
+- Sửa composer bị co chiều ngang: đặt flex basis/width rõ ràng và thay shell prompt dài bằng dấu `❯`.
+- Dùng logo compact khi terminal dưới 120 cột, border xám round và Footer chỉ giữ hint chính.
+- Áp dụng keymap phù hợp theo tài liệu OpenCode: `Ctrl+X` leader, `Ctrl+P`, Tab/Shift+Tab, nhiều phím newline và Readline/Emacs editing.
+- Leader mapping PXHVibe: `Ctrl+X` rồi `A` agents, `M` models, `Y` copy, `Q` exit, `H` help.
+- `Ctrl+C` xóa input trước; khi input trống mới thoát. `Ctrl+D` khi input trống cũng thoát.
+- Bump version từ `0.1.2` lên `0.1.3`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/Banner.tsx`
+- `src/components/Header.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/utils/imageClipboard.ts`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công trên `pxhvibe@0.1.3`.
+- UI regression test xác nhận Header compact mới vẫn giữ `PXH PM (Auto)` và loại nhãn message cũ.
+- Input tests xác nhận thumbnail `5×5`, Ctrl/Shift/Alt Enter, Readline word boundary và paste summary.
+- Toàn bộ 11 nhóm build/provider/agent/router/format/title/mode/custom/command/branding/image/viewport đều qua.
+
+### Vấn đề còn lại
+
+- PXHVibe áp dụng keymap tương thích cho tính năng đang có, không sao chép các session/theme/editor command chưa được triển khai.

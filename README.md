@@ -71,6 +71,14 @@ pxh --provider=custom
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
 
+### Keymap kiểu OpenCode
+
+- `Ctrl+X`: leader; sau đó `A` agents, `M` models, `Y` copy response, `Q` thoát.
+- `Ctrl+P`: xem command list; `Tab` / `Shift+Tab`: chuyển agent.
+- `Shift+Enter`, `Ctrl+Enter`, `Alt+Enter` hoặc `Ctrl+J`: xuống dòng.
+- `Ctrl+A/E/B/F`: đầu/cuối/lùi/tiến cursor; `Ctrl+D/K/U/W`: xóa theo ký tự, dòng hoặc từ.
+- `Alt+B/F/D`: lùi từ, tiến từ hoặc xóa từ kế tiếp.
+
 Ảnh clipboard được sao chép vào file tạm, gửi cùng TARGET rồi tự động xóa. Model đang chọn
 phải hỗ trợ vision; nếu model không nhận ảnh, hãy đổi model bằng `/models`.
 VS Code giữ `Ctrl+V` ở lớp terminal nên PXHVibe không nhận được phím này khi clipboard là ảnh;

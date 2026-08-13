@@ -11,7 +11,7 @@ const logo = String.raw`██████╗ ██╗  ██╗██╗  █
 
 export function Banner(): React.JSX.Element {
   const {stdout} = useStdout();
-  const showLargeLogo = (stdout.columns ?? 80) >= 62;
+  const showLargeLogo = (stdout.columns ?? 80) >= 120;
   const [bootStep, setBootStep] = useState(0);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export function Banner(): React.JSX.Element {
       {showLargeLogo ? (
         <Text bold color="green">{logo}</Text>
       ) : (
-        <Text bold color="green">{'[ P X H V i b e ]'}</Text>
+        <Text bold color="green">◆ P X H V i b e</Text>
       )}
       <Text bold color="green">Error404-Labs.Info.VN - Phạm Xuân Hoài</Text>
       <Text color={bootStep === bootMessages.length - 1 ? 'green' : 'cyan'} dimColor>

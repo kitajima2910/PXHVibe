@@ -13,13 +13,18 @@ interface PromptInputProps {
   onPasteImage: () => void;
   onRemoveLastImage: () => void;
   onCopy: () => void;
+  onOpenModels: () => void;
+  onOpenAgents: () => void;
+  onHelp: () => void;
+  onCycleAgent: (direction: -1 | 1) => void;
 }
 
-export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage, onCopy}: PromptInputProps): React.JSX.Element {
+export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage, onCopy, onOpenModels, onOpenAgents, onHelp, onCycleAgent}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [cursorIndex, setCursorIndex] = useState(0);
   const [pastedBlocks, setPastedBlocks] = useState<string[]>([]);
   const [spinnerIndex, setSpinnerIndex] = useState(0);
+  const [leaderActive, setLeaderActive] = useState(false);
   const {exit} = useApp();
   const {stdout} = useStdout();
   const editorRef = useRef<DOMElement>(null);
@@ -36,6 +41,12 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     }, 120);
     return () => clearInterval(timer);
   }, [isBusy]);
+
+  useEffect(() => {
+    if (!leaderActive) return;
+    const timer = setTimeout(() => setLeaderActive(false), 2000);
+    return () => clearTimeout(timer);
+  }, [leaderActive]);
 
   usePaste((text) => {
     if (isBusy || text.length === 0) return;
@@ -72,12 +83,44 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     }
 
     if (key.ctrl && input.toLowerCase() === 'c') {
+      if (value.length > 0 || pastedBlocks.length > 0) {
+        setValue('');
+        setCursorIndex(0);
+        setPastedBlocks([]);
+        return;
+      }
       onExit();
       exit();
       return;
     }
 
     if (isBusy) {
+      return;
+    }
+
+    if (leaderActive) {
+      setLeaderActive(false);
+      const command = input.toLowerCase();
+      if (command === 'a') onOpenAgents();
+      else if (command === 'm') onOpenModels();
+      else if (command === 'y') onCopy();
+      else if (command === 'q') { onExit(); exit(); }
+      else if (command === 'h') onHelp();
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'x') {
+      setLeaderActive(true);
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'p') {
+      onHelp();
+      return;
+    }
+
+    if (key.tab) {
+      onCycleAgent(key.shift ? -1 : 1);
       return;
     }
 
@@ -88,6 +131,72 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
 
     if (key.meta && input.toLowerCase() === 'c') {
       onCopy();
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'a') {
+      setCursorIndex(0);
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'e') {
+      setCursorIndex(value.length);
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'b') {
+      setCursorIndex((current) => Math.max(0, current - 1));
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'f') {
+      setCursorIndex((current) => Math.min(value.length, current + 1));
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'd') {
+      if (value.length === 0 && pastedBlocks.length === 0) {
+        onExit();
+        exit();
+        return;
+      }
+      if (cursorIndex < value.length) {
+        setValue((current) => current.slice(0, cursorIndex) + current.slice(cursorIndex + 1));
+      }
+      return;
+    }
+
+    if (key.meta && input.toLowerCase() === 'b') {
+      setCursorIndex(findPreviousWordBoundary(value, cursorIndex));
+      return;
+    }
+
+    if (key.meta && input.toLowerCase() === 'f') {
+      setCursorIndex(findNextWordBoundary(value, cursorIndex));
+      return;
+    }
+
+    if (key.meta && input.toLowerCase() === 'd') {
+      const nextWord = findNextWordBoundary(value, cursorIndex);
+      setValue((current) => current.slice(0, cursorIndex) + current.slice(nextWord));
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'k') {
+      setValue((current) => current.slice(0, cursorIndex));
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'u') {
+      setValue((current) => current.slice(cursorIndex));
+      setCursorIndex(0);
+      return;
+    }
+
+    if (key.ctrl && input.toLowerCase() === 'w') {
+      const previousWord = findPreviousWordBoundary(value, cursorIndex);
+      setValue((current) => current.slice(0, previousWord) + current.slice(cursorIndex));
+      setCursorIndex(previousWord);
       return;
     }
 
@@ -178,12 +287,12 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
   });
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={isBusy ? 'yellow' : 'gray'} paddingX={1}>
       <Box justifyContent="space-between">
         <Text bold color={isBusy ? 'yellow' : 'green'}>
-          {isBusy ? 'AGENT WORKING' : 'NEW TARGET'}
+          {isBusy ? 'WORKING' : leaderActive ? 'LEADER · a agents · m models · y copy · q exit' : 'COMPOSE'}
         </Text>
-        <Text dimColor>{isBusy ? 'input locked' : 'build mode'}</Text>
+        <Text dimColor>{isBusy ? 'input locked' : `${value.length} chars`}</Text>
       </Box>
       {attachments.length > 0 && (
         <Box marginBottom={1}>
@@ -201,14 +310,11 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
         </Box>
       )}
       <Box>
-        <Text bold color="green">root@pxhvibe</Text>
-        <Text color="gray">:</Text>
-        <Text bold color="cyan">~</Text>
-        <Text color="gray">$ </Text>
+        <Text bold color="cyan">❯ </Text>
         {isBusy ? (
           <Text color="yellow">{processingFrames[spinnerIndex]} đang phân tích và triển khai...</Text>
         ) : (
-          <Box flexDirection="column" flexGrow={1}>
+          <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (
               <Box ref={editorRef}><Text><Text inverse color="green"> </Text><Text color="gray"> Nhập TARGET hoặc /help</Text></Text></Box>
             ) : (
@@ -247,10 +353,11 @@ export function isPasteShortcut(
 
 export function isNewlineShortcut(
   input: string,
-  key: {return: boolean; shift: boolean; meta?: boolean},
+  key: {return: boolean; shift: boolean; meta?: boolean; ctrl?: boolean},
 ): boolean {
   return (key.return && key.shift)
     || (key.return && key.meta === true)
+    || (key.return && key.ctrl === true)
     || input === '\n'
     || input === '[27;2;13~';
 }
@@ -377,4 +484,16 @@ export function composePromptInput(value: string, pastedBlocks: readonly string[
   const parts = [value, ...pastedBlocks.map((block, index) => `[PASTED BLOCK ${index + 1}]\n${block}`)]
     .filter((part) => part.trim().length > 0);
   return parts.join('\n\n');
+}
+
+export function findPreviousWordBoundary(value: string, cursorIndex: number): number {
+  const before = value.slice(0, cursorIndex);
+  const withoutSpace = before.replace(/\s+$/, '');
+  return Math.max(0, withoutSpace.search(/\S+$/));
+}
+
+export function findNextWordBoundary(value: string, cursorIndex: number): number {
+  const after = value.slice(cursorIndex);
+  const match = after.match(/^\s*\S+/);
+  return Math.min(value.length, cursorIndex + (match?.[0].length ?? after.length));
 }

@@ -14,6 +14,8 @@ import {
   createPastePreview,
   createInputViewport,
   composePromptInput,
+  findPreviousWordBoundary,
+  findNextWordBoundary,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
 import {collapsePastedBlocksForDisplay} from '../utils/pastedText.js';
@@ -26,7 +28,7 @@ const payload = parseClipboardPayload(JSON.stringify({
   pixels: [['#ff0000', '#00ff00'], ['#0000ff', '#ffffff']],
 }));
 assert.equal(payload.width, 1920);
-assert.equal(thumbnailSize, 20);
+assert.equal(thumbnailSize, 5);
 assert.equal(payload.pixels[0]?.[1], '#00ff00');
 assert.equal(isPasteShortcut('v', {ctrl: false, meta: true}), true);
 assert.equal(isPasteShortcut('v', {ctrl: true, meta: false}), true);
@@ -36,6 +38,7 @@ assert.equal(isNewlineShortcut('\n', {return: false, shift: false}), true);
 assert.equal(isNewlineShortcut('[27;2;13~', {return: false, shift: false}), true);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false}), false);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false, meta: true}), true);
+assert.equal(isNewlineShortcut('\r', {return: true, shift: false, ctrl: true}), true);
 assert.equal(moveCursorVertically(25, 100, 20, -1), 5);
 assert.equal(moveCursorVertically(25, 100, 20, 1), 45);
 assert.equal(getCursorIndexFromPoint(14, 6, {x: 10, y: 5, width: 20, height: 2}, 80), 24);
@@ -49,6 +52,8 @@ assert.equal(inputViewport.text, 'abcdefghij\nKLMNOP');
 assert.equal(inputViewport.hiddenAbove, 1);
 assert.equal(inputViewport.cursorIndex, 13);
 assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
+assert.equal(findPreviousWordBoundary('hello brave world', 17), 12);
+assert.equal(findNextWordBoundary('hello brave world', 5), 11);
 assert.equal(
   collapsePastedBlocksForDisplay('review this\n\n[PASTED BLOCK 1]\nline one\nline two'),
   'review this\n\n~ 2 lines',
@@ -91,6 +96,10 @@ const editor = render(React.createElement(PromptInput, {
   onPasteImage: () => undefined,
   onRemoveLastImage: () => undefined,
   onCopy: () => undefined,
+  onOpenModels: () => undefined,
+  onOpenAgents: () => undefined,
+  onHelp: () => undefined,
+  onCycleAgent: () => undefined,
 }), {
   stdin: editorInput as unknown as NodeJS.ReadStream,
   stdout: editorOutput as unknown as NodeJS.WriteStream,
