@@ -60,6 +60,8 @@ pxh --provider=custom
 - `PageUp` / `PageDown`: xem lịch sử cũ hoặc trở về hội thoại mới nhất bằng bàn phím.
 - `←` / `→` / `Home` / `End`: di chuyển con trỏ soạn thảo; `↑` / `↓` di chuyển theo dòng wrap.
 - Click vào text trong `NEW TARGET`: đặt con trỏ tại vị trí muốn sửa.
+- `Shift+Enter`: chèn dòng mới; `Enter`: gửi TARGET.
+- Text paste dài tự thu gọn thành `PASTED BLOCK`; nhấn `Ctrl+E` hoặc click để mở và chỉnh sửa.
 - Khi ô nhập trống, `Backspace` hoặc `Delete`: bỏ ảnh đính kèm cuối cùng (tối đa 4 ảnh mỗi TARGET).
 - `/models`: chọn model/mode.
 - `/agents`: chọn specialist hoặc Economy Router tự động.

@@ -3,10 +3,15 @@ import React from 'react';
 import {render} from 'ink';
 import {PassThrough} from 'node:stream';
 import {ImageThumbnail} from '../components/ImageThumbnail.js';
+import {PromptInput} from '../components/PromptInput.js';
 import {
   getCursorIndexFromPoint,
   isPasteShortcut,
+  isNewlineShortcut,
   moveCursorVertically,
+  shouldCollapsePaste,
+  countLines,
+  createPastePreview,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
@@ -23,10 +28,18 @@ assert.equal(payload.pixels[0]?.[1], '#00ff00');
 assert.equal(isPasteShortcut('v', {ctrl: false, meta: true}), true);
 assert.equal(isPasteShortcut('v', {ctrl: true, meta: false}), true);
 assert.equal(isPasteShortcut('x', {ctrl: false, meta: true}), false);
+assert.equal(isNewlineShortcut('\r', {return: true, shift: true}), true);
+assert.equal(isNewlineShortcut('\n', {return: false, shift: false}), true);
+assert.equal(isNewlineShortcut('[27;2;13~', {return: false, shift: false}), true);
+assert.equal(isNewlineShortcut('\r', {return: true, shift: false}), false);
 assert.equal(moveCursorVertically(25, 100, 20, -1), 5);
 assert.equal(moveCursorVertically(25, 100, 20, 1), 45);
 assert.equal(getCursorIndexFromPoint(14, 6, {x: 10, y: 5, width: 20, height: 2}, 80), 24);
 assert.equal(getCursorIndexFromPoint(2, 2, {x: 10, y: 5, width: 20, height: 2}, 80), undefined);
+assert.equal(shouldCollapsePaste('one\ntwo\nthree\nfour'), true);
+assert.equal(shouldCollapsePaste('short text'), false);
+assert.equal(countLines('one\ntwo\nthree'), 3);
+assert.equal(createPastePreview('  one\n   two  '), 'one two');
 
 const output = new PassThrough();
 Object.assign(output, {columns: 80, rows: 20, isTTY: true});
@@ -44,5 +57,44 @@ const instance = render(React.createElement(ImageThumbnail, {image: {
 await new Promise((resolve) => setTimeout(resolve, 30));
 assert.match(stripAnsi(rendered), /1920×1080 · 2 KB/);
 instance.unmount();
+
+const editorInput = new PassThrough();
+Object.assign(editorInput, {
+  isTTY: true,
+  setRawMode: () => editorInput,
+  ref: () => editorInput,
+  unref: () => editorInput,
+});
+const editorOutput = new PassThrough();
+Object.assign(editorOutput, {columns: 100, rows: 30, isTTY: true});
+let editorFrame = '';
+let submitted = '';
+editorOutput.on('data', (chunk) => { editorFrame += chunk.toString('utf8'); });
+const editor = render(React.createElement(PromptInput, {
+  onSubmit: (value: string) => { submitted = value; },
+  onExit: () => undefined,
+  isBusy: false,
+  attachments: [],
+  onPasteImage: () => undefined,
+  onRemoveLastImage: () => undefined,
+}), {
+  stdin: editorInput as unknown as NodeJS.ReadStream,
+  stdout: editorOutput as unknown as NodeJS.WriteStream,
+  stderr: editorOutput as unknown as NodeJS.WriteStream,
+  debug: true,
+  exitOnCtrlC: false,
+});
+await new Promise((resolve) => setTimeout(resolve, 30));
+editorInput.write('\x1b[200~one\ntwo\nthree\nfour\x1b[201~');
+await new Promise((resolve) => setTimeout(resolve, 30));
+assert.match(stripAnsi(editorFrame), /PASTED BLOCK/);
+editorInput.write('\x1b[13;2u');
+await new Promise((resolve) => setTimeout(resolve, 20));
+editorInput.write('five');
+await new Promise((resolve) => setTimeout(resolve, 20));
+editorInput.write('\r');
+await new Promise((resolve) => setTimeout(resolve, 30));
+assert.equal(submitted, 'one\ntwo\nthree\nfour\nfive');
+editor.unmount();
 
 console.log('Image clipboard tests passed.');

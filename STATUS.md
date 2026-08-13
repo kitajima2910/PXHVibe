@@ -290,3 +290,32 @@
 ### Vấn đề còn lại
 
 - Khi mouse tracking bật, chọn text native của terminal cần giữ Shift trong VS Code/Windows Terminal.
+
+## Cập nhật: Collapsed paste và multiline input
+
+### Đã thay đổi gì
+
+- Dùng bracketed-paste channel của Ink để nhận nguyên block text, không trộn với từng key event.
+- Text paste từ 4 dòng hoặc 300 ký tự tự thu gọn thành `PASTED BLOCK` gồm số dòng, số ký tự và preview một dòng.
+- Nội dung đầy đủ vẫn được giữ nguyên để gửi model; `Ctrl+E`, click hoặc phím điều hướng sẽ mở block để chỉnh sửa.
+- `Shift+Enter` chèn newline tại cursor; Enter thường mới submit TARGET.
+- Footer hiển thị shortcut multiline mới.
+
+### File đã sửa
+
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công.
+- Integration test gửi bracketed paste 4 dòng, xác nhận TUI render `PASTED BLOCK`, sau đó Shift+Enter + text + Enter gửi đúng nội dung multiline đầy đủ.
+- Parser probe xác nhận Ink nhận Kitty `Shift+Enter` với `return=true, shift=true`; thêm fallback LF và legacy modified-enter sequence.
+
+### Vấn đề còn lại
+
+- Terminal không chuyển tiếp modifier Shift cho Enter sẽ cần dùng phím newline thay thế; VS Code Terminal hiện đại hỗ trợ modified Enter qua input protocol.
