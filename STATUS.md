@@ -15,6 +15,7 @@
 - Thiết kế lại TUI theo phong cách Matrix hacker: logo ASCII PXHVibe responsive, palette xanh, cyber borders, terminal prompt và dòng tác giả `Error404-Labs.Info.VN - Phạm Xuân Hoài`.
 - Đơn giản hóa agent: bỏ `/plan` và `/build`; mọi specialist trong `/agents` luôn chạy BUILD và có thể triển khai TARGET.
 - Tham khảo kiến trúc MIT của `kitajima2910/pxhopencode` để thêm Economy Router chạy local, `/agents` và 7 specialist roles native; không bundle runtime/skills pack của repo tham khảo.
+- Format lại input/output TUI: message card riêng cho TARGET/OUTPUT, event compact, timestamp, command panel và renderer Markdown terminal cho heading/list/quote/inline code/code fence.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -36,6 +37,7 @@
 - `src/components/Header.tsx`
 - `src/components/Banner.tsx`
 - `src/components/AgentPicker.tsx`
+- `src/components/FormattedText.tsx`
 - `src/components/ModePicker.tsx`
 - `src/components/CustomApiSetup.tsx`
 - `src/providers/OpenCodeProvider.ts`
@@ -49,6 +51,8 @@
 - `src/utils/agentPrompt.ts`
 - `src/agents.ts`
 - `src/tests/agents.test.ts`
+- `src/utils/terminalFormat.ts`
+- `src/tests/terminalFormat.test.ts`
 - `STATUS.md`
 - Đã xóa `src/providers/MockProvider.ts` và `src/providers/NativeAgentProvider.ts`.
 
@@ -81,6 +85,7 @@
 - TUI render test: banner hiển thị đúng tên Error404-Labs.Info.VN và Phạm Xuân Hoài.
 - Agent-mode tests: runtime luôn dùng agent `build` với auto tool và prompt luôn chứa `AGENT MODE: BUILD`.
 - Economy Router tests: route đúng bug, UI/UX, QA, Expert và tôn trọng specialist được khóa thủ công.
+- Terminal formatter tests: nhận đúng heading, blank, bullet, numbered list, quote và fenced code kèm language.
 
 ## Vấn đề còn lại
 

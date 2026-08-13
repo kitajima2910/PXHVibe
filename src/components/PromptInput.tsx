@@ -42,12 +42,30 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
   });
 
   return (
-    <Box borderStyle="double" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
-      <Text bold color={isBusy ? 'yellow' : 'green'}>
-        {isBusy ? '[PROCESSING] ' : 'root@pxhvibe:~$ '}
-      </Text>
-      <Text>{isBusy ? 'Thinking...' : value}</Text>
-      {!isBusy && <Text inverse> </Text>}
+    <Box flexDirection="column" borderStyle="double" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
+      <Box justifyContent="space-between">
+        <Text bold color={isBusy ? 'yellow' : 'green'}>
+          {isBusy ? '[ AGENT // PROCESSING ]' : '[ COMMAND // INPUT ]'}
+        </Text>
+        <Text dimColor>{isBusy ? 'LOCKED' : 'BUILD READY'}</Text>
+      </Box>
+      <Box>
+        <Text bold color="green">root@pxhvibe</Text>
+        <Text color="gray">:</Text>
+        <Text bold color="cyan">~</Text>
+        <Text color="gray">$ </Text>
+        {isBusy ? (
+          <Text color="yellow">◉ Agent đang xử lý TARGET...</Text>
+        ) : (
+          <>
+            <Text color={value.length === 0 ? 'gray' : 'white'}>
+              {value.length === 0 ? 'Nhập TARGET hoặc /help' : value}
+            </Text>
+            <Text inverse color="green"> </Text>
+          </>
+        )}
+      </Box>
+      <Text dimColor>{isBusy ? 'Theo dõi EVENT phía trên' : 'ENTER gửi  ·  /agents specialist  ·  /models model  ·  CTRL+C thoát'}</Text>
     </Box>
   );
 }

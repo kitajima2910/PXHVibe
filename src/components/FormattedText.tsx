@@ -1,0 +1,57 @@
+import React from 'react';
+import {Box, Text} from 'ink';
+import {parseTerminalBlocks} from '../utils/terminalFormat.js';
+
+interface FormattedTextProps {
+  content: string;
+  accent?: 'green' | 'yellow';
+}
+
+export function FormattedText({content, accent = 'green'}: FormattedTextProps): React.JSX.Element {
+  return (
+    <Box flexDirection="column">
+      {parseTerminalBlocks(content).map((block, index) => {
+        const key = `${block.type}-${index}`;
+        if (block.type === 'blank') return <Text key={key}> </Text>;
+        if (block.type === 'code') {
+          return (
+            <Box key={key} flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1} marginY={1}>
+              <Text bold color={accent}>[ CODE{block.language ? ` · ${block.language}` : ''} ]</Text>
+              <Text color="white">{block.content || ' '}</Text>
+            </Box>
+          );
+        }
+        if (block.type === 'heading') {
+          return <Text key={key} bold color={accent}>{'▰ '.repeat(block.level === 1 ? 1 : 0)}{block.content}</Text>;
+        }
+        if (block.type === 'bullet') {
+          return <Text key={key}><Text color={accent}>◆</Text>{' '}<InlineText content={block.content} /></Text>;
+        }
+        if (block.type === 'numbered') {
+          return <Text key={key}><Text bold color={accent}>{block.marker}</Text>{' '}<InlineText content={block.content} /></Text>;
+        }
+        if (block.type === 'quote') {
+          return <Text key={key} italic dimColor><Text color={accent}>│</Text>{' '}{block.content}</Text>;
+        }
+        return <Text key={key}><InlineText content={block.content} /></Text>;
+      })}
+    </Box>
+  );
+}
+
+function InlineText({content}: {content: string}): React.JSX.Element {
+  const parts = content.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean);
+  return (
+    <Text>
+      {parts.map((part, index) => {
+        if (part.startsWith('`') && part.endsWith('`')) {
+          return <Text key={index} color="cyan">{part.slice(1, -1)}</Text>;
+        }
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <Text key={index} bold>{part.slice(2, -2)}</Text>;
+        }
+        return part;
+      })}
+    </Text>
+  );
+}
