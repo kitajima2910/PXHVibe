@@ -4,6 +4,7 @@ import {createRequire} from 'node:module';
 import path from 'node:path';
 import type {AIProvider} from './AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
+import type {AgentEvent} from '../agent/types.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 
 const missingCliMessage =
@@ -28,6 +29,8 @@ export class OpenCodeProvider implements AIProvider {
       const child = spawn(resolveOpenCodeExecutable(), [
         'run',
         '--pure',
+        '--format',
+        'json',
         '--model',
         this.model,
         '--agent',
@@ -44,8 +47,11 @@ export class OpenCodeProvider implements AIProvider {
       child.stdin.end();
       this.activeProcess = child;
 
-      let stdout = '';
+      let stdoutBuffer = '';
+      let responseText = '';
+      let fallbackText = '';
       let stderr = '';
+      let stepCount = 0;
       let settled = false;
       let timeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -71,7 +77,16 @@ export class OpenCodeProvider implements AIProvider {
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
       child.stdout.on('data', (chunk: string) => {
-        stdout += chunk;
+        stdoutBuffer += chunk;
+        const lines = stdoutBuffer.split(/\r?\n/);
+        stdoutBuffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const parsed = parseOpenCodeEvent(line, stepCount);
+          stepCount = parsed.stepCount;
+          responseText += parsed.text;
+          fallbackText += parsed.fallbackText;
+          for (const event of parsed.events) options.onEvent?.(event);
+        }
       });
       child.stderr.on('data', (chunk: string) => {
         stderr += chunk;
@@ -85,7 +100,13 @@ export class OpenCodeProvider implements AIProvider {
         }
 
         settled = true;
-        const cleanStdout = stripAnsi(stdout).trim();
+        if (stdoutBuffer.trim().length > 0) {
+          const parsed = parseOpenCodeEvent(stdoutBuffer, stepCount);
+          responseText += parsed.text;
+          fallbackText += parsed.fallbackText;
+          for (const event of parsed.events) options.onEvent?.(event);
+        }
+        const cleanStdout = (responseText || fallbackText).trim();
         const cleanStderr = stripAnsi(stderr).trim();
         cleanup();
 
@@ -122,6 +143,90 @@ export class OpenCodeProvider implements AIProvider {
       child.kill();
     }
   }
+}
+
+interface ParsedRuntimeEvent {
+  events: AgentEvent[];
+  text: string;
+  fallbackText: string;
+  stepCount: number;
+}
+
+export function parseOpenCodeEvent(line: string, currentStepCount = 0): ParsedRuntimeEvent {
+  const cleanLine = stripAnsi(line).trim();
+  if (cleanLine.length === 0) {
+    return {events: [], text: '', fallbackText: '', stepCount: currentStepCount};
+  }
+
+  try {
+    const value = JSON.parse(cleanLine) as {
+      type?: string;
+      part?: {
+        text?: string;
+        tool?: string;
+        state?: {status?: string; title?: string; output?: string};
+      };
+    };
+
+    if (value.type === 'step_start') {
+      const stepCount = currentStepCount + 1;
+      return {
+        events: [{
+          type: 'activity',
+          content: stepCount === 1 ? 'Đang phân tích yêu cầu...' : 'Đang tiếp tục xử lý...',
+        }],
+        text: '',
+        fallbackText: '',
+        stepCount,
+      };
+    }
+
+    if (value.type === 'tool_use' && value.part?.tool !== undefined) {
+      const toolName = formatToolName(value.part.tool);
+      const summary = value.part.state?.title || summarizeToolOutput(value.part.state?.output);
+      return {
+        events: [
+          {type: 'tool_start', toolName},
+          {type: 'tool_complete', toolName, summary},
+        ],
+        text: '',
+        fallbackText: '',
+        stepCount: currentStepCount,
+      };
+    }
+
+    if (value.type === 'text' && value.part?.text !== undefined) {
+      return {
+        events: [{type: 'text_delta', content: value.part.text}],
+        text: value.part.text,
+        fallbackText: '',
+        stepCount: currentStepCount,
+      };
+    }
+
+    return {events: [], text: '', fallbackText: '', stepCount: currentStepCount};
+  } catch {
+    return {events: [], text: '', fallbackText: `${cleanLine}\n`, stepCount: currentStepCount};
+  }
+}
+
+function formatToolName(toolName: string): string {
+  const names: Record<string, string> = {
+    bash: 'terminal',
+    edit: 'chỉnh sửa file',
+    glob: 'tìm file',
+    grep: 'tìm nội dung',
+    list: 'liệt kê file',
+    read: 'đọc file',
+    write: 'tạo file',
+  };
+  return names[toolName] ?? toolName;
+}
+
+function summarizeToolOutput(output: string | undefined): string {
+  if (output === undefined || output.trim().length === 0) return 'Hoàn tất';
+  const firstLine = stripAnsi(output).trim().split(/\r?\n/, 1)[0] ?? 'Hoàn tất';
+  return firstLine.length > 120 ? `${firstLine.slice(0, 117)}...` : firstLine;
 }
 
 export function getRequestTimeoutMs(): number {

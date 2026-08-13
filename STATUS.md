@@ -10,6 +10,7 @@
 - Thêm Big Pickle Free và giữ các cloud coding model miễn phí hiện có trong `/models`.
 - Đổi model Free mặc định từ MiMo V2.5 sang Big Pickle vì MiMo không trả dữ liệu trong kiểm tra live, trong khi Big Pickle phản hồi bình thường.
 - Sửa Free mode bị kẹt `Thinking...`: đóng stdin của child process ngay sau khi spawn để runtime nhận EOF và bắt đầu xử lý positional prompt.
+- Free mode dùng JSON event stream để TUI hiển thị quá trình thật: phân tích, tool đang chạy/hoàn tất và nội dung trả lời ngay khi runtime phát ra.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -65,6 +66,8 @@
 - Live probe trong thư mục Temp rỗng: MiMo V2.5 không có output sau 30 giây; Big Pickle trả lời thành công trong khoảng 6,5 giây.
 - Root-cause probe: cùng lệnh Big Pickle chạy trực tiếp thành công nhưng qua `OpenCodeProvider` timeout vì stdin pipe còn mở.
 - Post-fix live probe qua chính `OpenCodeProvider` tại `D:\test`: trả `xin chào` thành công trong 6,07 giây.
+- JSON event probe: nhận đủ `step_start`, `tool_use`, `text`, `step_finish`; parser regression test bao phủ activity/tool/text.
+- Live provider stream probe: phát 5 event theo thứ tự activity → tool start → tool complete → activity → text và tạo file Temp thành công.
 
 ## Vấn đề còn lại
 

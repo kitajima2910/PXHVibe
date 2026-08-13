@@ -1,5 +1,6 @@
 export type AgentEvent =
   | {type: 'text_delta'; content: string}
+  | {type: 'activity'; content: string}
   | {type: 'tool_start'; toolName: string}
   | {type: 'tool_complete'; toolName: string; summary: string};
 

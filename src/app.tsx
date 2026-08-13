@@ -109,6 +109,16 @@ export function App({provider}: AppProps): React.JSX.Element {
         return;
       }
 
+      if (event.type === 'activity') {
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(),
+          role: 'system',
+          content: event.content,
+          createdAt: new Date(),
+        }]);
+        return;
+      }
+
       const activity = event.type === 'tool_start'
         ? `Đang chạy ${event.toolName}...`
         : `${event.toolName}: ${event.summary}`;
