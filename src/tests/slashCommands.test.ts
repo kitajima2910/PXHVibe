@@ -11,9 +11,11 @@ class CountingProvider implements AIProvider {
   readonly name = 'Test';
   calls = 0;
   lastPrompt = '';
-  async sendMessage(prompt: string, _options: ProviderRequestOptions): Promise<ProviderResponse> {
+  lastOptions: ProviderRequestOptions | undefined;
+  async sendMessage(prompt: string, options: ProviderRequestOptions): Promise<ProviderResponse> {
     this.calls += 1;
     this.lastPrompt = prompt;
+    this.lastOptions = options;
     return {content: 'unexpected'};
   }
   cancel(): void {}
@@ -36,6 +38,13 @@ const instance = render(React.createElement(App, {provider}), {
 
 await wait(50);
 assert.ok(stripAnsi(rendered).includes('Error404-Labs.Info.VN - Phạm Xuân Hoài'));
+await typeText('/agents');
+input.write('\r');
+await wait(80);
+assert.ok(stripAnsi(rendered).includes('PXH PM (Auto)'));
+assert.equal(provider.calls, 0);
+input.write('\x1b');
+await wait(50);
 await typeText('/models');
 input.write('\r');
 await wait(80);
@@ -54,6 +63,11 @@ input.write('\r');
 await wait(80);
 assert.equal(provider.calls, 0);
 assert.ok(stripAnsi(rendered).includes('Lệnh không hợp lệ'));
+await typeText('/plan');
+input.write('\r');
+await wait(80);
+assert.equal(provider.calls, 0);
+assert.ok(stripAnsi(rendered).includes('[AGENT] PLAN'));
 await typeText('sửa lỗi đăng nhập');
 input.write('\r');
 await wait(80);
@@ -61,7 +75,15 @@ assert.equal(provider.calls, 1);
 assert.ok(provider.lastPrompt.startsWith('RULE:\n'));
 assert.ok(provider.lastPrompt.includes('- Đọc STATUS.md nếu tồn tại trước khi bắt đầu.'));
 assert.ok(provider.lastPrompt.includes('- Cập nhật STATUS.md gồm:'));
+assert.ok(provider.lastPrompt.includes('AGENT MODE: PLAN'));
+assert.ok(provider.lastPrompt.includes('AGENT ROLE: PXH Bug Hunter'));
 assert.ok(provider.lastPrompt.endsWith('TARGET:\n\nsửa lỗi đăng nhập'));
+assert.equal(provider.lastOptions?.agentMode, 'plan');
+await typeText('/build');
+input.write('\r');
+await wait(80);
+assert.equal(provider.calls, 1);
+assert.ok(stripAnsi(rendered).includes('[AGENT] BUILD'));
 instance.unmount();
 console.log('Slash command tests: passed');
 

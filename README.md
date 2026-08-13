@@ -56,6 +56,9 @@ pxh --provider=custom
 - `Enter`: gửi prompt.
 - `Backspace` hoặc `Delete`: xóa ký tự.
 - `/models`: chọn model/mode.
+- `/agents`: chọn specialist hoặc Economy Router tự động.
+- `/plan`: chỉ đọc, phân tích và lập kế hoạch.
+- `/build`: triển khai và chỉnh sửa project.
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
 
@@ -83,3 +86,7 @@ npm publish
 PXHVibe bundles the MIT-licensed `opencode-ai` runtime for its Free mode. This
 attribution is retained for license transparency; runtime branding is not exposed
 as part of the end-user TUI.
+
+PXHVibe's local Economy Router and specialist-role design are inspired by the
+MIT-licensed [pxhopencode](https://github.com/kitajima2910/pxhopencode) project;
+the implementation in this package is native to PXHVibe.

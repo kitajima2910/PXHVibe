@@ -15,6 +15,9 @@ import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {buildAgentPrompt} from './utils/agentPrompt.js';
 import {Banner} from './components/Banner.js';
+import type {AgentMode} from './types/provider.js';
+import {agents, getAgent, routeAgent, type PXHAgent, type PXHAgentId} from './agents.js';
+import {AgentPicker} from './components/AgentPicker.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -44,6 +47,10 @@ export function App({provider}: AppProps): React.JSX.Element {
   const [isBusy, setIsBusy] = useState(false);
   const [isModePickerOpen, setIsModePickerOpen] = useState(false);
   const [isCustomSetupOpen, setIsCustomSetupOpen] = useState(false);
+  const [agentMode, setAgentMode] = useState<AgentMode>('build');
+  const [selectedAgentId, setSelectedAgentId] = useState<PXHAgentId>('auto');
+  const [activeAgent, setActiveAgent] = useState<PXHAgent>(getAgent('auto'));
+  const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
 
   const handleSubmit = async (content: string): Promise<void> => {
     if (isBusy) {
@@ -56,11 +63,30 @@ export function App({provider}: AppProps): React.JSX.Element {
       return;
     }
 
+    if (command === '/agents') {
+      setIsAgentPickerOpen(true);
+      return;
+    }
+
+    if (command === '/build' || command === '/plan') {
+      const nextAgentMode: AgentMode = command === '/plan' ? 'plan' : 'build';
+      setAgentMode(nextAgentMode);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        content: nextAgentMode === 'plan'
+          ? 'Đã chuyển sang PLAN — chỉ phân tích, không sửa file.'
+          : 'Đã chuyển sang BUILD — có thể triển khai và sửa file.',
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
     if (command === '/help') {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
-        content: 'Lệnh: /models — chọn model; /help — trợ giúp.',
+        content: 'Lệnh: /models — chọn model; /agents — chọn specialist; /plan — chỉ lập kế hoạch; /build — triển khai; /help — trợ giúp.',
         createdAt: new Date(),
       }]);
       return;
@@ -76,6 +102,8 @@ export function App({provider}: AppProps): React.JSX.Element {
       return;
     }
 
+    const routedAgent = routeAgent(selectedAgentId, content);
+    setActiveAgent(routedAgent);
     const message: Message = {
       id: createMessageId(),
       role: 'user',
@@ -83,7 +111,12 @@ export function App({provider}: AppProps): React.JSX.Element {
       createdAt: new Date(),
     };
 
-    setMessages((currentMessages) => [...currentMessages, message]);
+    setMessages((currentMessages) => [...currentMessages, message, {
+      id: createMessageId(),
+      role: 'system',
+      content: `Economy Router → ${routedAgent.label}`,
+      createdAt: new Date(),
+    }]);
     setIsBusy(true);
     setStatus('Thinking...');
     const responseMessageId = createMessageId();
@@ -133,8 +166,9 @@ export function App({provider}: AppProps): React.JSX.Element {
     };
 
     try {
-      const response = await currentProvider.sendMessage(buildAgentPrompt(content), {
+      const response = await currentProvider.sendMessage(buildAgentPrompt(content, agentMode, routedAgent), {
         cwd: process.cwd(),
+        agentMode,
         onEvent: handleAgentEvent,
       });
       if (!hasStreamedResponse) {
@@ -195,16 +229,38 @@ export function App({provider}: AppProps): React.JSX.Element {
     }]);
   };
 
+  const handleAgentSelect = (agent: PXHAgent): void => {
+    setSelectedAgentId(agent.id);
+    setActiveAgent(agent);
+    setIsAgentPickerOpen(false);
+    setMessages((currentMessages) => [...currentMessages, {
+      id: createMessageId(),
+      role: 'system',
+      content: agent.id === 'auto'
+        ? 'Đã bật Economy Router tự động.'
+        : `Đã khóa specialist: ${agent.label}.`,
+      createdAt: new Date(),
+    }]);
+  };
+
   return (
     <Box flexDirection="column">
       <Banner />
       <Header
         workingDirectory={process.cwd()}
         providerName={currentProvider.name}
+        agentMode={agentMode}
+        agentLabel={activeAgent.label}
         status={status}
       />
       <MessageList messages={messages} />
-      {isCustomSetupOpen ? (
+      {isAgentPickerOpen ? (
+        <AgentPicker
+          agents={agents}
+          onSelect={handleAgentSelect}
+          onCancel={() => setIsAgentPickerOpen(false)}
+        />
+      ) : isCustomSetupOpen ? (
         <CustomApiSetup
           onComplete={handleCustomSetup}
           onCancel={() => setIsCustomSetupOpen(false)}

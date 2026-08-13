@@ -17,6 +17,12 @@ const codingRules = `RULE:
   - Kết quả kiểm tra
   - Vấn đề còn lại, nếu có`;
 
-export function buildAgentPrompt(target: string): string {
-  return `${codingRules}\n\nTARGET:\n\n${target}`;
+import type {AgentMode} from '../types/provider.js';
+import type {PXHAgent} from '../agents.js';
+
+export function buildAgentPrompt(target: string, agentMode: AgentMode, agent: PXHAgent): string {
+  const modeInstruction = agentMode === 'plan'
+    ? 'AGENT MODE: PLAN\nChỉ đọc, phân tích và lập kế hoạch. Không tạo, sửa hoặc xóa file.'
+    : 'AGENT MODE: BUILD\nTriển khai TARGET bằng các thay đổi nhỏ nhất và kiểm tra kết quả.';
+  return `${codingRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}\n\n${modeInstruction}\n\nTARGET:\n\n${target}`;
 }

@@ -13,6 +13,8 @@
 - Free mode dùng JSON event stream để TUI hiển thị quá trình thật: phân tích, tool đang chạy/hoàn tất và nội dung trả lời ngay khi runtime phát ra.
 - Tự động bọc mọi prompt gửi từ TUI bằng coding RULE; nội dung người dùng được đặt nguyên vẹn trong `TARGET` cho cả Free và Custom API.
 - Thiết kế lại TUI theo phong cách Matrix hacker: logo ASCII PXHVibe responsive, palette xanh, cyber borders, terminal prompt và dòng tác giả `Error404-Labs.Info.VN - Phạm Xuân Hoài`.
+- Thêm agent mode `/plan` và `/build`: Header hiển thị mode; Free runtime nhận đúng agent; PLAN không bật auto-write và Custom PLAN không được cấp tool `apply_patch`.
+- Tham khảo kiến trúc MIT của `kitajima2910/pxhopencode` để thêm Economy Router chạy local, `/agents` và 7 specialist roles native; không bundle runtime/skills pack của repo tham khảo.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -33,6 +35,7 @@
 - `src/types/provider.ts`
 - `src/components/Header.tsx`
 - `src/components/Banner.tsx`
+- `src/components/AgentPicker.tsx`
 - `src/components/ModePicker.tsx`
 - `src/components/CustomApiSetup.tsx`
 - `src/providers/OpenCodeProvider.ts`
@@ -44,6 +47,8 @@
 - `src/tests/customApiSetup.test.ts`
 - `src/tests/slashCommands.test.ts`
 - `src/utils/agentPrompt.ts`
+- `src/agents.ts`
+- `src/tests/agents.test.ts`
 - `STATUS.md`
 - Đã xóa `src/providers/MockProvider.ts` và `src/providers/NativeAgentProvider.ts`.
 
@@ -74,6 +79,9 @@
 - Live provider stream probe: phát 5 event theo thứ tự activity → tool start → tool complete → activity → text và tạo file Temp thành công.
 - Prompt integration test: provider nhận đủ RULE và TARGET, trong khi slash command vẫn không bị gửi lên model.
 - TUI render test: banner hiển thị đúng tên Error404-Labs.Info.VN và Phạm Xuân Hoài.
+- Agent-mode tests: `/plan` và `/build` không bị gửi như prompt; PLAN bỏ `--auto`, dùng agent `plan` và provider nhận đúng mode.
+- Live PLAN guard probe: agent chỉ trả kế hoạch và `FILE_EXISTS=False` dù TARGET yêu cầu tạo file.
+- Economy Router tests: route đúng bug, UI/UX, QA, Expert và tôn trọng specialist được khóa thủ công.
 
 ## Vấn đề còn lại
 
