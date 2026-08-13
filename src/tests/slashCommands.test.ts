@@ -6,6 +6,7 @@ import {App} from '../app.js';
 import type {AIProvider} from '../providers/AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
+import {appVersion} from '../version.js';
 
 class CountingProvider implements AIProvider {
   readonly name = 'Test';
@@ -38,6 +39,7 @@ const instance = render(React.createElement(App, {provider}), {
 
 await wait(50);
 assert.ok(stripAnsi(rendered).includes('Error404-Labs.Info.VN - Phạm Xuân Hoài'));
+assert.ok(stripAnsi(rendered).includes(`PXHVibe v${appVersion}`));
 await typeText('/agents');
 input.write('\r');
 await wait(80);

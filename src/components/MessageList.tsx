@@ -41,10 +41,12 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
   useInput((input, key) => {
     const mouse = parseTerminalMouse(input);
     if (mouse !== undefined) {
-      if (mouse.button === 'wheel-up') scrollBy(1);
-      if (mouse.button === 'wheel-down') scrollBy(-1);
       if (viewportRef.current !== null) {
         const metrics = measureElement(viewportRef.current);
+        const insideViewport = mouse.x >= metrics.x && mouse.x < metrics.x + metrics.width
+          && mouse.y >= metrics.y && mouse.y < metrics.y + metrics.height;
+        if (insideViewport && mouse.button === 'wheel-up') scrollBy(1);
+        if (insideViewport && mouse.button === 'wheel-down') scrollBy(-1);
         const onScrollbar = mouse.x >= metrics.x + metrics.width - 1;
         if (mouse.button === 'left' && mouse.action === 'press' && onScrollbar) {
           isDragging.current = true;

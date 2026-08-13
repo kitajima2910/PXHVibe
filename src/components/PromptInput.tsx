@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Box, Text, measureElement, useApp, useInput, usePaste, type DOMElement} from 'ink';
+import {Box, Text, measureElement, useApp, useInput, usePaste, useStdout, type DOMElement} from 'ink';
 import type {ImageAttachment} from '../types/attachment.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
@@ -11,15 +11,19 @@ interface PromptInputProps {
   attachments: readonly ImageAttachment[];
   onPasteImage: () => void;
   onRemoveLastImage: () => void;
+  onCopy: () => void;
 }
 
-export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage}: PromptInputProps): React.JSX.Element {
+export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage, onCopy}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [cursorIndex, setCursorIndex] = useState(0);
-  const [isPasteCollapsed, setIsPasteCollapsed] = useState(false);
+  const [pastedBlocks, setPastedBlocks] = useState<string[]>([]);
   const [spinnerIndex, setSpinnerIndex] = useState(0);
   const {exit} = useApp();
+  const {stdout} = useStdout();
   const editorRef = useRef<DOMElement>(null);
+  const editorWidth = Math.max(20, (stdout.columns ?? 80) - 21);
+  const inputViewport = createInputViewport(value, cursorIndex, editorWidth, 5);
 
   useEffect(() => {
     if (!isBusy) {
@@ -34,22 +38,34 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
 
   usePaste((text) => {
     if (isBusy || text.length === 0) return;
+    if (shouldCollapsePaste(text)) {
+      setPastedBlocks((current) => [...current, text]);
+      return;
+    }
     setValue((currentValue) => currentValue.slice(0, cursorIndex) + text + currentValue.slice(cursorIndex));
     setCursorIndex((current) => current + text.length);
-    if (shouldCollapsePaste(text)) setIsPasteCollapsed(true);
   }, {isActive: !isBusy});
 
   useInput((input, key) => {
     const mouse = parseTerminalMouse(input);
     if (mouse !== undefined) {
-      if (mouse.button === 'left' && mouse.action === 'press' && editorRef.current !== null) {
-        if (isPasteCollapsed) {
-          setIsPasteCollapsed(false);
-          return;
-        }
+      if (editorRef.current !== null) {
         const metrics = measureElement(editorRef.current);
-        const clickedIndex = getCursorIndexFromPoint(mouse.x, mouse.y, metrics, value.length);
-        if (clickedIndex !== undefined) setCursorIndex(clickedIndex);
+        const insideEditor = mouse.x >= metrics.x && mouse.x < metrics.x + metrics.width
+          && mouse.y >= metrics.y && mouse.y < metrics.y + metrics.height;
+        if (insideEditor && mouse.button === 'wheel-up') {
+          setCursorIndex((current) => moveCursorVertically(current, value.length, editorWidth, -1));
+        } else if (insideEditor && mouse.button === 'wheel-down') {
+          setCursorIndex((current) => moveCursorVertically(current, value.length, editorWidth, 1));
+        } else if (insideEditor && mouse.button === 'left' && mouse.action === 'press') {
+          const clickedIndex = getCursorIndexFromViewportPoint(
+            mouse.x,
+            mouse.y,
+            metrics,
+            inputViewport.lines,
+          );
+          if (clickedIndex !== undefined) setCursorIndex(clickedIndex);
+        }
       }
       return;
     }
@@ -69,8 +85,8 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
       return;
     }
 
-    if (key.ctrl && input.toLowerCase() === 'e') {
-      if (shouldCollapsePaste(value)) setIsPasteCollapsed((current) => !current);
+    if (key.meta && input.toLowerCase() === 'c') {
+      onCopy();
       return;
     }
 
@@ -78,55 +94,46 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
       if (isNewlineShortcut(input, key)) {
         setValue((currentValue) => currentValue.slice(0, cursorIndex) + '\n' + currentValue.slice(cursorIndex));
         setCursorIndex((current) => current + 1);
-        setIsPasteCollapsed(false);
         return;
       }
-      const prompt = value.trim();
-      if (prompt.toLowerCase() === '/paste') {
+      const editablePrompt = value.trim();
+      if (editablePrompt.toLowerCase() === '/paste' && pastedBlocks.length === 0) {
         onPasteImage();
         setValue('');
         setCursorIndex(0);
-        setIsPasteCollapsed(false);
         return;
       }
+      const prompt = composePromptInput(editablePrompt, pastedBlocks);
       if (prompt.length > 0) {
         onSubmit(prompt);
         setValue('');
         setCursorIndex(0);
-        setIsPasteCollapsed(false);
+        setPastedBlocks([]);
       }
       return;
     }
 
     if (key.leftArrow) {
-      setIsPasteCollapsed(false);
       setCursorIndex((current) => Math.max(0, current - 1));
       return;
     }
 
     if (key.rightArrow) {
-      setIsPasteCollapsed(false);
       setCursorIndex((current) => Math.min(value.length, current + 1));
       return;
     }
 
     if (key.home) {
-      setIsPasteCollapsed(false);
       setCursorIndex(0);
       return;
     }
 
     if (key.end) {
-      setIsPasteCollapsed(false);
       setCursorIndex(value.length);
       return;
     }
 
     if (key.upArrow || key.downArrow) {
-      setIsPasteCollapsed(false);
-      const editorWidth = editorRef.current === null
-        ? 40
-        : Math.max(1, measureElement(editorRef.current).width);
       setCursorIndex((current) => moveCursorVertically(
         current,
         value.length,
@@ -137,9 +144,12 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     }
 
     if (key.backspace) {
-      setIsPasteCollapsed(false);
       if (value.length === 0 && attachments.length > 0) {
         onRemoveLastImage();
+        return;
+      }
+      if (value.length === 0 && pastedBlocks.length > 0) {
+        setPastedBlocks((current) => current.slice(0, -1));
         return;
       }
       if (cursorIndex > 0) {
@@ -150,7 +160,6 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     }
 
     if (key.delete) {
-      setIsPasteCollapsed(false);
       if (value.length === 0 && attachments.length > 0) {
         onRemoveLastImage();
         return;
@@ -162,7 +171,6 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     }
 
     if (!key.ctrl && !key.meta && input.length > 0) {
-      setIsPasteCollapsed(false);
       setValue((currentValue) => currentValue.slice(0, cursorIndex) + input + currentValue.slice(cursorIndex));
       setCursorIndex((current) => current + input.length);
     }
@@ -181,6 +189,17 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
           {attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}
         </Box>
       )}
+      {pastedBlocks.length > 0 && (
+        <Box flexDirection="column">
+          {pastedBlocks.slice(-3).map((block, index) => (
+            <Text key={`${block.length}-${index}`}>
+              <Text bold color="cyan">▣ PASTE {Math.max(1, pastedBlocks.length - 2 + index)}</Text>
+              <Text dimColor> · {countLines(block)} lines · {formatCharacterCount(block.length)} · {createPastePreview(block)}</Text>
+            </Text>
+          ))}
+          {pastedBlocks.length > 3 && <Text dimColor>+{pastedBlocks.length - 3} pasted blocks cũ</Text>}
+        </Box>
+      )}
       <Box>
         <Text bold color="green">root@pxhvibe</Text>
         <Text color="gray">:</Text>
@@ -189,23 +208,23 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
         {isBusy ? (
           <Text color="yellow">{processingFrames[spinnerIndex]} đang phân tích và triển khai...</Text>
         ) : (
-          <Box ref={editorRef} flexGrow={1}>
+          <Box flexDirection="column" flexGrow={1}>
             {value.length === 0 ? (
-              <Text><Text inverse color="green"> </Text><Text color="gray"> Nhập TARGET hoặc /help</Text></Text>
-            ) : isPasteCollapsed ? (
-              <Box flexDirection="column">
-                <Text>
-                  <Text bold color="cyan">▣ PASTED BLOCK</Text>
-                  <Text dimColor> · {countLines(value)} lines · {formatCharacterCount(value.length)}</Text>
-                </Text>
-                <Text dimColor>{createPastePreview(value)} · Ctrl+E hoặc click để mở</Text>
-              </Box>
+              <Box ref={editorRef}><Text><Text inverse color="green"> </Text><Text color="gray"> Nhập TARGET hoặc /help</Text></Text></Box>
             ) : (
-              <Text color="white">
-                {value.slice(0, cursorIndex)}
-                <Text inverse color="green">{value[cursorIndex] ?? ' '}</Text>
-                {cursorIndex < value.length ? value.slice(cursorIndex + 1) : ''}
-              </Text>
+              <>
+                {inputViewport.hiddenAbove > 0 && <Text color="cyan">↑ {inputViewport.hiddenAbove} lines</Text>}
+                <Box ref={editorRef} flexDirection="column" overflow="hidden">
+                  <Text color="white">
+                    {inputViewport.text.slice(0, inputViewport.cursorIndex)}
+                    <Text inverse color="green">{inputViewport.text[inputViewport.cursorIndex] ?? ' '}</Text>
+                    {inputViewport.cursorIndex < inputViewport.text.length
+                      ? inputViewport.text.slice(inputViewport.cursorIndex + 1)
+                      : ''}
+                  </Text>
+                </Box>
+                {inputViewport.hiddenBelow > 0 && <Text color="cyan">↓ {inputViewport.hiddenBelow} lines</Text>}
+              </>
             )}
           </Box>
         )}
@@ -258,6 +277,84 @@ export function getCursorIndexFromPoint(
   return Math.min(valueLength, index);
 }
 
+interface InputViewportLine {
+  start: number;
+  end: number;
+  text: string;
+}
+
+export interface InputViewport {
+  text: string;
+  cursorIndex: number;
+  lines: readonly InputViewportLine[];
+  hiddenAbove: number;
+  hiddenBelow: number;
+}
+
+export function createInputViewport(
+  value: string,
+  cursorIndex: number,
+  lineWidth: number,
+  maxLines: number,
+): InputViewport {
+  const width = Math.max(1, lineWidth);
+  const lines: InputViewportLine[] = [];
+  let start = 0;
+  let text = '';
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index] ?? '';
+    if (character === '\n') {
+      lines.push({start, end: index, text});
+      start = index + 1;
+      text = '';
+      continue;
+    }
+    text += character;
+    if (text.length === width) {
+      lines.push({start, end: index + 1, text});
+      start = index + 1;
+      text = '';
+    }
+  }
+  if (text.length > 0 || start === value.length) lines.push({start, end: value.length, text});
+  let cursorLine = 0;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line !== undefined && cursorIndex >= line.start && cursorIndex <= line.end) cursorLine = index;
+  }
+  const limit = Math.max(1, maxLines);
+  const firstLine = Math.max(0, Math.min(lines.length - limit, cursorLine - Math.floor(limit / 2)));
+  const visibleLines = lines.slice(firstLine, firstLine + limit);
+  let relativeCursor = 0;
+  const localCursorLine = Math.max(0, cursorLine - firstLine);
+  for (const [index, line] of visibleLines.entries()) {
+    if (index === localCursorLine) {
+      relativeCursor += Math.min(line.text.length, cursorIndex - line.start);
+      break;
+    }
+    relativeCursor += line.text.length + 1;
+  }
+  return {
+    text: visibleLines.map((line) => line.text).join('\n'),
+    cursorIndex: relativeCursor,
+    lines: visibleLines,
+    hiddenAbove: firstLine,
+    hiddenBelow: Math.max(0, lines.length - firstLine - visibleLines.length),
+  };
+}
+
+export function getCursorIndexFromViewportPoint(
+  x: number,
+  y: number,
+  metrics: {x: number; y: number; width: number; height: number},
+  lines: readonly InputViewportLine[],
+): number | undefined {
+  const row = y - metrics.y;
+  const line = lines[row];
+  if (x < metrics.x || x >= metrics.x + metrics.width || line === undefined) return undefined;
+  return Math.min(line.end, line.start + x - metrics.x);
+}
+
 export function shouldCollapsePaste(value: string): boolean {
   return value.length >= 300 || countLines(value) >= 4;
 }
@@ -273,4 +370,10 @@ export function createPastePreview(value: string): string {
 
 function formatCharacterCount(length: number): string {
   return length < 1000 ? `${length} chars` : `${(length / 1000).toFixed(1)}k chars`;
+}
+
+export function composePromptInput(value: string, pastedBlocks: readonly string[]): string {
+  const parts = [value, ...pastedBlocks.map((block, index) => `[PASTED BLOCK ${index + 1}]\n${block}`)]
+    .filter((part) => part.trim().length > 0);
+  return parts.join('\n\n');
 }

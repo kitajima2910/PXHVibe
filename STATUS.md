@@ -319,3 +319,41 @@
 ### Vấn đề còn lại
 
 - Terminal không chuyển tiếp modifier Shift cho Enter sẽ cần dùng phím newline thay thế; VS Code Terminal hiện đại hỗ trợ modified Enter qua input protocol.
+
+## Cập nhật: Immutable paste, version, copy và input viewport
+
+### Đã thay đổi gì
+
+- Bỏ hoàn toàn `Ctrl+E`/click mở pasted block; paste dài trở thành text attachment bất biến và luôn thu gọn.
+- Bật Kitty keyboard protocol ở CLI để VS Code phân biệt `Shift+Enter`; vẫn giữ LF và legacy fallback.
+- Thêm input viewport tối đa 5 dòng, tự theo cursor và nhận mouse wheel trong đúng vùng input.
+- Thêm `/copy` và `Alt+C` để copy response gần nhất vào Windows Clipboard.
+- Bump package từ `0.1.0` lên `0.1.1` và hiển thị `PXHVibe v0.1.1` trong Banner.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/version.ts`
+- `src/cli.tsx`
+- `src/app.tsx`
+- `src/components/Banner.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/MessageList.tsx`
+- `src/utils/clipboard.ts`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công trên package `0.1.1`.
+- Input integration test xác nhận paste dài luôn hiện chip bất biến và nội dung đầy đủ được compose vào TARGET.
+- Input viewport test xác nhận chỉ giữ 2/5 dòng mẫu quanh cursor, có hiddenAbove/hiddenBelow chính xác.
+- Banner regression test xác nhận version đọc từ package và xuất hiện trong TUI.
+- Kitty keyboard option được typecheck; modified Enter vẫn có ba đường parser: Kitty CSI-u, LF và legacy sequence.
+
+### Vấn đề còn lại
+
+- Pasted block cố ý không chỉnh sửa trực tiếp; Backspace khi input text trống sẽ bỏ block gần nhất.

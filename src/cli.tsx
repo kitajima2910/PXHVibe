@@ -14,7 +14,9 @@ try {
     providerName === 'free' ? parseModelName(args) : undefined,
   );
   const terminalScreen = enterTerminalScreen();
-  const instance = render(<App provider={provider} />);
+  const instance = render(<App provider={provider} />, {
+    kittyKeyboard: {mode: 'enabled', flags: ['disambiguateEscapeCodes']},
+  });
   void instance.waitUntilExit().finally(() => terminalScreen.restore());
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : 'Không thể khởi tạo provider.';

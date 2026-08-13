@@ -12,6 +12,8 @@ import {
   shouldCollapsePaste,
   countLines,
   createPastePreview,
+  createInputViewport,
+  composePromptInput,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
@@ -40,6 +42,11 @@ assert.equal(shouldCollapsePaste('one\ntwo\nthree\nfour'), true);
 assert.equal(shouldCollapsePaste('short text'), false);
 assert.equal(countLines('one\ntwo\nthree'), 3);
 assert.equal(createPastePreview('  one\n   two  '), 'one two');
+const inputViewport = createInputViewport('1234567890abcdefghijKLMNOP', 22, 10, 2);
+assert.equal(inputViewport.text, 'abcdefghij\nKLMNOP');
+assert.equal(inputViewport.hiddenAbove, 1);
+assert.equal(inputViewport.cursorIndex, 13);
+assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
 
 const output = new PassThrough();
 Object.assign(output, {columns: 80, rows: 20, isTTY: true});
@@ -77,6 +84,7 @@ const editor = render(React.createElement(PromptInput, {
   attachments: [],
   onPasteImage: () => undefined,
   onRemoveLastImage: () => undefined,
+  onCopy: () => undefined,
 }), {
   stdin: editorInput as unknown as NodeJS.ReadStream,
   stdout: editorOutput as unknown as NodeJS.WriteStream,
@@ -87,14 +95,14 @@ const editor = render(React.createElement(PromptInput, {
 await new Promise((resolve) => setTimeout(resolve, 30));
 editorInput.write('\x1b[200~one\ntwo\nthree\nfour\x1b[201~');
 await new Promise((resolve) => setTimeout(resolve, 30));
-assert.match(stripAnsi(editorFrame), /PASTED BLOCK/);
+assert.match(stripAnsi(editorFrame), /▣ PASTE 1 · 4 lines · 18 chars/);
 editorInput.write('\x1b[13;2u');
 await new Promise((resolve) => setTimeout(resolve, 20));
 editorInput.write('five');
 await new Promise((resolve) => setTimeout(resolve, 20));
 editorInput.write('\r');
 await new Promise((resolve) => setTimeout(resolve, 30));
-assert.equal(submitted, 'one\ntwo\nthree\nfour\nfive');
+assert.equal(submitted, 'five\n\n[PASTED BLOCK 1]\none\ntwo\nthree\nfour');
 editor.unmount();
 
 console.log('Image clipboard tests passed.');

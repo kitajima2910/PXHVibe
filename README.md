@@ -61,7 +61,9 @@ pxh --provider=custom
 - `←` / `→` / `Home` / `End`: di chuyển con trỏ soạn thảo; `↑` / `↓` di chuyển theo dòng wrap.
 - Click vào text trong `NEW TARGET`: đặt con trỏ tại vị trí muốn sửa.
 - `Shift+Enter`: chèn dòng mới; `Enter`: gửi TARGET.
-- Text paste dài tự thu gọn thành `PASTED BLOCK`; nhấn `Ctrl+E` hoặc click để mở và chỉnh sửa.
+- Text paste dài trở thành `PASTED BLOCK` thu gọn, bất biến và vẫn được gửi đầy đủ cho model.
+- `Alt+C` hoặc `/copy`: copy response gần nhất vào Windows Clipboard.
+- Input text chỉ hiển thị tối đa 5 dòng; dùng `↑`/`↓` hoặc mouse wheel trong input để cuộn.
 - Khi ô nhập trống, `Backspace` hoặc `Delete`: bỏ ảnh đính kèm cuối cùng (tối đa 4 ảnh mỗi TARGET).
 - `/models`: chọn model/mode.
 - `/agents`: chọn specialist hoặc Economy Router tự động.

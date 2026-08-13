@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Text, useStdout} from 'ink';
+import {appVersion} from '../version.js';
 
 const logo = String.raw`██████╗ ██╗  ██╗██╗  ██╗██╗   ██╗██╗██████╗ ███████╗
 ██╔══██╗╚██╗██╔╝██║  ██║██║   ██║██║██╔══██╗██╔════╝
@@ -28,7 +29,7 @@ export function Banner(): React.JSX.Element {
       )}
       <Text bold color="green">Error404-Labs.Info.VN - Phạm Xuân Hoài</Text>
       <Text color={bootStep === bootMessages.length - 1 ? 'green' : 'cyan'} dimColor>
-        {spinnerFrames[bootStep % spinnerFrames.length]} {bootMessages[bootStep]}
+        {spinnerFrames[bootStep % spinnerFrames.length]} PXHVibe v{appVersion} · {bootMessages[bootStep]}
       </Text>
     </Box>
   );

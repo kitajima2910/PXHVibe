@@ -20,6 +20,7 @@ import {AgentPicker} from './components/AgentPicker.js';
 import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
 import type {ImageAttachment} from './types/attachment.js';
 import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
+import {copyTextToClipboard} from './utils/clipboard.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -92,6 +93,21 @@ export function App({provider}: AppProps): React.JSX.Element {
     });
   };
 
+  const handleCopyLastResponse = async (): Promise<void> => {
+    const response = [...messages].reverse().find((message) => message.role === 'assistant');
+    if (response === undefined) return;
+    try {
+      await copyTextToClipboard(response.content);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: 'Đã copy response gần nhất.', createdAt: new Date(),
+      }]);
+    } catch (error: unknown) {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: getErrorMessage(error), createdAt: new Date(),
+      }]);
+    }
+  };
+
   const handleSubmit = async (content: string): Promise<void> => {
     if (isBusy) {
       return;
@@ -112,9 +128,14 @@ export function App({provider}: AppProps): React.JSX.Element {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
-        content: 'Lệnh: /models — chọn model; /agents — chọn specialist BUILD; /paste — dán ảnh clipboard; /help — trợ giúp.',
+        content: 'Lệnh: /models — chọn model; /agents — chọn specialist; /paste — dán ảnh; /copy — copy response; /help — trợ giúp.',
         createdAt: new Date(),
       }]);
+      return;
+    }
+
+    if (command === '/copy') {
+      await handleCopyLastResponse();
       return;
     }
 
@@ -316,6 +337,7 @@ export function App({provider}: AppProps): React.JSX.Element {
           attachments={pendingImages}
           onPasteImage={() => void handlePasteImage()}
           onRemoveLastImage={handleRemoveLastImage}
+          onCopy={() => void handleCopyLastResponse()}
         />
       )}
       <Footer />
