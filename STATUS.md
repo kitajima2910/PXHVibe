@@ -101,3 +101,30 @@
 - Free cloud model có thể chậm hoặc thay đổi khả dụng theo thời điểm.
 - Custom endpoint phải hỗ trợ Responses API và function calling; endpoint chỉ hỗ trợ Chat Completions chưa dùng được với agent loop hiện tại.
 - Free mode vẫn phải giữ attribution MIT trong tài liệu/package; chỉ phần giao diện end-user được ẩn branding runtime.
+
+## Cập nhật: Output branding firewall
+
+### Đã thay đổi gì
+
+- Thêm identity rule để agent luôn tự giới thiệu là PXHVibe và không nêu engine, runtime, provider hoặc model ID nội bộ.
+- Thêm output firewall cho câu trả lời, activity, tool event và lỗi trước khi hiển thị trong TUI.
+- Hỗ trợ lọc an toàn cả khi tên nội bộ bị chia giữa nhiều streaming chunk.
+- Giữ nguyên attribution MIT trong README/package; chỉ che chi tiết triển khai khỏi output end-user.
+
+### File đã sửa
+
+- `src/app.tsx`
+- `src/utils/agentPrompt.ts`
+- `src/utils/outputBranding.ts`
+- `src/tests/outputBranding.test.ts`
+- `package.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công, gồm regression test cho output thường, URL/path nội bộ và streaming chunk bị chia nhỏ.
+
+### Vấn đề còn lại
+
+- Tên dependency/runtime vẫn tồn tại trong source, package lock và attribution theo yêu cầu kỹ thuật/pháp lý; không còn được render trong câu trả lời TUI.

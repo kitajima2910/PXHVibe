@@ -17,6 +17,7 @@ import {buildAgentPrompt} from './utils/agentPrompt.js';
 import {Banner} from './components/Banner.js';
 import {agents, getAgent, routeAgent, type PXHAgent, type PXHAgentId} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
+import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -106,26 +107,35 @@ export function App({provider}: AppProps): React.JSX.Element {
     setStatus('Thinking...');
     const responseMessageId = createMessageId();
     let hasStreamedResponse = false;
+    const streamSanitizer = new StreamingBrandSanitizer();
+
+    const appendAssistantContent = (nextContent: string): void => {
+      if (nextContent.length === 0) {
+        return;
+      }
+
+      setMessages((currentMessages) => {
+        const existing = currentMessages.find((item) => item.id === responseMessageId);
+        if (existing === undefined) {
+          return [...currentMessages, {
+            id: responseMessageId,
+            role: 'assistant',
+            content: nextContent,
+            createdAt: new Date(),
+          }];
+        }
+        return currentMessages.map((item) =>
+          item.id === responseMessageId
+            ? {...item, content: item.content + nextContent}
+            : item,
+        );
+      });
+    };
 
     const handleAgentEvent = (event: AgentEvent): void => {
       if (event.type === 'text_delta') {
         hasStreamedResponse = true;
-        setMessages((currentMessages) => {
-          const existing = currentMessages.find((item) => item.id === responseMessageId);
-          if (existing === undefined) {
-            return [...currentMessages, {
-              id: responseMessageId,
-              role: 'assistant',
-              content: event.content,
-              createdAt: new Date(),
-            }];
-          }
-          return currentMessages.map((item) =>
-            item.id === responseMessageId
-              ? {...item, content: item.content + event.content}
-              : item,
-          );
-        });
+        appendAssistantContent(streamSanitizer.push(event.content));
         return;
       }
 
@@ -133,7 +143,7 @@ export function App({provider}: AppProps): React.JSX.Element {
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
-          content: event.content,
+          content: sanitizeOutputBranding(event.content),
           createdAt: new Date(),
         }]);
         return;
@@ -145,7 +155,7 @@ export function App({provider}: AppProps): React.JSX.Element {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
-        content: activity,
+        content: sanitizeOutputBranding(activity),
         createdAt: new Date(),
       }]);
     };
@@ -155,13 +165,10 @@ export function App({provider}: AppProps): React.JSX.Element {
         cwd: process.cwd(),
         onEvent: handleAgentEvent,
       });
-      if (!hasStreamedResponse) {
-        setMessages((currentMessages) => [...currentMessages, {
-          id: responseMessageId,
-          role: 'assistant',
-          content: response.content,
-          createdAt: new Date(),
-        }]);
+      if (hasStreamedResponse) {
+        appendAssistantContent(streamSanitizer.flush());
+      } else {
+        appendAssistantContent(sanitizeOutputBranding(response.content));
       }
       setStatus('Ready');
     } catch (error: unknown) {
@@ -170,7 +177,7 @@ export function App({provider}: AppProps): React.JSX.Element {
         {
           id: createMessageId(),
           role: 'system',
-          content: getErrorMessage(error),
+          content: sanitizeOutputBranding(getErrorMessage(error)),
           createdAt: new Date(),
         },
       ]);

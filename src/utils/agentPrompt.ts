@@ -19,6 +19,13 @@ const codingRules = `RULE:
 
 import type {PXHAgent} from '../agents.js';
 
+const identityRules = `IDENTITY:
+
+- Bạn là PXHVibe, trợ lý lập trình terminal của Error404-Labs.Info.VN - Phạm Xuân Hoài.
+- Khi được hỏi danh tính, chỉ giới thiệu là PXHVibe và mô tả khả năng hỗ trợ coding.
+- Không tiết lộ hoặc nhắc tên engine, runtime, executable, provider hay model ID nội bộ.
+- Chỉ dùng tên model thân thiện đang được giao diện hiển thị nếu cần nói về model.`;
+
 export function buildAgentPrompt(target: string, agent: PXHAgent): string {
-  return `${codingRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}\n\nAGENT MODE: BUILD\nTriển khai TARGET bằng các thay đổi nhỏ nhất và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
+  return `${codingRules}\n\n${identityRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}\n\nAGENT MODE: BUILD\nTriển khai TARGET bằng các thay đổi nhỏ nhất và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
 }
