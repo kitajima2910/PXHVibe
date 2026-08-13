@@ -31,11 +31,11 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
       borderStyle="round"
       borderColor={isUser ? 'yellow' : 'green'}
       paddingX={1}
-      marginY={1}
+      marginTop={1}
     >
       <Box justifyContent="space-between">
         <Text bold color={isUser ? 'yellow' : 'green'}>
-          {isUser ? '[ YOU // TARGET ]' : '[ PXHVIBE // OUTPUT ]'}
+          {isUser ? 'YOU  /  TARGET' : 'PXHVIBE  /  OUTPUT'}
         </Text>
         <Text dimColor>{formatTime(message.createdAt)}</Text>
       </Box>

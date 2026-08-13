@@ -16,6 +16,8 @@
 - Đơn giản hóa agent: bỏ `/plan` và `/build`; mọi specialist trong `/agents` luôn chạy BUILD và có thể triển khai TARGET.
 - Tham khảo kiến trúc MIT của `kitajima2910/pxhopencode` để thêm Economy Router chạy local, `/agents` và 7 specialist roles native; không bundle runtime/skills pack của repo tham khảo.
 - Format lại input/output TUI: message card riêng cho TARGET/OUTPUT, event compact, timestamp, command panel và renderer Markdown terminal cho heading/list/quote/inline code/code fence.
+- Tinh gọn visual hierarchy theo phản hồi ảnh thực tế: bỏ text/shortcut trùng, status bar một dòng, border nhẹ hơn và khoảng cách card gọn hơn.
+- Thêm boot animation ngắn, spinner khi agent chạy và đặt terminal/tab title thành `PXHVibe` bằng process title + ANSI OSC.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -52,7 +54,9 @@
 - `src/agents.ts`
 - `src/tests/agents.test.ts`
 - `src/utils/terminalFormat.ts`
+- `src/utils/terminalTitle.ts`
 - `src/tests/terminalFormat.test.ts`
+- `src/tests/terminalTitle.test.ts`
 - `STATUS.md`
 - Đã xóa `src/providers/MockProvider.ts` và `src/providers/NativeAgentProvider.ts`.
 
@@ -86,6 +90,7 @@
 - Agent-mode tests: runtime luôn dùng agent `build` với auto tool và prompt luôn chứa `AGENT MODE: BUILD`.
 - Economy Router tests: route đúng bug, UI/UX, QA, Expert và tôn trọng specialist được khóa thủ công.
 - Terminal formatter tests: nhận đúng heading, blank, bullet, numbered list, quote và fenced code kèm language.
+- Terminal title test: ANSI OSC được sanitize và phát đúng tiêu đề `PXHVibe`.
 
 ## Vấn đề còn lại
 

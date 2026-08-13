@@ -3,8 +3,10 @@ import React from 'react';
 import {render} from 'ink';
 import {App} from './app.js';
 import {createProvider, parseModelName, parseProviderName} from './providers/createProvider.js';
+import {setTerminalTitle} from './utils/terminalTitle.js';
 
 try {
+  setTerminalTitle('PXHVibe');
   const args = process.argv.slice(2);
   const providerName = parseProviderName(args);
   const provider = createProvider(

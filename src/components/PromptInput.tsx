@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
 
 interface PromptInputProps {
@@ -9,7 +9,19 @@ interface PromptInputProps {
 
 export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
+  const [spinnerIndex, setSpinnerIndex] = useState(0);
   const {exit} = useApp();
+
+  useEffect(() => {
+    if (!isBusy) {
+      setSpinnerIndex(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setSpinnerIndex((current) => (current + 1) % processingFrames.length);
+    }, 120);
+    return () => clearInterval(timer);
+  }, [isBusy]);
 
   useInput((input, key) => {
     if (key.ctrl && input.toLowerCase() === 'c') {
@@ -42,12 +54,12 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
   });
 
   return (
-    <Box flexDirection="column" borderStyle="double" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
       <Box justifyContent="space-between">
         <Text bold color={isBusy ? 'yellow' : 'green'}>
-          {isBusy ? '[ AGENT // PROCESSING ]' : '[ COMMAND // INPUT ]'}
+          {isBusy ? 'AGENT WORKING' : 'NEW TARGET'}
         </Text>
-        <Text dimColor>{isBusy ? 'LOCKED' : 'BUILD READY'}</Text>
+        <Text dimColor>{isBusy ? 'input locked' : 'build mode'}</Text>
       </Box>
       <Box>
         <Text bold color="green">root@pxhvibe</Text>
@@ -55,7 +67,7 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
         <Text bold color="cyan">~</Text>
         <Text color="gray">$ </Text>
         {isBusy ? (
-          <Text color="yellow">◉ Agent đang xử lý TARGET...</Text>
+          <Text color="yellow">{processingFrames[spinnerIndex]} đang phân tích và triển khai...</Text>
         ) : (
           <>
             <Text color={value.length === 0 ? 'gray' : 'white'}>
@@ -65,7 +77,8 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
           </>
         )}
       </Box>
-      <Text dimColor>{isBusy ? 'Theo dõi EVENT phía trên' : 'ENTER gửi  ·  /agents specialist  ·  /models model  ·  CTRL+C thoát'}</Text>
     </Box>
   );
 }
+
+const processingFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
