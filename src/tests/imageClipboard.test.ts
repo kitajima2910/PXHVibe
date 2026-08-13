@@ -16,6 +16,7 @@ import {
   composePromptInput,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
+import {collapsePastedBlocksForDisplay} from '../utils/pastedText.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 
 const payload = parseClipboardPayload(JSON.stringify({
@@ -25,7 +26,7 @@ const payload = parseClipboardPayload(JSON.stringify({
   pixels: [['#ff0000', '#00ff00'], ['#0000ff', '#ffffff']],
 }));
 assert.equal(payload.width, 1920);
-assert.equal(thumbnailSize, 50);
+assert.equal(thumbnailSize, 20);
 assert.equal(payload.pixels[0]?.[1], '#00ff00');
 assert.equal(isPasteShortcut('v', {ctrl: false, meta: true}), true);
 assert.equal(isPasteShortcut('v', {ctrl: true, meta: false}), true);
@@ -34,6 +35,7 @@ assert.equal(isNewlineShortcut('\r', {return: true, shift: true}), true);
 assert.equal(isNewlineShortcut('\n', {return: false, shift: false}), true);
 assert.equal(isNewlineShortcut('[27;2;13~', {return: false, shift: false}), true);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false}), false);
+assert.equal(isNewlineShortcut('\r', {return: true, shift: false, meta: true}), true);
 assert.equal(moveCursorVertically(25, 100, 20, -1), 5);
 assert.equal(moveCursorVertically(25, 100, 20, 1), 45);
 assert.equal(getCursorIndexFromPoint(14, 6, {x: 10, y: 5, width: 20, height: 2}, 80), 24);
@@ -47,6 +49,10 @@ assert.equal(inputViewport.text, 'abcdefghij\nKLMNOP');
 assert.equal(inputViewport.hiddenAbove, 1);
 assert.equal(inputViewport.cursorIndex, 13);
 assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
+assert.equal(
+  collapsePastedBlocksForDisplay('review this\n\n[PASTED BLOCK 1]\nline one\nline two'),
+  'review this\n\n~ 2 lines',
+);
 
 const output = new PassThrough();
 Object.assign(output, {columns: 80, rows: 20, isTTY: true});
@@ -95,8 +101,9 @@ const editor = render(React.createElement(PromptInput, {
 await new Promise((resolve) => setTimeout(resolve, 30));
 editorInput.write('\x1b[200~one\ntwo\nthree\nfour\x1b[201~');
 await new Promise((resolve) => setTimeout(resolve, 30));
-assert.match(stripAnsi(editorFrame), /▣ PASTE 1 · 4 lines · 18 chars/);
-editorInput.write('\x1b[13;2u');
+assert.match(stripAnsi(editorFrame), /~ 4 lines/);
+// Match the existing VS Code keybinding: Shift+Enter sends ESC + Enter.
+editorInput.write('\x1b\r');
 await new Promise((resolve) => setTimeout(resolve, 20));
 editorInput.write('five');
 await new Promise((resolve) => setTimeout(resolve, 20));

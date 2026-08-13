@@ -21,6 +21,7 @@ import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBra
 import type {ImageAttachment} from './types/attachment.js';
 import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
 import {copyTextToClipboard} from './utils/clipboard.js';
+import {collapsePastedBlocksForDisplay} from './utils/pastedText.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -155,7 +156,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     const message: Message = {
       id: createMessageId(),
       role: 'user',
-      content,
+      content: collapsePastedBlocksForDisplay(content),
       ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
       createdAt: new Date(),
     };

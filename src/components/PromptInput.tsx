@@ -3,6 +3,7 @@ import {Box, Text, measureElement, useApp, useInput, usePaste, useStdout, type D
 import type {ImageAttachment} from '../types/attachment.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
+import {countTextLines} from '../utils/pastedText.js';
 
 interface PromptInputProps {
   onSubmit: (value: string) => void;
@@ -193,8 +194,7 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
         <Box flexDirection="column">
           {pastedBlocks.slice(-3).map((block, index) => (
             <Text key={`${block.length}-${index}`}>
-              <Text bold color="cyan">▣ PASTE {Math.max(1, pastedBlocks.length - 2 + index)}</Text>
-              <Text dimColor> · {countLines(block)} lines · {formatCharacterCount(block.length)} · {createPastePreview(block)}</Text>
+              <Text bold color="cyan">~ {countTextLines(block)} lines</Text>
             </Text>
           ))}
           {pastedBlocks.length > 3 && <Text dimColor>+{pastedBlocks.length - 3} pasted blocks cũ</Text>}
@@ -247,9 +247,10 @@ export function isPasteShortcut(
 
 export function isNewlineShortcut(
   input: string,
-  key: {return: boolean; shift: boolean},
+  key: {return: boolean; shift: boolean; meta?: boolean},
 ): boolean {
   return (key.return && key.shift)
+    || (key.return && key.meta === true)
     || input === '\n'
     || input === '[27;2;13~';
 }
@@ -360,7 +361,7 @@ export function shouldCollapsePaste(value: string): boolean {
 }
 
 export function countLines(value: string): number {
-  return value.length === 0 ? 0 : value.split(/\r?\n/).length;
+  return countTextLines(value);
 }
 
 export function createPastePreview(value: string): string {

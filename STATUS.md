@@ -357,3 +357,39 @@
 ### Vấn đề còn lại
 
 - Pasted block cố ý không chỉnh sửa trực tiếp; Backspace khi input text trống sẽ bỏ block gần nhất.
+
+## Cập nhật v0.1.2: Shift+Enter thực tế, paste summary và thumbnail 20
+
+### Đã thay đổi gì
+
+- Xác nhận VS Code keybinding hiện tại gửi `ESC + Enter`; Ink parse thành `return=true, meta=true`, không phải `shift=true`.
+- Bổ sung chính xác biến thể `Meta+Enter` vào newline handler nên không cần sửa/ghi đè keybindings người dùng.
+- Pasted text bất biến chỉ hiện `~ N lines` trong input và trong TARGET sau khi gửi; payload đầy đủ vẫn được route và gửi model.
+- Footer gợi ý `Shift + bôi chọn + Ctrl+C` để copy đoạn tùy chọn trong terminal có mouse tracking.
+- Giảm thumbnail canvas từ `50×50` xuống cố định `20×20` pixel màu.
+- Bump version từ `0.1.1` lên `0.1.2`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/utils/imageClipboard.ts`
+- `src/utils/pastedText.ts`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công trên `pxhvibe@0.1.2`.
+- Integration test dùng đúng sequence VS Code đang cấu hình (`ESC + Enter`), chèn newline rồi submit đúng multiline TARGET.
+- Paste display test xác nhận payload 2 dòng được hiển thị thành `~ 2 lines` nhưng compose prompt vẫn chứa nguyên văn.
+- Thumbnail test xác nhận canvas cố định là `20×20`.
+
+### Vấn đề còn lại
+
+- `Alt+C`/`/copy` vẫn copy toàn bộ response gần nhất; Shift-select + Ctrl+C dùng để copy một đoạn tùy chọn.

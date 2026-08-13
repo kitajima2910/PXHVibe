@@ -11,7 +11,7 @@ interface ClipboardPayload {
   pixels: string[][];
 }
 
-export const thumbnailSize = 50;
+export const thumbnailSize = 20;
 
 const clipboardScript = String.raw`
 $ErrorActionPreference = 'Stop'
