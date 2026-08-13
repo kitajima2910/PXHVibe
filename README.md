@@ -11,6 +11,22 @@ MVP giao diện terminal cho ứng dụng vibe coding, xây dựng bằng TypeSc
 
 ```sh
 npm install
+npm run build
+npm link
+```
+
+Sau khi link một lần, có thể khởi động PXHVibe từ terminal trong bất kỳ project
+nào bằng lệnh:
+
+```bat
+pxh
+```
+
+Lệnh dùng working directory của terminal đang mở. Có thể chọn provider trực tiếp:
+
+```bat
+pxh --provider=mock
+pxh --provider=opencode
 ```
 
 ## Chạy development

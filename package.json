@@ -5,6 +5,9 @@
   "description": "A minimal terminal vibe coding interface built with React and Ink.",
   "type": "module",
   "main": "dist/cli.js",
+  "bin": {
+    "pxh": "dist/cli.js"
+  },
   "scripts": {
     "dev": "npm run build && node dist/cli.js",
     "build": "tsc -p tsconfig.json",

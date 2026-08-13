@@ -2,6 +2,7 @@
 
 ## Đã thay đổi gì
 
+- Thêm command `pxh` trỏ tới entrypoint TUI đã build, để có thể khởi động PXHVibe từ terminal sau khi chạy `npm link`.
 - Hoàn thành Step 2 với lớp AI provider độc lập khỏi component giao diện.
 - Thêm Mock provider phản hồi bất đồng bộ sau 400 ms.
 - Thêm OpenCode provider dùng `spawn()` với argument array, `shell: false`, working directory hiện tại, thu thập stdout/stderr và loại bỏ ANSI.
@@ -12,6 +13,7 @@
 
 ## File đã tạo hoặc chỉnh sửa
 
+- `package.json`
 - `src/providers/AIProvider.ts`
 - `src/providers/MockProvider.ts`
 - `src/providers/OpenCodeProvider.ts`
@@ -32,6 +34,8 @@
 
 ## Kết quả kiểm tra
 
+- `npm.cmd link`: thành công, đã tạo command shim global `pxh`.
+- `pxh --provider=invalid`: command gọi đúng PXHVibe, trả thông báo provider hợp lệ và exit code 1 như thiết kế.
 - `npm.cmd run typecheck`: thành công.
 - `npm.cmd run build`: thành công.
 - Mock provider qua stdin TTY mô phỏng: header hiển thị `Mock`; prompt `xin chào` trả về `Mock response: xin chào`; trạng thái chuyển `Thinking...` rồi về `Ready`; Ctrl+C thoát sạch.
@@ -41,6 +45,7 @@
 
 ## Vấn đề còn lại
 
+- Trên PowerShell của máy kiểm thử, Execution Policy chặn các npm shim `.ps1`; lệnh `pxh` hoạt động trong Windows CMD. Có thể dùng `pxh.cmd` nếu chạy từ PowerShell mà không thay đổi policy hệ thống.
 - Không chạy prompt OpenCode end-to-end vì môi trường không cho phép gửi nội dung hoặc metadata project tới dịch vụ ngoài khi chưa có phê duyệt rõ ràng.
 - Bản OpenCode trên máy được cài qua npm shim `.cmd`; `spawn('opencode', ..., {shell: false})` không tự phân giải shim này trên Windows. Provider tuân thủ yêu cầu executable `opencode` và cần `opencode.exe` có trên PATH để chạy trong cấu hình hiện tại.
 - Shell kiểm thử tự động không cấp raw TTY; kiểm thử tương tác Mock dùng stdin TTY mô phỏng.
