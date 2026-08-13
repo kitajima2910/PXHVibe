@@ -3,15 +3,22 @@ import {Box, Text, useApp, useInput} from 'ink';
 
 interface PromptInputProps {
   onSubmit: (value: string) => void;
+  onExit: () => void;
+  isBusy: boolean;
 }
 
-export function PromptInput({onSubmit}: PromptInputProps): React.JSX.Element {
+export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const {exit} = useApp();
 
   useInput((input, key) => {
     if (key.ctrl && input.toLowerCase() === 'c') {
+      onExit();
       exit();
+      return;
+    }
+
+    if (isBusy) {
       return;
     }
 
@@ -36,9 +43,11 @@ export function PromptInput({onSubmit}: PromptInputProps): React.JSX.Element {
 
   return (
     <Box borderStyle="round" paddingX={1}>
-      <Text bold color="green">Prompt: </Text>
-      <Text>{value}</Text>
-      <Text inverse> </Text>
+      <Text bold color={isBusy ? 'yellow' : 'green'}>
+        {isBusy ? 'Busy: ' : 'Prompt: '}
+      </Text>
+      <Text>{isBusy ? 'Thinking...' : value}</Text>
+      {!isBusy && <Text inverse> </Text>}
     </Box>
   );
 }

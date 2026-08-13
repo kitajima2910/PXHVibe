@@ -2,33 +2,45 @@
 
 ## Đã thay đổi gì
 
-- Khởi tạo bộ khung MVP cho PXHVibe bằng TypeScript, React, Ink, npm và ESM.
-- Tạo bốn vùng giao diện: Header, Message area, Input area và Footer.
-- Thêm xử lý gửi prompt hợp lệ, xóa input sau khi gửi và thoát bằng Ctrl+C.
-- Thêm `.gitignore` để loại trừ dependencies và output build khỏi Git.
+- Hoàn thành Step 2 với lớp AI provider độc lập khỏi component giao diện.
+- Thêm Mock provider phản hồi bất đồng bộ sau 400 ms.
+- Thêm OpenCode provider dùng `spawn()` với argument array, `shell: false`, working directory hiện tại, thu thập stdout/stderr và loại bỏ ANSI.
+- Thêm lựa chọn `--provider=mock|opencode`, mặc định là `mock`, cùng thông báo ngắn gọn cho provider không hợp lệ.
+- Nối provider vào TUI: giữ lịch sử, hiển thị `Thinking...`, khóa input khi bận, thêm assistant/system message và cho phép thử lại sau lỗi.
+- Ctrl+C dừng child process đang chạy trước khi unmount Ink.
+- Cập nhật README với cách chạy hai provider và cảnh báo chế độ OpenCode `--auto`.
 
-## File đã sửa
+## File đã tạo hoặc chỉnh sửa
 
-- `package.json`
-- `tsconfig.json`
-- `README.md`
+- `src/providers/AIProvider.ts`
+- `src/providers/MockProvider.ts`
+- `src/providers/OpenCodeProvider.ts`
+- `src/providers/createProvider.ts`
+- `src/types/provider.ts`
+- `src/utils/stripAnsi.ts`
 - `src/app.tsx`
 - `src/cli.tsx`
 - `src/components/Header.tsx`
-- `src/components/MessageList.tsx`
 - `src/components/PromptInput.tsx`
-- `src/components/Footer.tsx`
-- `src/types/message.ts`
+- `README.md`
 - `STATUS.md`
-- `.gitignore`
+
+## Provider đã hỗ trợ
+
+- `mock` (mặc định): không chạy command và không sửa file.
+- `opencode`: chạy `opencode run --agent build --auto <prompt>` trong working directory hiện tại.
 
 ## Kết quả kiểm tra
 
-- `npm install`: thành công, không phát hiện vulnerability.
-- `npm run typecheck`: thành công.
-- `npm run build`: thành công.
-- Runtime TUI với stdin TTY mô phỏng: render đủ bốn vùng, gửi prompt bằng Enter, hiển thị tin nhắn với role `You`, xóa input và thoát sạch bằng Ctrl+C.
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd run build`: thành công.
+- Mock provider qua stdin TTY mô phỏng: header hiển thị `Mock`; prompt `xin chào` trả về `Mock response: xin chào`; trạng thái chuyển `Thinking...` rồi về `Ready`; Ctrl+C thoát sạch.
+- Provider không hợp lệ: thoát với mã 1, hiển thị hai giá trị hợp lệ và không có stack trace.
+- `opencode --version`: thành công ngoài sandbox, phiên bản `1.18.15`.
+- Nhánh không tìm thấy executable của OpenCode provider: trả đúng lỗi tiếng Việt yêu cầu, không có stack trace.
 
 ## Vấn đề còn lại
 
-- Shell kiểm thử tự động không cấp raw TTY, nên không thể chạy tương tác trực tiếp bằng `npm run dev` trong chính shell đó; luồng tương tác đã được xác minh bằng stdin TTY mô phỏng.
+- Không chạy prompt OpenCode end-to-end vì môi trường không cho phép gửi nội dung hoặc metadata project tới dịch vụ ngoài khi chưa có phê duyệt rõ ràng.
+- Bản OpenCode trên máy được cài qua npm shim `.cmd`; `spawn('opencode', ..., {shell: false})` không tự phân giải shim này trên Windows. Provider tuân thủ yêu cầu executable `opencode` và cần `opencode.exe` có trên PATH để chạy trong cấu hình hiện tại.
+- Shell kiểm thử tự động không cấp raw TTY; kiểm thử tương tác Mock dùng stdin TTY mô phỏng.

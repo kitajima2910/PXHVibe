@@ -15,9 +15,22 @@ npm install
 
 ## Chạy development
 
-```sh
-npm run dev
+### Chạy Mock
+
+```bat
+npm run dev -- --provider=mock
 ```
+
+### Chạy OpenCode
+
+```bat
+opencode --version
+npm run dev -- --provider=opencode
+```
+
+OpenCode phải được cài đặt và đăng nhập trước. Provider `opencode` chạy agent
+`build` trong working directory hiện tại. Chế độ `--auto` có thể đọc, tạo và
+chỉnh sửa file trong project; nên commit source trước khi giao tác vụ lớn.
 
 ## Build và chạy bản build
 
