@@ -71,13 +71,14 @@ pxh --provider=custom
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
 
-### Keymap kiểu OpenCode
+### Keymap TUI
 
-- `Ctrl+X`: leader; sau đó `A` agents, `M` models, `Y` copy response, `Q` thoát.
-- `Ctrl+P`: xem command list; `Tab` / `Shift+Tab`: chuyển agent.
-- `Shift+Enter`, `Ctrl+Enter`, `Alt+Enter` hoặc `Ctrl+J`: xuống dòng.
-- `Ctrl+A/E/B/F`: đầu/cuối/lùi/tiến cursor; `Ctrl+D/K/U/W`: xóa theo ký tự, dòng hoặc từ.
-- `Alt+B/F/D`: lùi từ, tiến từ hoặc xóa từ kế tiếp.
+- `Enter`: gửi TARGET.
+- `Shift+Enter` hoặc `Ctrl+J`: xuống dòng.
+- `←` / `→` / `↑` / `↓`, `Home`, `End`: di chuyển con trỏ.
+- `PageUp` / `PageDown` hoặc con lăn chuột: xem lịch sử.
+- `Alt+V`: dán ảnh; `Ctrl+C`: dừng và thoát.
+- Các chức năng khác dùng slash command: `/models`, `/agents`, `/copy`, `/help`.
 
 Ảnh clipboard được sao chép vào file tạm, gửi cùng TARGET rồi tự động xóa. Model đang chọn
 phải hỗ trợ vision; nếu model không nhận ảnh, hãy đổi model bằng `/models`.

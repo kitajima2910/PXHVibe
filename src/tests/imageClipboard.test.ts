@@ -14,8 +14,6 @@ import {
   createPastePreview,
   createInputViewport,
   composePromptInput,
-  findPreviousWordBoundary,
-  findNextWordBoundary,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
 import {collapsePastedBlocksForDisplay} from '../utils/pastedText.js';
@@ -52,8 +50,6 @@ assert.equal(inputViewport.text, 'abcdefghij\nKLMNOP');
 assert.equal(inputViewport.hiddenAbove, 1);
 assert.equal(inputViewport.cursorIndex, 13);
 assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
-assert.equal(findPreviousWordBoundary('hello brave world', 17), 12);
-assert.equal(findNextWordBoundary('hello brave world', 5), 11);
 assert.equal(
   collapsePastedBlocksForDisplay('review this\n\n[PASTED BLOCK 1]\nline one\nline two'),
   'review this\n\n~ 2 lines',
@@ -95,11 +91,6 @@ const editor = render(React.createElement(PromptInput, {
   attachments: [],
   onPasteImage: () => undefined,
   onRemoveLastImage: () => undefined,
-  onCopy: () => undefined,
-  onOpenModels: () => undefined,
-  onOpenAgents: () => undefined,
-  onHelp: () => undefined,
-  onCycleAgent: () => undefined,
 }), {
   stdin: editorInput as unknown as NodeJS.ReadStream,
   stdout: editorOutput as unknown as NodeJS.WriteStream,

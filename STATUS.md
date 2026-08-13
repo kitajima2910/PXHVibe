@@ -431,3 +431,37 @@
 ### Vấn đề còn lại
 
 - PXHVibe áp dụng keymap tương thích cho tính năng đang có, không sao chép các session/theme/editor command chưa được triển khai.
+
+## Cập nhật v0.1.4: Native TUI keymap và khôi phục Matrix UI
+
+### Đã thay đổi gì
+
+- Bỏ toàn bộ keymap mô phỏng OpenCode: không còn leader `Ctrl+X`, `Ctrl+P`, Tab đổi agent hoặc nhóm Emacs shortcuts.
+- Keymap TUI tối giản: Enter gửi, Shift+Enter/Ctrl+J xuống dòng, arrows/Home/End chỉnh input, PageUp/PageDown/wheel xem lịch sử, Alt+V ảnh, Ctrl+C thoát.
+- Khôi phục logo Matrix lớn từ 62 cột, status bar viền xanh và composer `NEW TARGET` rõ ràng.
+- Giữ dấu prompt ngắn `❯` và bản sửa editor width để input không bị xếp thành cột dọc.
+- Lọc lỗi runtime chứa prompt nội bộ RULE/IDENTITY/AGENT thành thông báo một dòng, không đổ debug payload ra TUI.
+- Bump version từ `0.1.3` lên `0.1.4`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/Banner.tsx`
+- `src/components/Header.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.4`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Slash command list vẫn là text gọn; chưa có command palette riêng.

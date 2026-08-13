@@ -11,13 +11,13 @@ interface HeaderProps {
 export function Header({workingDirectory, providerName, agentLabel, status}: HeaderProps): React.JSX.Element {
   const statusColor = status === 'Error' ? 'red' : status === 'Thinking...' ? 'yellow' : 'green';
   return (
-    <Box borderStyle="round" borderColor="gray" paddingX={1} justifyContent="space-between">
+    <Box borderStyle="single" borderColor={statusColor} paddingX={1} justifyContent="space-between">
       <Box gap={1}>
         <Text bold color={statusColor}>● {status === 'Thinking...' ? 'WORKING' : status.toUpperCase()}</Text>
-        <Text dimColor>·</Text>
-        <Text color="cyan">{providerName}</Text>
+        <Text color="gray">│</Text>
+        <Text bold color="green">{providerName}</Text>
       </Box>
-      <Text><Text dimColor>BUILD </Text><Text bold color="green">{agentLabel}</Text></Text>
+      <Text><Text color="gray">BUILD / </Text><Text bold color="cyan">{agentLabel}</Text></Text>
       <Text color="gray">{workingDirectory}</Text>
     </Box>
   );

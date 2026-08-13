@@ -41,7 +41,15 @@ interface AppProps {
 type AppStatus = 'Ready' | 'Thinking...' | 'Error';
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Provider đã gặp lỗi không xác định.';
+  const message = error instanceof Error ? error.message : 'Provider đã gặp lỗi không xác định.';
+  if (
+    message.includes('AGENT ROLE:')
+    || message.includes('AGENT MODE:')
+    || (message.includes('IDENTITY:') && message.includes('TARGET:'))
+  ) {
+    return 'Model không thể xử lý TARGET này. Hãy thử lại hoặc chọn model khác bằng /models.';
+  }
+  return message;
 }
 
 export function App({provider}: AppProps): React.JSX.Element {
@@ -98,7 +106,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     setMessages((currentMessages) => [...currentMessages, {
       id: createMessageId(),
       role: 'system',
-      content: 'Commands: /models · /agents · /paste · /copy · /help | Leader: Ctrl+X then A/M/Y/Q',
+      content: 'Lệnh: /models · /agents · /paste · /copy · /help',
       createdAt: new Date(),
     }]);
   };
@@ -342,15 +350,6 @@ export function App({provider}: AppProps): React.JSX.Element {
           attachments={pendingImages}
           onPasteImage={() => void handlePasteImage()}
           onRemoveLastImage={handleRemoveLastImage}
-          onCopy={() => void handleCopyLastResponse()}
-          onOpenModels={() => setIsModePickerOpen(true)}
-          onOpenAgents={() => setIsAgentPickerOpen(true)}
-          onHelp={showCommandList}
-          onCycleAgent={(direction) => {
-            const currentIndex = Math.max(0, agents.findIndex((agent) => agent.id === selectedAgentId));
-            const nextAgent = agents[(currentIndex + direction + agents.length) % agents.length];
-            if (nextAgent !== undefined) handleAgentSelect(nextAgent);
-          }}
         />
       )}
       <Footer />
