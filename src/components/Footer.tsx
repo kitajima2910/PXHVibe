@@ -3,11 +3,11 @@ import {Box, Text} from 'ink';
 
 export function Footer(): React.JSX.Element {
   return (
-    <Box gap={2} paddingX={1}>
-      <Text dimColor>Enter: Send</Text>
-      <Text dimColor>/models: Switch model</Text>
-      <Text dimColor>/help: Commands</Text>
-      <Text dimColor>Ctrl+C: Exit</Text>
+    <Box gap={2} paddingX={1} justifyContent="center">
+      <Text color="green" dimColor>[ENTER] SEND</Text>
+      <Text color="green" dimColor>[/models] MODELS</Text>
+      <Text color="green" dimColor>[/help] HELP</Text>
+      <Text color="green" dimColor>[CTRL+C] EXIT</Text>
     </Box>
   );
 }

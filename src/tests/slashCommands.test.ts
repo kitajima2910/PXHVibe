@@ -35,6 +35,7 @@ const instance = render(React.createElement(App, {provider}), {
 });
 
 await wait(50);
+assert.ok(stripAnsi(rendered).includes('Error404-Labs.Info.VN - Phạm Xuân Hoài'));
 await typeText('/models');
 input.write('\r');
 await wait(80);

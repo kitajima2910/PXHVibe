@@ -31,10 +31,10 @@ export function ModePicker({modes, onSelect, onCancel}: ModePickerProps): React.
   });
 
   return (
-    <Box flexDirection="column" borderStyle="round" paddingX={1}>
-      <Text bold color="cyan">Chọn mode</Text>
+    <Box flexDirection="column" borderStyle="double" borderColor="green" paddingX={1}>
+      <Text bold color="green">[ SELECT MODEL ]</Text>
       {modes.map((mode, index) => (
-        <Text key={mode.id} color={index === selectedIndex ? 'green' : 'white'}>
+        <Text key={mode.id} bold={index === selectedIndex} color={index === selectedIndex ? 'green' : 'gray'}>
           {index === selectedIndex ? '› ' : '  '}{mode.label} — {mode.description}
         </Text>
       ))}

@@ -54,8 +54,8 @@ export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): Rea
 
   const visibleValue = field === 'apiKey' ? '•'.repeat(values.apiKey.length) : values[field];
   return (
-    <Box flexDirection="column" borderStyle="round" paddingX={1}>
-      <Text bold color="cyan">Custom API</Text>
+    <Box flexDirection="column" borderStyle="double" borderColor="green" paddingX={1}>
+      <Text bold color="green">[ CUSTOM API UPLINK ]</Text>
       <Text>{fieldLabels[field]}: {visibleValue}<Text inverse> </Text></Text>
       <Text dimColor>
         Endpoint phải tương thích OpenAI Responses API. API key chỉ giữ trong bộ nhớ.

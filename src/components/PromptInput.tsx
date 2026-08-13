@@ -42,9 +42,9 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
   });
 
   return (
-    <Box borderStyle="round" paddingX={1}>
+    <Box borderStyle="double" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
       <Text bold color={isBusy ? 'yellow' : 'green'}>
-        {isBusy ? 'Busy: ' : 'Prompt: '}
+        {isBusy ? '[PROCESSING] ' : 'root@pxhvibe:~$ '}
       </Text>
       <Text>{isBusy ? 'Thinking...' : value}</Text>
       {!isBusy && <Text inverse> </Text>}

@@ -12,6 +12,7 @@
 - Sửa Free mode bị kẹt `Thinking...`: đóng stdin của child process ngay sau khi spawn để runtime nhận EOF và bắt đầu xử lý positional prompt.
 - Free mode dùng JSON event stream để TUI hiển thị quá trình thật: phân tích, tool đang chạy/hoàn tất và nội dung trả lời ngay khi runtime phát ra.
 - Tự động bọc mọi prompt gửi từ TUI bằng coding RULE; nội dung người dùng được đặt nguyên vẹn trong `TARGET` cho cả Free và Custom API.
+- Thiết kế lại TUI theo phong cách Matrix hacker: logo ASCII PXHVibe responsive, palette xanh, cyber borders, terminal prompt và dòng tác giả `Error404-Labs.Info.VN - Phạm Xuân Hoài`.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -31,6 +32,7 @@
 - `src/modes.ts`
 - `src/types/provider.ts`
 - `src/components/Header.tsx`
+- `src/components/Banner.tsx`
 - `src/components/ModePicker.tsx`
 - `src/components/CustomApiSetup.tsx`
 - `src/providers/OpenCodeProvider.ts`
@@ -71,6 +73,7 @@
 - JSON event probe: nhận đủ `step_start`, `tool_use`, `text`, `step_finish`; parser regression test bao phủ activity/tool/text.
 - Live provider stream probe: phát 5 event theo thứ tự activity → tool start → tool complete → activity → text và tạo file Temp thành công.
 - Prompt integration test: provider nhận đủ RULE và TARGET, trong khi slash command vẫn không bị gửi lên model.
+- TUI render test: banner hiển thị đúng tên Error404-Labs.Info.VN và Phạm Xuân Hoài.
 
 ## Vấn đề còn lại
 

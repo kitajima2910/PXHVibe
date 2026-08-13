@@ -14,6 +14,7 @@ import {createCustomProvider} from './providers/createProvider.js';
 import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {buildAgentPrompt} from './utils/agentPrompt.js';
+import {Banner} from './components/Banner.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -196,6 +197,7 @@ export function App({provider}: AppProps): React.JSX.Element {
 
   return (
     <Box flexDirection="column">
+      <Banner />
       <Header
         workingDirectory={process.cwd()}
         providerName={currentProvider.name}
