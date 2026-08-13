@@ -10,8 +10,10 @@ import {stripAnsi} from '../utils/stripAnsi.js';
 class CountingProvider implements AIProvider {
   readonly name = 'Test';
   calls = 0;
-  async sendMessage(_prompt: string, _options: ProviderRequestOptions): Promise<ProviderResponse> {
+  lastPrompt = '';
+  async sendMessage(prompt: string, _options: ProviderRequestOptions): Promise<ProviderResponse> {
     this.calls += 1;
+    this.lastPrompt = prompt;
     return {content: 'unexpected'};
   }
   cancel(): void {}
@@ -51,6 +53,14 @@ input.write('\r');
 await wait(80);
 assert.equal(provider.calls, 0);
 assert.ok(stripAnsi(rendered).includes('Lệnh không hợp lệ'));
+await typeText('sửa lỗi đăng nhập');
+input.write('\r');
+await wait(80);
+assert.equal(provider.calls, 1);
+assert.ok(provider.lastPrompt.startsWith('RULE:\n'));
+assert.ok(provider.lastPrompt.includes('- Đọc STATUS.md nếu tồn tại trước khi bắt đầu.'));
+assert.ok(provider.lastPrompt.includes('- Cập nhật STATUS.md gồm:'));
+assert.ok(provider.lastPrompt.endsWith('TARGET:\n\nsửa lỗi đăng nhập'));
 instance.unmount();
 console.log('Slash command tests: passed');
 

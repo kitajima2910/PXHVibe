@@ -13,6 +13,7 @@ import {createProvider} from './providers/createProvider.js';
 import {createCustomProvider} from './providers/createProvider.js';
 import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
+import {buildAgentPrompt} from './utils/agentPrompt.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -131,7 +132,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     };
 
     try {
-      const response = await currentProvider.sendMessage(content, {
+      const response = await currentProvider.sendMessage(buildAgentPrompt(content), {
         cwd: process.cwd(),
         onEvent: handleAgentEvent,
       });

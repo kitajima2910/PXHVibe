@@ -11,6 +11,7 @@
 - Đổi model Free mặc định từ MiMo V2.5 sang Big Pickle vì MiMo không trả dữ liệu trong kiểm tra live, trong khi Big Pickle phản hồi bình thường.
 - Sửa Free mode bị kẹt `Thinking...`: đóng stdin của child process ngay sau khi spawn để runtime nhận EOF và bắt đầu xử lý positional prompt.
 - Free mode dùng JSON event stream để TUI hiển thị quá trình thật: phân tích, tool đang chạy/hoàn tất và nội dung trả lời ngay khi runtime phát ra.
+- Tự động bọc mọi prompt gửi từ TUI bằng coding RULE; nội dung người dùng được đặt nguyên vẹn trong `TARGET` cho cả Free và Custom API.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -40,6 +41,7 @@
 - `src/tests/modes.test.ts`
 - `src/tests/customApiSetup.test.ts`
 - `src/tests/slashCommands.test.ts`
+- `src/utils/agentPrompt.ts`
 - `STATUS.md`
 - Đã xóa `src/providers/MockProvider.ts` và `src/providers/NativeAgentProvider.ts`.
 
@@ -68,6 +70,7 @@
 - Post-fix live probe qua chính `OpenCodeProvider` tại `D:\test`: trả `xin chào` thành công trong 6,07 giây.
 - JSON event probe: nhận đủ `step_start`, `tool_use`, `text`, `step_finish`; parser regression test bao phủ activity/tool/text.
 - Live provider stream probe: phát 5 event theo thứ tự activity → tool start → tool complete → activity → text và tạo file Temp thành công.
+- Prompt integration test: provider nhận đủ RULE và TARGET, trong khi slash command vẫn không bị gửi lên model.
 
 ## Vấn đề còn lại
 
