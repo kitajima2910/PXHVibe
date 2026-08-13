@@ -13,7 +13,7 @@
 - Free mode dùng JSON event stream để TUI hiển thị quá trình thật: phân tích, tool đang chạy/hoàn tất và nội dung trả lời ngay khi runtime phát ra.
 - Tự động bọc mọi prompt gửi từ TUI bằng coding RULE; nội dung người dùng được đặt nguyên vẹn trong `TARGET` cho cả Free và Custom API.
 - Thiết kế lại TUI theo phong cách Matrix hacker: logo ASCII PXHVibe responsive, palette xanh, cyber borders, terminal prompt và dòng tác giả `Error404-Labs.Info.VN - Phạm Xuân Hoài`.
-- Thêm agent mode `/plan` và `/build`: Header hiển thị mode; Free runtime nhận đúng agent; PLAN không bật auto-write và Custom PLAN không được cấp tool `apply_patch`.
+- Đơn giản hóa agent: bỏ `/plan` và `/build`; mọi specialist trong `/agents` luôn chạy BUILD và có thể triển khai TARGET.
 - Tham khảo kiến trúc MIT của `kitajima2910/pxhopencode` để thêm Economy Router chạy local, `/agents` và 7 specialist roles native; không bundle runtime/skills pack của repo tham khảo.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
@@ -79,8 +79,7 @@
 - Live provider stream probe: phát 5 event theo thứ tự activity → tool start → tool complete → activity → text và tạo file Temp thành công.
 - Prompt integration test: provider nhận đủ RULE và TARGET, trong khi slash command vẫn không bị gửi lên model.
 - TUI render test: banner hiển thị đúng tên Error404-Labs.Info.VN và Phạm Xuân Hoài.
-- Agent-mode tests: `/plan` và `/build` không bị gửi như prompt; PLAN bỏ `--auto`, dùng agent `plan` và provider nhận đúng mode.
-- Live PLAN guard probe: agent chỉ trả kế hoạch và `FILE_EXISTS=False` dù TARGET yêu cầu tạo file.
+- Agent-mode tests: runtime luôn dùng agent `build` với auto tool và prompt luôn chứa `AGENT MODE: BUILD`.
 - Economy Router tests: route đúng bug, UI/UX, QA, Expert và tôn trọng specialist được khóa thủ công.
 
 ## Vấn đề còn lại

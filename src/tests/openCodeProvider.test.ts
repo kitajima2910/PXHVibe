@@ -20,10 +20,9 @@ assert.equal(defaultOpenCodeModel, 'opencode/big-pickle');
 assert.equal(new OpenCodeProvider().name, 'Free · Big Pickle');
 delete process.env.PXH_REQUEST_TIMEOUT_MS;
 assert.equal(getRequestTimeoutMs(), 120_000);
-assert.ok(buildOpenCodeArguments('target', defaultOpenCodeModel, 'build').includes('--auto'));
-const planArguments = buildOpenCodeArguments('target', defaultOpenCodeModel, 'plan');
-assert.ok(!planArguments.includes('--auto'));
-assert.deepEqual(planArguments.slice(-3), ['--agent', 'plan', 'target']);
+const buildArguments = buildOpenCodeArguments('target', defaultOpenCodeModel);
+assert.ok(buildArguments.includes('--auto'));
+assert.deepEqual(buildArguments.slice(-4), ['--agent', 'build', '--auto', 'target']);
 
 const step = parseOpenCodeEvent(JSON.stringify({type: 'step_start', part: {type: 'step-start'}}));
 assert.deepEqual(step.events, [{type: 'activity', content: 'Đang phân tích yêu cầu...'}]);

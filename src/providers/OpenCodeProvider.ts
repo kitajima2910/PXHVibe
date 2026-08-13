@@ -3,7 +3,7 @@ import {existsSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
 import type {AIProvider} from './AIProvider.js';
-import type {AgentMode, ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
+import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import type {AgentEvent} from '../agent/types.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 
@@ -26,11 +26,7 @@ export class OpenCodeProvider implements AIProvider {
   ): Promise<ProviderResponse> {
     return new Promise((resolve, reject) => {
       // Automatic coding mode allows the selected agent to modify project files.
-      const child = spawn(resolveOpenCodeExecutable(), buildOpenCodeArguments(
-        prompt,
-        this.model,
-        options.agentMode ?? 'build',
-      ), {
+      const child = spawn(resolveOpenCodeExecutable(), buildOpenCodeArguments(prompt, this.model), {
         cwd: options.cwd,
         shell: false,
         windowsHide: true,
@@ -141,7 +137,6 @@ export class OpenCodeProvider implements AIProvider {
 export function buildOpenCodeArguments(
   prompt: string,
   model: string,
-  agentMode: AgentMode,
 ): string[] {
   return [
     'run',
@@ -151,8 +146,8 @@ export function buildOpenCodeArguments(
     '--model',
     model,
     '--agent',
-    agentMode,
-    ...(agentMode === 'build' ? ['--auto'] : []),
+    'build',
+    '--auto',
     prompt,
   ];
 }

@@ -57,8 +57,6 @@ pxh --provider=custom
 - `Backspace` hoặc `Delete`: xóa ký tự.
 - `/models`: chọn model/mode.
 - `/agents`: chọn specialist hoặc Economy Router tự động.
-- `/plan`: chỉ đọc, phân tích và lập kế hoạch.
-- `/build`: triển khai và chỉnh sửa project.
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
 

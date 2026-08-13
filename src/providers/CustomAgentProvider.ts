@@ -12,19 +12,14 @@ export interface CustomApiConfig {
 
 export class CustomAgentProvider implements AIProvider {
   readonly name: string;
-  private readonly buildRuntime: AgentRuntime;
-  private readonly planRuntime: AgentRuntime;
+  private readonly runtime: AgentRuntime;
   private activeController: AbortController | undefined;
 
   constructor(config: CustomApiConfig) {
     this.name = `Custom API · ${config.model}`;
-    const createModel = (): OpenAIModelProvider =>
-      new OpenAIModelProvider(config.model, config.apiKey || 'local', config.baseURL);
-    const tools = createWorkspaceTools();
-    this.buildRuntime = new AgentRuntime(createModel(), tools);
-    this.planRuntime = new AgentRuntime(
-      createModel(),
-      tools.filter((tool) => tool.name !== 'apply_patch'),
+    this.runtime = new AgentRuntime(
+      new OpenAIModelProvider(config.model, config.apiKey || 'local', config.baseURL),
+      createWorkspaceTools(),
     );
   }
 
@@ -32,8 +27,7 @@ export class CustomAgentProvider implements AIProvider {
     const controller = new AbortController();
     this.activeController = controller;
     try {
-      const runtime = options.agentMode === 'plan' ? this.planRuntime : this.buildRuntime;
-      const content = await runtime.run(
+      const content = await this.runtime.run(
         prompt,
         options.cwd,
         controller.signal,

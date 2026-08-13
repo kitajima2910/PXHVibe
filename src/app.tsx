@@ -15,7 +15,6 @@ import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {buildAgentPrompt} from './utils/agentPrompt.js';
 import {Banner} from './components/Banner.js';
-import type {AgentMode} from './types/provider.js';
 import {agents, getAgent, routeAgent, type PXHAgent, type PXHAgentId} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 
@@ -47,7 +46,6 @@ export function App({provider}: AppProps): React.JSX.Element {
   const [isBusy, setIsBusy] = useState(false);
   const [isModePickerOpen, setIsModePickerOpen] = useState(false);
   const [isCustomSetupOpen, setIsCustomSetupOpen] = useState(false);
-  const [agentMode, setAgentMode] = useState<AgentMode>('build');
   const [selectedAgentId, setSelectedAgentId] = useState<PXHAgentId>('auto');
   const [activeAgent, setActiveAgent] = useState<PXHAgent>(getAgent('auto'));
   const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
@@ -68,25 +66,11 @@ export function App({provider}: AppProps): React.JSX.Element {
       return;
     }
 
-    if (command === '/build' || command === '/plan') {
-      const nextAgentMode: AgentMode = command === '/plan' ? 'plan' : 'build';
-      setAgentMode(nextAgentMode);
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(),
-        role: 'system',
-        content: nextAgentMode === 'plan'
-          ? 'Đã chuyển sang PLAN — chỉ phân tích, không sửa file.'
-          : 'Đã chuyển sang BUILD — có thể triển khai và sửa file.',
-        createdAt: new Date(),
-      }]);
-      return;
-    }
-
     if (command === '/help') {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
-        content: 'Lệnh: /models — chọn model; /agents — chọn specialist; /plan — chỉ lập kế hoạch; /build — triển khai; /help — trợ giúp.',
+        content: 'Lệnh: /models — chọn model; /agents — chọn specialist BUILD; /help — trợ giúp.',
         createdAt: new Date(),
       }]);
       return;
@@ -166,9 +150,8 @@ export function App({provider}: AppProps): React.JSX.Element {
     };
 
     try {
-      const response = await currentProvider.sendMessage(buildAgentPrompt(content, agentMode, routedAgent), {
+      const response = await currentProvider.sendMessage(buildAgentPrompt(content, routedAgent), {
         cwd: process.cwd(),
-        agentMode,
         onEvent: handleAgentEvent,
       });
       if (!hasStreamedResponse) {
@@ -249,7 +232,6 @@ export function App({provider}: AppProps): React.JSX.Element {
       <Header
         workingDirectory={process.cwd()}
         providerName={currentProvider.name}
-        agentMode={agentMode}
         agentLabel={activeAgent.label}
         status={status}
       />
