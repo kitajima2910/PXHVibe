@@ -9,7 +9,7 @@ interface MessageListProps {
 
 export function MessageList({messages}: MessageListProps): React.JSX.Element {
   return (
-    <Box flexDirection="column" paddingX={1} minHeight={5}>
+    <Box flexDirection="column" paddingX={1} minHeight={5} flexGrow={1}>
       {messages.map((message) => <MessageCard key={message.id} message={message} />)}
     </Box>
   );

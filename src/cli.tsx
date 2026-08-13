@@ -3,7 +3,7 @@ import React from 'react';
 import {render} from 'ink';
 import {App} from './app.js';
 import {createProvider, parseModelName, parseProviderName} from './providers/createProvider.js';
-import {setTerminalTitle} from './utils/terminalTitle.js';
+import {enterTerminalScreen, setTerminalTitle} from './utils/terminalTitle.js';
 
 try {
   setTerminalTitle('PXHVibe');
@@ -13,7 +13,9 @@ try {
     providerName,
     providerName === 'free' ? parseModelName(args) : undefined,
   );
-  render(<App provider={provider} />);
+  const terminalScreen = enterTerminalScreen();
+  const instance = render(<App provider={provider} />);
+  void instance.waitUntilExit().finally(() => terminalScreen.restore());
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : 'Không thể khởi tạo provider.';
   console.error(message);

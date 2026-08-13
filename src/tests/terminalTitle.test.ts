@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
-import {setTerminalTitle} from '../utils/terminalTitle.js';
+import {enterTerminalScreen, setTerminalTitle} from '../utils/terminalTitle.js';
 
 let output = '';
 setTerminalTitle('PXH\u0007Vibe', {isTTY: true, write(value) { output += value; }});
 assert.equal(output, '\u001B]0;PXHVibe\u0007');
 assert.equal(process.title, 'PXH\u0007Vibe');
+
+let screenOutput = '';
+const screen = enterTerminalScreen({isTTY: true, write(value) { screenOutput += value; }});
+screen.restore();
+assert.equal(screenOutput, '\u001B[?1049h\u001B[2J\u001B[H\u001B[?1049l');
 
 console.log('Terminal title tests: passed');

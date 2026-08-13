@@ -18,6 +18,8 @@
 - Format lại input/output TUI: message card riêng cho TARGET/OUTPUT, event compact, timestamp, command panel và renderer Markdown terminal cho heading/list/quote/inline code/code fence.
 - Tinh gọn visual hierarchy theo phản hồi ảnh thực tế: bỏ text/shortcut trùng, status bar một dòng, border nhẹ hơn và khoảng cách card gọn hơn.
 - Thêm boot animation ngắn, spinner khi agent chạy và đặt terminal/tab title thành `PXHVibe` bằng process title + ANSI OSC.
+- Chạy TUI trong alternate screen full-height: ẩn prompt shell cũ như `D:\test>pxh` khi app hoạt động, đặt conversation co giãn và input ở đáy; khôi phục shell khi thoát.
+- Ghi rõ cấu hình VS Code `${sequence}` cần thiết để tab dùng OSC title thay vì foreground process `node`.
 - Xóa Mock khỏi provider contract, menu, source và build output.
 - Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
 - API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
@@ -91,6 +93,7 @@
 - Economy Router tests: route đúng bug, UI/UX, QA, Expert và tôn trọng specialist được khóa thủ công.
 - Terminal formatter tests: nhận đúng heading, blank, bullet, numbered list, quote và fenced code kèm language.
 - Terminal title test: ANSI OSC được sanitize và phát đúng tiêu đề `PXHVibe`.
+- Alternate-screen test: phát đúng enter/clear/home và restore sequences, restore idempotent.
 
 ## Vấn đề còn lại
 

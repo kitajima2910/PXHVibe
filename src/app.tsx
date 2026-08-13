@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Box} from 'ink';
+import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
 import {MessageList} from './components/MessageList.js';
@@ -40,6 +40,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function App({provider}: AppProps): React.JSX.Element {
+  const {stdout} = useStdout();
   const [currentProvider, setCurrentProvider] = useState(provider);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [status, setStatus] = useState<AppStatus>('Ready');
@@ -227,7 +228,7 @@ export function App({provider}: AppProps): React.JSX.Element {
   };
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={stdout.rows}>
       <Banner />
       <Header
         workingDirectory={process.cwd()}

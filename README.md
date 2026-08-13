@@ -72,6 +72,16 @@ npm test
 npm run dev
 ```
 
+### Tên tab trong VS Code
+
+PXHVibe gửi terminal title `PXHVibe` qua ANSI OSC. VS Code mặc định lại hiển thị tên
+foreground process (`node`). Để tab dùng title do PXHVibe gửi, thêm vào VS Code
+User Settings JSON:
+
+```json
+"terminal.integrated.tabs.title": "${sequence}"
+```
+
 ## Phát hành
 
 ```bat
