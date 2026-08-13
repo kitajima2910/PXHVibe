@@ -6,6 +6,10 @@ import {MessageList} from './components/MessageList.js';
 import {PromptInput} from './components/PromptInput.js';
 import type {AIProvider} from './providers/AIProvider.js';
 import type {Message} from './types/message.js';
+import type {AgentEvent} from './agent/types.js';
+import {ModePicker} from './components/ModePicker.js';
+import {modes, type PXHMode} from './modes.js';
+import {createProvider} from './providers/createProvider.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -29,12 +33,19 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function App({provider}: AppProps): React.JSX.Element {
+  const [currentProvider, setCurrentProvider] = useState(provider);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [status, setStatus] = useState<AppStatus>('Ready');
   const [isBusy, setIsBusy] = useState(false);
+  const [isModePickerOpen, setIsModePickerOpen] = useState(false);
 
   const handleSubmit = async (content: string): Promise<void> => {
     if (isBusy) {
+      return;
+    }
+
+    if (content.toLowerCase() === '/modes') {
+      setIsModePickerOpen(true);
       return;
     }
 
@@ -48,18 +59,55 @@ export function App({provider}: AppProps): React.JSX.Element {
     setMessages((currentMessages) => [...currentMessages, message]);
     setIsBusy(true);
     setStatus('Thinking...');
+    const responseMessageId = createMessageId();
+    let hasStreamedResponse = false;
+
+    const handleAgentEvent = (event: AgentEvent): void => {
+      if (event.type === 'text_delta') {
+        hasStreamedResponse = true;
+        setMessages((currentMessages) => {
+          const existing = currentMessages.find((item) => item.id === responseMessageId);
+          if (existing === undefined) {
+            return [...currentMessages, {
+              id: responseMessageId,
+              role: 'assistant',
+              content: event.content,
+              createdAt: new Date(),
+            }];
+          }
+          return currentMessages.map((item) =>
+            item.id === responseMessageId
+              ? {...item, content: item.content + event.content}
+              : item,
+          );
+        });
+        return;
+      }
+
+      const activity = event.type === 'tool_start'
+        ? `Đang chạy ${event.toolName}...`
+        : `${event.toolName}: ${event.summary}`;
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        content: activity,
+        createdAt: new Date(),
+      }]);
+    };
 
     try {
-      const response = await provider.sendMessage(content, {cwd: process.cwd()});
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          id: createMessageId(),
+      const response = await currentProvider.sendMessage(content, {
+        cwd: process.cwd(),
+        onEvent: handleAgentEvent,
+      });
+      if (!hasStreamedResponse) {
+        setMessages((currentMessages) => [...currentMessages, {
+          id: responseMessageId,
           role: 'assistant',
           content: response.content,
           createdAt: new Date(),
-        },
-      ]);
+        }]);
+      }
       setStatus('Ready');
     } catch (error: unknown) {
       setMessages((currentMessages) => [
@@ -77,19 +125,41 @@ export function App({provider}: AppProps): React.JSX.Element {
     }
   };
 
+  const handleModeSelect = (mode: PXHMode): void => {
+    currentProvider.cancel();
+    const nextProvider = createProvider(mode.provider, mode.model);
+    setCurrentProvider(nextProvider);
+    setStatus('Ready');
+    setIsModePickerOpen(false);
+    setMessages((currentMessages) => [...currentMessages, {
+      id: createMessageId(),
+      role: 'system',
+      content: `Đã chuyển sang ${mode.label}.`,
+      createdAt: new Date(),
+    }]);
+  };
+
   return (
     <Box flexDirection="column">
       <Header
         workingDirectory={process.cwd()}
-        providerName={provider.name}
+        providerName={currentProvider.name}
         status={status}
       />
       <MessageList messages={messages} />
-      <PromptInput
-        onSubmit={(content) => void handleSubmit(content)}
-        onExit={() => provider.cancel()}
-        isBusy={isBusy}
-      />
+      {isModePickerOpen ? (
+        <ModePicker
+          modes={modes}
+          onSelect={handleModeSelect}
+          onCancel={() => setIsModePickerOpen(false)}
+        />
+      ) : (
+        <PromptInput
+          onSubmit={(content) => void handleSubmit(content)}
+          onExit={() => currentProvider.cancel()}
+          isBusy={isBusy}
+        />
+      )}
       <Footer />
     </Box>
   );

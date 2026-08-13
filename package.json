@@ -1,8 +1,24 @@
 {
   "name": "pxhvibe",
   "version": "0.1.0",
-  "private": true,
-  "description": "A minimal terminal vibe coding interface built with React and Ink.",
+  "description": "A terminal vibe coding interface powered by free OpenCode models.",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "tui",
+    "coding-agent",
+    "opencode",
+    "cli"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
@@ -10,12 +26,18 @@
   },
   "scripts": {
     "dev": "npm run build && node dist/cli.js",
+    "prepack": "npm run build",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/cli.js",
+    "test": "npm run build && npm run test:opencode && npm run test:native",
+    "test:native": "node dist/tests/nativeAgent.test.js",
+    "test:opencode": "node dist/tests/openCodeProvider.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "ink": "^7.1.1",
+    "openai": "^7.4.0",
+    "opencode-ai": "^1.18.18",
     "react": "^19.2.8"
   },
   "devDependencies": {

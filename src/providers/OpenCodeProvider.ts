@@ -1,14 +1,22 @@
 import {spawn, type ChildProcessWithoutNullStreams} from 'node:child_process';
+import {existsSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import path from 'node:path';
 import type {AIProvider} from './AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 
 const missingCliMessage =
   'Không tìm thấy OpenCode CLI. Hãy cài đặt và đăng nhập OpenCode trước.';
+export const defaultOpenCodeModel = 'opencode/mimo-v2.5-free';
 
 export class OpenCodeProvider implements AIProvider {
-  readonly name = 'OpenCode';
+  readonly name: string;
   private activeProcess: ChildProcessWithoutNullStreams | undefined;
+
+  constructor(private readonly model = defaultOpenCodeModel) {
+    this.name = `OpenCode Free (${model.split('/').at(-1) ?? model})`;
+  }
 
   sendMessage(
     prompt: string,
@@ -16,7 +24,16 @@ export class OpenCodeProvider implements AIProvider {
   ): Promise<ProviderResponse> {
     return new Promise((resolve, reject) => {
       // --auto enables OpenCode to execute the coding task and modify project files.
-      const child = spawn('opencode', ['run', '--agent', 'build', '--auto', prompt], {
+      const child = spawn(resolveOpenCodeExecutable(), [
+        'run',
+        '--pure',
+        '--model',
+        this.model,
+        '--agent',
+        'build',
+        '--auto',
+        prompt,
+      ], {
         cwd: options.cwd,
         shell: false,
         windowsHide: true,
@@ -91,4 +108,39 @@ export class OpenCodeProvider implements AIProvider {
       child.kill();
     }
   }
+}
+
+export function resolveOpenCodeExecutable(): string {
+  const configuredPath = process.env.PXH_OPENCODE_PATH;
+  if (configuredPath !== undefined && configuredPath.length > 0) return configuredPath;
+  if (process.platform !== 'win32') return 'opencode';
+
+  try {
+    const bundledExecutable = createRequire(import.meta.url).resolve(
+      'opencode-ai/bin/opencode.exe',
+    );
+    if (existsSync(bundledExecutable)) return bundledExecutable;
+  } catch {
+    // Fall through to PATH and legacy global npm locations.
+  }
+
+  for (const directory of (process.env.PATH ?? '').split(path.delimiter)) {
+    const candidate = path.join(directory, 'opencode.exe');
+    if (existsSync(candidate)) return candidate;
+  }
+
+  const appData = process.env.APPDATA;
+  if (appData !== undefined) {
+    const npmExecutable = path.join(
+      appData,
+      'npm',
+      'node_modules',
+      'opencode-ai',
+      'bin',
+      'opencode.exe',
+    );
+    if (existsSync(npmExecutable)) return npmExecutable;
+  }
+
+  return 'opencode';
 }
