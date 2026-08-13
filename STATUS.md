@@ -128,3 +128,128 @@
 ### Vấn đề còn lại
 
 - Tên dependency/runtime vẫn tồn tại trong source, package lock và attribution theo yêu cầu kỹ thuật/pháp lý; không còn được render trong câu trả lời TUI.
+
+## Cập nhật: Clipboard image và thumbnail TUI
+
+### Đã thay đổi gì
+
+- Thêm `Ctrl+V` và `/paste` để đọc ảnh hoặc file ảnh từ clipboard Windows.
+- Hiển thị thumbnail true-color bằng ký tự half-block trong khung nhập và message TARGET đã gửi.
+- Hỗ trợ tối đa 4 ảnh; khi input trống có thể dùng Backspace/Delete để bỏ ảnh cuối.
+- Free mode gửi ảnh bằng file attachment; Custom API gửi ảnh bằng `input_image` của Responses API.
+- Ảnh clipboard được lưu trong thư mục tạm riêng và tự động xóa sau request hoặc khi người dùng bỏ ảnh/thoát.
+
+### File đã sửa
+
+- `src/types/attachment.ts`
+- `src/types/provider.ts`
+- `src/types/message.ts`
+- `src/utils/imageClipboard.ts`
+- `src/components/ImageThumbnail.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/MessageList.tsx`
+- `src/components/Footer.tsx`
+- `src/app.tsx`
+- `src/providers/OpenCodeProvider.ts`
+- `src/providers/CustomAgentProvider.ts`
+- `src/agent/types.ts`
+- `src/agent/ModelProvider.ts`
+- `src/agent/AgentRuntime.ts`
+- `src/agent/OpenAIModelProvider.ts`
+- `src/tests/imageClipboard.test.ts`
+- `src/tests/openCodeProvider.test.ts`
+- `README.md`
+- `package.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công; gồm attachment arguments, clipboard payload và render thumbnail.
+- Clipboard probe không thay đổi clipboard: cơ chế báo đúng lỗi thân thiện khi clipboard hiện không chứa ảnh.
+
+### Vấn đề còn lại
+
+- `Ctrl+V` có thể bị VS Code/terminal giữ lại; `/paste` là đường dự phòng ổn định.
+- Khả năng phân tích ảnh phụ thuộc model vision đang chọn; PXHVibe không thể biến model text-only thành model vision.
+
+## Cập nhật: Thumbnail rõ hơn và phím dán VS Code
+
+### Đã thay đổi gì
+
+- Tăng giới hạn thumbnail từ `24×12` lên `44×28` pixel màu, tương đương tối đa 44 cột × 14 dòng terminal.
+- Bật pixel offset và compositing chất lượng cao khi thu nhỏ ảnh.
+- Thêm `Alt+V` để PXHVibe nhận trực tiếp trong VS Code; vẫn giữ `/paste` và khả năng nhận `Ctrl+V` ở terminal có chuyển tiếp phím.
+- Footer và tài liệu không còn hướng dẫn `Ctrl+V` như phím chính trong VS Code.
+
+### File đã sửa
+
+- `src/utils/imageClipboard.ts`
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công; test mới xác nhận `Alt+V`, `Ctrl+V` khi được chuyển tiếp và không nhận nhầm phím khác.
+
+### Vấn đề còn lại
+
+- VS Code giữ `Ctrl+V` trước khi dữ liệu đến process terminal; không thể sửa từ bên trong PXHVibe. `Alt+V` và `/paste` là hai đường hoạt động trong VS Code.
+
+## Cập nhật: Message timeline, thumbnail và Auto agent
+
+### Đã thay đổi gì
+
+- Tăng mẫu thumbnail lên tối đa `64×44` pixel màu và dùng High Quality Bilinear để giảm độ nhòe khi thu nhỏ avatar/UI.
+- Đổi message card viền kín và nhãn dài thành timeline viền trái nhẹ với badge ngắn `YOU` / `PXH`.
+- Rút gọn system event từ `◆ EVENT` lặp lại thành ký hiệu `↳`.
+- Sửa Header bị đổi từ `PXH PM (Auto)` sang worker: Economy Router vẫn route specialist cho prompt nhưng Header luôn phản ánh agent người dùng đã chọn.
+
+### File đã sửa
+
+- `src/utils/imageClipboard.ts`
+- `src/components/MessageList.tsx`
+- `src/app.tsx`
+- `src/tests/slashCommands.test.ts`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công; regression test xác nhận Header Auto không bị worker route ghi đè và nhãn message cũ đã được loại bỏ.
+
+### Vấn đề còn lại
+
+- Thumbnail ANSI phụ thuộc kích thước cell/font terminal nên không thể nét bằng ảnh raster trong GUI; tăng độ phân giải tiếp sẽ chiếm quá nhiều dòng/cột.
+
+## Cập nhật: Conversation viewport
+
+### Đã thay đổi gì
+
+- Sửa danh sách message tràn xuống và ghi đè khung input khi hội thoại dài.
+- Đặt vùng hội thoại thành flex viewport có `overflow: hidden`, luôn neo message mới nhất ở đáy.
+- Thêm `PageUp` / `PageDown` để xem lịch sử theo từng nhóm 4 message và trở về cuối hội thoại.
+- Thêm chỉ báo HISTORY khi người dùng đang xem phần cũ.
+
+### File đã sửa
+
+- `src/components/MessageList.tsx`
+- `src/components/Footer.tsx`
+- `src/tests/messageViewport.test.ts`
+- `README.md`
+- `package.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công, gồm viewport regression test với 10 message trong vùng cao 8 dòng.
+- Regression test xác nhận message mới nhất được giữ lại, message cũ bị cắt và PageUp bật chỉ báo HISTORY.
+
+### Vấn đề còn lại
+
+- Lịch sử chỉ tồn tại trong bộ nhớ của phiên chạy hiện tại; chưa lưu session qua lần khởi động mới.

@@ -9,6 +9,8 @@ export interface AgentInputMessage {
   content: string;
 }
 
+export type AgentImage = ImageAttachment;
+
 export interface AgentToolOutput {
   type: 'function_call_output';
   callId: string;
@@ -38,3 +40,4 @@ export interface AgentToolDefinition {
 export interface AgentTool extends AgentToolDefinition {
   execute(argumentsValue: unknown, cwd: string): Promise<string>;
 }
+import type {ImageAttachment} from '../types/attachment.js';

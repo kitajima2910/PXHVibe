@@ -23,6 +23,8 @@ assert.equal(getRequestTimeoutMs(), 120_000);
 const buildArguments = buildOpenCodeArguments('target', defaultOpenCodeModel);
 assert.ok(buildArguments.includes('--auto'));
 assert.deepEqual(buildArguments.slice(-4), ['--agent', 'build', '--auto', 'target']);
+const imageArguments = buildOpenCodeArguments('describe', defaultOpenCodeModel, ['C:\\Temp\\shot.png']);
+assert.deepEqual(imageArguments.slice(-3), ['--file', 'C:\\Temp\\shot.png', 'describe']);
 
 const step = parseOpenCodeEvent(JSON.stringify({type: 'step_start', part: {type: 'step-start'}}));
 assert.deepEqual(step.events, [{type: 'activity', content: 'Đang phân tích yêu cầu...'}]);

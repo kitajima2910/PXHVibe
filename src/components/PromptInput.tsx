@@ -1,13 +1,18 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
+import type {ImageAttachment} from '../types/attachment.js';
+import {ImageThumbnail} from './ImageThumbnail.js';
 
 interface PromptInputProps {
   onSubmit: (value: string) => void;
   onExit: () => void;
   isBusy: boolean;
+  attachments: readonly ImageAttachment[];
+  onPasteImage: () => void;
+  onRemoveLastImage: () => void;
 }
 
-export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React.JSX.Element {
+export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [spinnerIndex, setSpinnerIndex] = useState(0);
   const {exit} = useApp();
@@ -34,8 +39,18 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
       return;
     }
 
+    if (isPasteShortcut(input, key)) {
+      onPasteImage();
+      return;
+    }
+
     if (key.return) {
       const prompt = value.trim();
+      if (prompt.toLowerCase() === '/paste') {
+        onPasteImage();
+        setValue('');
+        return;
+      }
       if (prompt.length > 0) {
         onSubmit(prompt);
         setValue('');
@@ -44,6 +59,10 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
     }
 
     if (key.backspace || key.delete) {
+      if (value.length === 0 && attachments.length > 0) {
+        onRemoveLastImage();
+        return;
+      }
       setValue((currentValue) => currentValue.slice(0, -1));
       return;
     }
@@ -61,6 +80,11 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
         </Text>
         <Text dimColor>{isBusy ? 'input locked' : 'build mode'}</Text>
       </Box>
+      {attachments.length > 0 && (
+        <Box marginBottom={1}>
+          {attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}
+        </Box>
+      )}
       <Box>
         <Text bold color="green">root@pxhvibe</Text>
         <Text color="gray">:</Text>
@@ -82,3 +106,13 @@ export function PromptInput({onSubmit, onExit, isBusy}: PromptInputProps): React
 }
 
 const processingFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+export function isPasteShortcut(
+  input: string,
+  key: {ctrl: boolean; meta: boolean},
+): boolean {
+  const character = input.toLowerCase();
+  return (key.meta && character === 'v')
+    || (key.ctrl && character === 'v')
+    || input === '\x16';
+}

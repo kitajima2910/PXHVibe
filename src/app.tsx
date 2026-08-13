@@ -18,6 +18,8 @@ import {Banner} from './components/Banner.js';
 import {agents, getAgent, routeAgent, type PXHAgent, type PXHAgentId} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
+import type {ImageAttachment} from './types/attachment.js';
+import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -51,6 +53,44 @@ export function App({provider}: AppProps): React.JSX.Element {
   const [selectedAgentId, setSelectedAgentId] = useState<PXHAgentId>('auto');
   const [activeAgent, setActiveAgent] = useState<PXHAgent>(getAgent('auto'));
   const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
+  const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([]);
+  const [isPastingImage, setIsPastingImage] = useState(false);
+
+  const handlePasteImage = async (): Promise<void> => {
+    if (isBusy || isPastingImage) return;
+    if (pendingImages.length >= 4) {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        content: 'Mỗi TARGET hỗ trợ tối đa 4 ảnh.',
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    setIsPastingImage(true);
+    try {
+      const image = await pasteImageFromClipboard();
+      setPendingImages((current) => [...current, image]);
+    } catch (error: unknown) {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        content: getErrorMessage(error),
+        createdAt: new Date(),
+      }]);
+    } finally {
+      setIsPastingImage(false);
+    }
+  };
+
+  const handleRemoveLastImage = (): void => {
+    setPendingImages((current) => {
+      const image = current.at(-1);
+      if (image !== undefined) void removeTemporaryImage(image);
+      return current.slice(0, -1);
+    });
+  };
 
   const handleSubmit = async (content: string): Promise<void> => {
     if (isBusy) {
@@ -72,7 +112,7 @@ export function App({provider}: AppProps): React.JSX.Element {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
-        content: 'Lệnh: /models — chọn model; /agents — chọn specialist BUILD; /help — trợ giúp.',
+        content: 'Lệnh: /models — chọn model; /agents — chọn specialist BUILD; /paste — dán ảnh clipboard; /help — trợ giúp.',
         createdAt: new Date(),
       }]);
       return;
@@ -89,11 +129,13 @@ export function App({provider}: AppProps): React.JSX.Element {
     }
 
     const routedAgent = routeAgent(selectedAgentId, content);
-    setActiveAgent(routedAgent);
+    const requestImages = pendingImages;
+    setPendingImages([]);
     const message: Message = {
       id: createMessageId(),
       role: 'user',
       content,
+      ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
       createdAt: new Date(),
     };
 
@@ -163,6 +205,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     try {
       const response = await currentProvider.sendMessage(buildAgentPrompt(content, routedAgent), {
         cwd: process.cwd(),
+        ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
         onEvent: handleAgentEvent,
       });
       if (hasStreamedResponse) {
@@ -183,6 +226,7 @@ export function App({provider}: AppProps): React.JSX.Element {
       ]);
       setStatus('Error');
     } finally {
+      await Promise.all(requestImages.map(removeTemporaryImage));
       setIsBusy(false);
     }
   };
@@ -264,8 +308,14 @@ export function App({provider}: AppProps): React.JSX.Element {
       ) : (
         <PromptInput
           onSubmit={(content) => void handleSubmit(content)}
-          onExit={() => currentProvider.cancel()}
-          isBusy={isBusy}
+          onExit={() => {
+            currentProvider.cancel();
+            for (const image of pendingImages) void removeTemporaryImage(image);
+          }}
+          isBusy={isBusy || isPastingImage}
+          attachments={pendingImages}
+          onPasteImage={() => void handlePasteImage()}
+          onRemoveLastImage={handleRemoveLastImage}
         />
       )}
       <Footer />

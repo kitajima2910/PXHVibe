@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import type {ResponseInput, FunctionTool} from 'openai/resources/responses/responses';
 import type {ModelProvider, ModelRequest} from './ModelProvider.js';
 import type {AgentModelTurn} from './types.js';
+import {readFile} from 'node:fs/promises';
 
 export class OpenAIModelProvider implements ModelProvider {
   private readonly client: OpenAI;
@@ -15,11 +16,21 @@ export class OpenAIModelProvider implements ModelProvider {
   }
 
   async createTurn(request: ModelRequest): Promise<AgentModelTurn> {
+    const imageContent = await Promise.all((request.images ?? []).map(async (image) => ({
+      type: 'input_image' as const,
+      detail: 'auto' as const,
+      image_url: `data:${image.mimeType};base64,${(await readFile(image.path)).toString('base64')}`,
+    })));
     const input: ResponseInput = request.input.map((item) => {
       if ('type' in item) {
         return {type: 'function_call_output', call_id: item.callId, output: item.output};
       }
-      return {role: item.role, content: item.content};
+      return {
+        role: item.role,
+        content: imageContent.length === 0
+          ? item.content
+          : [{type: 'input_text', text: item.content}, ...imageContent],
+      };
     });
     const tools: FunctionTool[] = request.tools.map((tool) => ({
       type: 'function',

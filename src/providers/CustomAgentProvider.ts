@@ -32,6 +32,7 @@ export class CustomAgentProvider implements AIProvider {
         options.cwd,
         controller.signal,
         options.onEvent ?? (() => undefined),
+        options.attachments ?? [],
       );
       return {content};
     } finally {

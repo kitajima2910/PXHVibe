@@ -1,5 +1,5 @@
 import type {ModelProvider} from './ModelProvider.js';
-import type {AgentEvent, AgentInput, AgentTool} from './types.js';
+import type {AgentEvent, AgentImage, AgentInput, AgentTool} from './types.js';
 
 const instructions = `You are PXHVibe, a coding agent working in the user's current project.
 Use the available tools to inspect and edit the project before answering.
@@ -21,6 +21,7 @@ export class AgentRuntime {
     cwd: string,
     signal: AbortSignal,
     onEvent: (event: AgentEvent) => void,
+    images: readonly AgentImage[] = [],
   ): Promise<string> {
     let input: AgentInput[] = [{role: 'user', content: prompt}];
     let responseId = this.previousResponseId;
@@ -31,6 +32,7 @@ export class AgentRuntime {
       const turn = await this.model.createTurn({
         instructions,
         input,
+        ...(turnIndex === 0 && images.length > 0 ? {images} : {}),
         tools: this.tools,
         ...(responseId === undefined ? {} : {previousResponseId: responseId}),
         signal,

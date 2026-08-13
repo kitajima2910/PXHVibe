@@ -30,7 +30,7 @@
     "clean": "node --input-type=module -e \"import {rm} from 'node:fs/promises'; await rm('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc -p tsconfig.json",
     "start": "node dist/cli.js",
-    "test": "npm run build && npm run test:free && npm run test:agent && npm run test:router && npm run test:format && npm run test:title && npm run test:modes && npm run test:custom && npm run test:commands && npm run test:branding",
+    "test": "npm run build && npm run test:free && npm run test:agent && npm run test:router && npm run test:format && npm run test:title && npm run test:modes && npm run test:custom && npm run test:commands && npm run test:branding && npm run test:image && npm run test:viewport",
     "test:agent": "node dist/tests/nativeAgent.test.js",
     "test:router": "node dist/tests/agents.test.js",
     "test:format": "node dist/tests/terminalFormat.test.js",
@@ -40,6 +40,8 @@
     "test:custom": "node dist/tests/customApiSetup.test.js",
     "test:commands": "node dist/tests/slashCommands.test.js",
     "test:branding": "node dist/tests/outputBranding.test.js",
+    "test:image": "node dist/tests/imageClipboard.test.js",
+    "test:viewport": "node dist/tests/messageViewport.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

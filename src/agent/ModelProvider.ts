@@ -2,11 +2,13 @@ import type {
   AgentInput,
   AgentModelTurn,
   AgentToolDefinition,
+  AgentImage,
 } from './types.js';
 
 export interface ModelRequest {
   instructions: string;
   input: readonly AgentInput[];
+  images?: readonly AgentImage[];
   tools: readonly AgentToolDefinition[];
   previousResponseId?: string;
   signal: AbortSignal;
