@@ -2,80 +2,70 @@
 
 ## Đã thay đổi gì
 
-- Chuẩn bị package npm public `pxhvibe` với bin `pxh`, `prepack`, Node.js engine và metadata phát hành.
-- Bundle `opencode-ai` làm runtime dependency để người dùng không phải cài OpenCode CLI riêng.
-- Thêm slash command `/modes` mở menu TUI; hỗ trợ ↑/↓, Enter và Esc để chuyển mode không cần khởi động lại.
-- Thêm catalog bảy model OpenCode Zen free cùng Native OpenAI và Mock mode.
-- Chuyển provider mặc định của `pxh` sang wrapper OpenCode CLI dùng model Zen miễn phí `opencode/mimo-v2.5-free`.
-- Thêm `--model=<provider/model>` và `PXH_OPENCODE_MODEL` để chọn model OpenCode khác.
-- Sửa Windows wrapper để tìm và spawn trực tiếp `opencode.exe` với `shell: false`, không phụ thuộc npm shim `.cmd`.
-- Thêm `--pure` để wrapper không nạp plugin OpenCode ngoài và chạy ổn định, cô lập hơn.
-- Hoàn thành Native Agent MVP để PXHVibe có thể vibe code mà không phụ thuộc OpenCode CLI.
-- Thêm `AgentRuntime` thực hiện vòng lặp model → tool → model, giới hạn tối đa 12 lượt và giữ `previous_response_id` giữa các prompt.
-- Thêm adapter Responses API bằng OpenAI SDK chính thức, hỗ trợ streaming text và hủy request bằng AbortController.
-- Thêm năm workspace tool: `list_files`, `read_file`, `search_text`, `apply_patch`, `git_diff`.
-- Giới hạn file tool trong working directory, bỏ qua symlink khi duyệt, giới hạn kích thước/output và chặn path traversal.
-- TUI hiển thị text streaming cùng trạng thái bắt đầu/hoàn tất tool.
-- Thêm provider `native` và đặt làm mặc định; giữ `mock` và `opencode` để tương thích.
-- Thêm command global `pxh` qua npm bin/npm link.
-- Cập nhật README với cấu hình `OPENAI_API_KEY`, `PXH_MODEL` và cách chạy Native Agent.
+- Sửa lỗi `/models` bị gửi nhầm thành AI prompt và làm UI kẹt ở `Thinking...`.
+- Chỉ giữ `/models` để chọn model; `/modes` đã bị loại bỏ và được báo là lệnh không hợp lệ.
+- Thêm timeout Free request mặc định 120 giây; hết hạn sẽ dừng child process và hướng dẫn chọn model khác.
+- Hỗ trợ `PXH_REQUEST_TIMEOUT_MS` để điều chỉnh timeout.
+- Đổi giao diện sang thương hiệu PXHVibe: Header hiển thị `Mode`, tên model thân thiện và không hiển thị tên engine hoặc model ID nội bộ.
+- Thêm Big Pickle Free và giữ các cloud coding model miễn phí hiện có trong `/models`.
+- Đổi model Free mặc định từ MiMo V2.5 sang Big Pickle vì MiMo không trả dữ liệu trong kiểm tra live, trong khi Big Pickle phản hồi bình thường.
+- Xóa Mock khỏi provider contract, menu, source và build output.
+- Thêm Custom API mode với form nhập Base URL, model và API key ngay trong TUI.
+- API key Custom được che khi nhập, chỉ giữ trong bộ nhớ process và không ghi vào message, log hoặc file.
+- Custom API sử dụng AgentRuntime cùng workspace tools hiện có và yêu cầu endpoint tương thích OpenAI Responses API/function calling.
+- Hỗ trợ cấu hình Custom qua `PXH_CUSTOM_BASE_URL`, `PXH_CUSTOM_MODEL`, `PXH_CUSTOM_API_KEY`.
+- Gỡ OpenAI API khỏi menu, provider contract và CLI; Free mode vẫn là mặc định.
+- Bundle runtime miễn phí trong package npm; attribution MIT được giữ trong README nhưng không đưa branding runtime vào TUI.
+- Thêm clean build để tarball không chứa artifact provider cũ.
 
 ## File đã tạo hoặc chỉnh sửa
 
 - `package.json`
 - `package-lock.json`
-- `src/agent/types.ts`
-- `src/agent/ModelProvider.ts`
-- `src/agent/OpenAIModelProvider.ts`
-- `src/agent/AgentRuntime.ts`
-- `src/agent/tools/workspaceTools.ts`
-- `src/providers/NativeAgentProvider.ts`
-- `src/providers/OpenCodeProvider.ts`
-- `src/providers/createProvider.ts`
-- `src/modes.ts`
-- `src/components/ModePicker.tsx`
-- `src/components/Footer.tsx`
-- `src/types/provider.ts`
-- `src/app.tsx`
-- `src/tests/nativeAgent.test.ts`
-- `src/tests/openCodeProvider.test.ts`
 - `README.md`
+- `src/app.tsx`
+- `src/cli.tsx`
+- `src/modes.ts`
+- `src/types/provider.ts`
+- `src/components/Header.tsx`
+- `src/components/ModePicker.tsx`
+- `src/components/CustomApiSetup.tsx`
+- `src/providers/OpenCodeProvider.ts`
+- `src/providers/CustomAgentProvider.ts`
+- `src/providers/createProvider.ts`
+- `src/agent/OpenAIModelProvider.ts`
+- `src/tests/openCodeProvider.test.ts`
+- `src/tests/modes.test.ts`
+- `src/tests/customApiSetup.test.ts`
+- `src/tests/slashCommands.test.ts`
 - `STATUS.md`
+- Đã xóa `src/providers/MockProvider.ts` và `src/providers/NativeAgentProvider.ts`.
 
-## Provider đã hỗ trợ
+## Mode đã hỗ trợ
 
-- `opencode` (mặc định): wrapper OpenCode CLI, mặc định dùng `opencode/mimo-v2.5-free`.
-- `native`: gọi OpenAI Responses API trực tiếp và tự chạy coding tools của PXHVibe.
-- `mock`: phản hồi giả, không gọi mạng và không sửa file.
+- Free (mặc định): Big Pickle, MiMo V2.5, DeepSeek V4 Flash, Nemotron, Laguna, Hy3 và Ling.
+- Custom API: endpoint tương thích OpenAI Responses API với Base URL/model/API key riêng.
 
 ## Kết quả kiểm tra
 
-- Tên package `pxhvibe`: chưa tồn tại trên npm tại thời điểm kiểm tra.
-- `npm pack --dry-run`: thành công; tarball có bin/runtime và kích thước khoảng 12 KB, chưa tính dependencies.
-- Cài tarball global vào prefix tạm: thành công; tạo đủ `pxh`, `pxh.cmd`, `pxh.ps1` và cài 43 packages.
-- Bản cài cô lập tìm đúng `node_modules/pxhvibe/node_modules/opencode-ai/bin/opencode.exe`.
-- `pxh.cmd --provider=invalid` từ bản cài cô lập: chạy đúng entrypoint và exit code 1.
-- `/modes` qua stdin TTY mô phỏng: menu hiện model free và chọn MiMo thành công; Header cập nhật provider ngay.
-- `npm.cmd test`: thành công.
-- `opencode models opencode`: thành công; máy hiện thấy 8 model Zen miễn phí.
-- `npm.cmd run test:opencode`: thành công; xác nhận provider/model mặc định và tìm đúng `opencode.exe` trên Windows.
-- OpenCode wrapper smoke test trong thư mục tạm rỗng: `mimo-v2.5-free` timeout sau 120 giây; `deepseek-v4-flash-free` timeout sau 60 giây; không có output hoặc lỗi xác thực. Các child process thử nghiệm đã được dừng và thư mục tạm đã được dọn.
-- `npm.cmd install openai`: thành công, không phát hiện vulnerability.
 - `npm.cmd run typecheck`: thành công.
-- `npm.cmd run build`: thành công.
-- `npm.cmd run test:native`: thành công.
-- Native agent fake-model: gọi `read_file`, trả tool output cho model, streaming câu trả lời và truyền đúng `previousResponseId`.
-- `apply_patch`: sửa file, tạo file trong thư mục con và chặn đường dẫn `../` ra ngoài workspace.
-- Thiếu `OPENAI_API_KEY`: trả lỗi cấu hình ngắn gọn, không crash.
-- Mock TUI regression: `Thinking...`, phản hồi Unicode, trở về `Ready` và Ctrl+C đều thành công.
-- `git diff --check`: thành công.
+- `npm.cmd test`: thành công.
+- Free runtime test: tìm đúng executable bundled và tên Header thân thiện.
+- Native Agent test: tool loop, session, sửa file và workspace boundary thành công.
+- Mode catalog test: Big Pickle đứng đầu, có Custom API, không có Mock, không lộ engine trong description.
+- Custom API setup test: API key được mask và không xuất hiện trong output render.
+- Slash command test: `/models` mở menu; `/modes` và `/unknown` báo lỗi; không lệnh nào gọi provider.
+- Timeout parser test: mặc định 120.000 ms.
+- Clean build: `dist/providers/MockProvider.js` không còn tồn tại.
+- Clean build: `dist/providers/NativeAgentProvider.js` không còn tồn tại.
+- `npm.cmd install --global D:\PXHVibe`: thành công; lệnh `pxh` global đã cập nhật.
+- `pxh --provider=mock`: bị từ chối; danh sách provider CLI chỉ còn `free, custom`.
+- `pxh.cmd --provider=native`: bị từ chối với danh sách hợp lệ `free, custom`.
+- Live probe trong thư mục Temp rỗng: MiMo V2.5 không có output sau 30 giây; Big Pickle trả lời thành công trong khoảng 6,5 giây.
 
 ## Vấn đề còn lại
 
-- Package đã sẵn sàng về mặt kỹ thuật nhưng chưa được publish lên npm; cần tài khoản npm có quyền publish tên `pxhvibe` và chạy `npm publish`.
-- OpenCode Zen free được liệt kê và wrapper khởi chạy đúng executable/model, nhưng hai smoke test live không nhận phản hồi trước timeout. Cần thử lại trực tiếp bằng `pxh` hoặc `opencode run` khi dịch vụ/model phản hồi ổn định.
-- Model Zen miễn phí và khả dụng có thể thay đổi theo thời điểm; dùng `opencode models opencode` để xem danh sách hiện tại và `--model=` để đổi.
-- Chưa chạy API live vì không có bước cung cấp API key an toàn trong môi trường kiểm thử; agent loop được kiểm tra bằng fake model, không gửi source ra ngoài và không phát sinh chi phí.
-- Native MVP chưa có confirmation dialog; `apply_patch` có thể sửa file trong workspace khi model gọi tool. Nên commit source trước khi dùng.
-- Native MVP chưa có shell tool, model picker trong TUI, diff viewer hoặc lưu session qua lần khởi động mới.
-- PowerShell trên máy kiểm thử chặn npm shim `.ps1`; dùng `pxh.cmd` hoặc Windows CMD nếu chưa thay đổi Execution Policy.
+- Package chưa được publish lên npm; cần tài khoản npm và chạy `npm publish`.
+- Free cloud model có thể chậm hoặc thay đổi khả dụng theo thời điểm.
+- Custom endpoint phải hỗ trợ Responses API và function calling; endpoint chỉ hỗ trợ Chat Completions chưa dùng được với agent loop hiện tại.
+- Free mode vẫn phải giữ attribution MIT trong tài liệu/package; chỉ phần giao diện end-user được ẩn branding runtime.

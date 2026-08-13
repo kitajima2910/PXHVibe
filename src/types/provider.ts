@@ -9,4 +9,4 @@ export interface ProviderResponse {
   content: string;
 }
 
-export type ProviderName = 'mock' | 'native' | 'opencode';
+export type ProviderName = 'free' | 'custom';

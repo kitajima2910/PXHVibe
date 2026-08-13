@@ -9,8 +9,9 @@ export class OpenAIModelProvider implements ModelProvider {
   constructor(
     private readonly model: string,
     apiKey: string,
+    baseURL?: string,
   ) {
-    this.client = new OpenAI({apiKey});
+    this.client = new OpenAI({apiKey, ...(baseURL === undefined ? {} : {baseURL})});
   }
 
   async createTurn(request: ModelRequest): Promise<AgentModelTurn> {

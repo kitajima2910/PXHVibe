@@ -1,124 +1,85 @@
 # PXHVibe
 
-MVP giao diện terminal cho ứng dụng vibe coding, xây dựng bằng TypeScript, React và Ink.
-
-## Yêu cầu
-
-- Node.js 20 trở lên
-- npm
+Terminal coding agent bằng TypeScript, React và Ink.
 
 ## Cài đặt
 
+Yêu cầu Node.js 22 trở lên và npm.
+
 ```bat
 npm install --global pxhvibe
-```
-
-Gói cài đặt bao gồm OpenCode CLI. Sau khi cài một lần, khởi động PXHVibe từ
-terminal trong bất kỳ project nào bằng lệnh:
-
-```bat
 pxh
 ```
 
-Trong TUI, gõ `/modes` để mở menu chọn model/mode. Dùng phím mũi tên và Enter;
-không cần khởi động lại PXHVibe.
+PXHVibe chạy trong working directory hiện tại. Nên commit source trước khi giao
+tác vụ lớn vì Free mode có thể đọc, tạo và chỉnh sửa file.
 
-Lệnh dùng working directory của terminal đang mở. Mặc định PXHVibe dùng OpenCode
-CLI với model Zen miễn phí `opencode/mimo-v2.5-free`; không cần
-`OPENAI_API_KEY`.
+## Chọn mode
 
-### Chạy OpenCode Free
+Trong TUI, gõ:
 
-```bat
-pxh
+```text
+/models
 ```
 
-Có thể chọn model miễn phí khác đang có trong OpenCode:
+Dùng `↑`/`↓`, Enter để chọn và Esc để đóng. Các mode gồm:
+
+- Big Pickle Free và các cloud coding model miễn phí khác.
+- Custom API tương thích OpenAI Responses API.
+
+Tên model/runtime nội bộ không được hiển thị trong Header hoặc menu; giao diện chỉ
+hiển thị tên mode PXHVibe thân thiện.
+
+## Custom API
+
+Chọn `Custom API` trong `/models`, sau đó nhập:
+
+1. Base URL, ví dụ `https://example.com/v1`.
+2. Model ID của endpoint.
+3. API key.
+
+API key được che khi nhập, chỉ giữ trong bộ nhớ của process và không được ghi vào
+message, log hoặc file. Endpoint phải hỗ trợ OpenAI Responses API và function
+calling để coding tools hoạt động.
+
+Có thể cấu hình trước bằng biến môi trường:
 
 ```bat
-pxh
-```
-
-Sau đó gõ `/modes` và chọn `DeepSeek V4 Flash (Free)`.
-
-Hoặc đặt model mặc định cho PXHVibe:
-
-```bat
-set PXH_OPENCODE_MODEL=opencode/mimo-v2.5-free
-pxh
-```
-
-### Cấu hình Native Agent
-
-Trong Windows CMD:
-
-```bat
-set OPENAI_API_KEY=your_api_key
-set PXH_MODEL=gpt-5.6-terra
-pxh
-```
-
-`PXH_MODEL` là tùy chọn; mặc định là `gpt-5.6-terra`. Native Agent hiện có các tool
-`list_files`, `read_file`, `search_text`, `apply_patch` và `git_diff`. Các tool
-file bị giới hạn trong working directory hiện tại; MVP chưa cho model chạy shell
-command.
-
-Có thể chọn provider trực tiếp. Native Agent là tùy chọn và cần OpenAI API key:
-
-```bat
-pxh --provider=native
-pxh --provider=mock
-pxh --provider=opencode
-```
-
-## Chạy development
-
-### Chạy Native Agent
-
-```bat
-set OPENAI_API_KEY=your_api_key
-npm run dev -- --provider=native
-```
-
-### Chạy Mock
-
-```bat
-npm run dev -- --provider=mock
-```
-
-### Chạy OpenCode
-
-```bat
-opencode --version
-npm run dev -- --provider=opencode --model=opencode/mimo-v2.5-free
-```
-
-OpenCode phải được cài đặt và kết nối với OpenCode Zen trước. Provider `opencode`
-chạy agent `build` trong working directory hiện tại. Chế độ `--auto` có thể đọc,
-tạo và chỉnh sửa file trong project; nên commit source trước khi giao tác vụ lớn.
-
-## Build và chạy bản build
-
-```sh
-npm run build
-npm start
+set PXH_CUSTOM_BASE_URL=https://example.com/v1
+set PXH_CUSTOM_MODEL=your-model
+set PXH_CUSTOM_API_KEY=your-secret-key
+pxh --provider=custom
 ```
 
 ## Phím điều khiển
 
-- `Enter`: gửi prompt
-- `Backspace` hoặc `Delete`: xóa ký tự
-- `/modes`: mở menu chuyển model/mode
-- `Ctrl+C`: thoát ứng dụng
+- `Enter`: gửi prompt.
+- `Backspace` hoặc `Delete`: xóa ký tự.
+- `/models`: chọn model/mode.
+- `/help`: xem slash command hỗ trợ.
+- `Ctrl+C`: thoát.
 
-## Phát hành package
+Free request tự dừng sau 120 giây nếu cloud model không phản hồi. Có thể thay đổi
+bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
-Tên `pxhvibe` hiện chưa được sử dụng trên npm. Người duy trì có thể kiểm tra gói
-và phát hành bằng:
+## Development
 
 ```bat
+npm install
 npm run typecheck
 npm test
+npm run dev
+```
+
+## Phát hành
+
+```bat
 npm pack --dry-run
 npm publish
 ```
+
+## Attribution
+
+PXHVibe bundles the MIT-licensed `opencode-ai` runtime for its Free mode. This
+attribution is retained for license transparency; runtime branding is not exposed
+as part of the end-user TUI.

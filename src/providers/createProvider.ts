@@ -1,17 +1,16 @@
 import type {AIProvider} from './AIProvider.js';
-import {MockProvider} from './MockProvider.js';
-import {NativeAgentProvider} from './NativeAgentProvider.js';
+import {CustomAgentProvider, type CustomApiConfig} from './CustomAgentProvider.js';
 import {OpenCodeProvider} from './OpenCodeProvider.js';
 import {defaultOpenCodeModel} from './OpenCodeProvider.js';
 import type {ProviderName} from '../types/provider.js';
 
 export function parseProviderName(args: readonly string[]): ProviderName {
   const providerArgument = args.find((argument) => argument.startsWith('--provider='));
-  const providerName = providerArgument?.slice('--provider='.length) ?? 'opencode';
+  const providerName = providerArgument?.slice('--provider='.length) ?? 'free';
 
-  if (providerName !== 'mock' && providerName !== 'native' && providerName !== 'opencode') {
+  if (providerName !== 'free' && providerName !== 'custom') {
     throw new Error(
-      `Provider "${providerName}" không hợp lệ. Giá trị hợp lệ: native, mock, opencode.`,
+      `Mode "${providerName}" không hợp lệ. Giá trị hợp lệ: free, custom.`,
     );
   }
 
@@ -30,6 +29,23 @@ export function parseModelName(args: readonly string[]): string {
 }
 
 export function createProvider(providerName: ProviderName, model?: string): AIProvider {
-  if (providerName === 'opencode') return new OpenCodeProvider(model);
-  return providerName === 'native' ? new NativeAgentProvider() : new MockProvider();
+  if (providerName === 'free') return new OpenCodeProvider(model);
+  return createCustomProviderFromEnvironment();
+}
+
+export function createCustomProvider(config: CustomApiConfig): AIProvider {
+  return new CustomAgentProvider(config);
+}
+
+function createCustomProviderFromEnvironment(): AIProvider {
+  const baseURL = process.env.PXH_CUSTOM_BASE_URL;
+  const model = process.env.PXH_CUSTOM_MODEL;
+  if (baseURL === undefined || model === undefined) {
+    throw new Error('Custom API cần PXH_CUSTOM_BASE_URL và PXH_CUSTOM_MODEL.');
+  }
+  return new CustomAgentProvider({
+    baseURL,
+    model,
+    apiKey: process.env.PXH_CUSTOM_API_KEY ?? '',
+  });
 }

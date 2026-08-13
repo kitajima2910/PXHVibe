@@ -9,6 +9,7 @@ export interface PXHMode {
 }
 
 export const modes: readonly PXHMode[] = [
+  freeMode('pickle', 'Big Pickle', 'opencode/big-pickle'),
   freeMode('mimo', 'MiMo V2.5', 'opencode/mimo-v2.5-free'),
   freeMode('deepseek', 'DeepSeek V4 Flash', 'opencode/deepseek-v4-flash-free'),
   freeMode('nemotron', 'Nemotron 3 Ultra', 'opencode/nemotron-3-ultra-free'),
@@ -17,16 +18,10 @@ export const modes: readonly PXHMode[] = [
   freeMode('hy3', 'Hy3', 'opencode/hy3-free'),
   freeMode('ling', 'Ling 3.0 Tiny', 'opencode/ling-3.0-tiny-free'),
   {
-    id: 'native',
-    label: 'Native OpenAI',
-    description: 'Agent tích hợp trực tiếp, cần OPENAI_API_KEY.',
-    provider: 'native',
-  },
-  {
-    id: 'mock',
-    label: 'Mock',
-    description: 'Chế độ kiểm thử offline, không sửa file.',
-    provider: 'mock',
+    id: 'custom',
+    label: 'Custom API',
+    description: 'Base URL, model và API key riêng.',
+    provider: 'custom',
   },
 ];
 
@@ -34,8 +29,8 @@ function freeMode(id: string, label: string, model: string): PXHMode {
   return {
     id,
     label: `${label} (Free)`,
-    description: model,
-    provider: 'opencode',
+    description: 'Cloud coding agent miễn phí',
+    provider: 'free',
     model,
   };
 }

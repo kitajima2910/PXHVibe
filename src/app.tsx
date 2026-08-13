@@ -10,6 +10,9 @@ import type {AgentEvent} from './agent/types.js';
 import {ModePicker} from './components/ModePicker.js';
 import {modes, type PXHMode} from './modes.js';
 import {createProvider} from './providers/createProvider.js';
+import {createCustomProvider} from './providers/createProvider.js';
+import {CustomApiSetup} from './components/CustomApiSetup.js';
+import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -38,14 +41,36 @@ export function App({provider}: AppProps): React.JSX.Element {
   const [status, setStatus] = useState<AppStatus>('Ready');
   const [isBusy, setIsBusy] = useState(false);
   const [isModePickerOpen, setIsModePickerOpen] = useState(false);
+  const [isCustomSetupOpen, setIsCustomSetupOpen] = useState(false);
 
   const handleSubmit = async (content: string): Promise<void> => {
     if (isBusy) {
       return;
     }
 
-    if (content.toLowerCase() === '/modes') {
+    const command = content.toLowerCase();
+    if (command === '/models') {
       setIsModePickerOpen(true);
+      return;
+    }
+
+    if (command === '/help') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        content: 'Lệnh: /models — chọn model; /help — trợ giúp.',
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command.startsWith('/')) {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        content: `Lệnh không hợp lệ: ${content}. Gõ /help để xem danh sách lệnh.`,
+        createdAt: new Date(),
+      }]);
       return;
     }
 
@@ -126,6 +151,11 @@ export function App({provider}: AppProps): React.JSX.Element {
   };
 
   const handleModeSelect = (mode: PXHMode): void => {
+    if (mode.provider === 'custom') {
+      setIsModePickerOpen(false);
+      setIsCustomSetupOpen(true);
+      return;
+    }
     currentProvider.cancel();
     const nextProvider = createProvider(mode.provider, mode.model);
     setCurrentProvider(nextProvider);
@@ -139,6 +169,20 @@ export function App({provider}: AppProps): React.JSX.Element {
     }]);
   };
 
+  const handleCustomSetup = (config: CustomApiConfig): void => {
+    currentProvider.cancel();
+    const nextProvider = createCustomProvider(config);
+    setCurrentProvider(nextProvider);
+    setStatus('Ready');
+    setIsCustomSetupOpen(false);
+    setMessages((currentMessages) => [...currentMessages, {
+      id: createMessageId(),
+      role: 'system',
+      content: `Đã kết nối Custom API với model ${config.model}.`,
+      createdAt: new Date(),
+    }]);
+  };
+
   return (
     <Box flexDirection="column">
       <Header
@@ -147,7 +191,12 @@ export function App({provider}: AppProps): React.JSX.Element {
         status={status}
       />
       <MessageList messages={messages} />
-      {isModePickerOpen ? (
+      {isCustomSetupOpen ? (
+        <CustomApiSetup
+          onComplete={handleCustomSetup}
+          onCancel={() => setIsCustomSetupOpen(false)}
+        />
+      ) : isModePickerOpen ? (
         <ModePicker
           modes={modes}
           onSelect={handleModeSelect}

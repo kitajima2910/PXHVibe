@@ -7,15 +7,16 @@ import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.j
 import {stripAnsi} from '../utils/stripAnsi.js';
 
 const missingCliMessage =
-  'Không tìm thấy OpenCode CLI. Hãy cài đặt và đăng nhập OpenCode trước.';
-export const defaultOpenCodeModel = 'opencode/mimo-v2.5-free';
+  'Không tìm thấy PXHVibe Free runtime. Hãy cài đặt lại PXHVibe.';
+export const defaultOpenCodeModel = 'opencode/big-pickle';
+const defaultRequestTimeoutMs = 120_000;
 
 export class OpenCodeProvider implements AIProvider {
   readonly name: string;
   private activeProcess: ChildProcessWithoutNullStreams | undefined;
 
   constructor(private readonly model = defaultOpenCodeModel) {
-    this.name = `OpenCode Free (${model.split('/').at(-1) ?? model})`;
+    this.name = `Free · ${formatModelName(model)}`;
   }
 
   sendMessage(
@@ -23,7 +24,7 @@ export class OpenCodeProvider implements AIProvider {
     options: ProviderRequestOptions,
   ): Promise<ProviderResponse> {
     return new Promise((resolve, reject) => {
-      // --auto enables OpenCode to execute the coding task and modify project files.
+      // Automatic coding mode allows the selected agent to modify project files.
       const child = spawn(resolveOpenCodeExecutable(), [
         'run',
         '--pure',
@@ -43,8 +44,10 @@ export class OpenCodeProvider implements AIProvider {
       let stdout = '';
       let stderr = '';
       let settled = false;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
 
       const cleanup = (): void => {
+        if (timeout !== undefined) clearTimeout(timeout);
         if (this.activeProcess === child) {
           this.activeProcess = undefined;
         }
@@ -84,7 +87,7 @@ export class OpenCodeProvider implements AIProvider {
         cleanup();
 
         if (code !== 0) {
-          reject(new Error(cleanStderr || `OpenCode đã thoát với mã lỗi ${code ?? 'không xác định'}.`));
+          reject(new Error(cleanStderr || `Free mode đã thoát với mã lỗi ${code ?? 'không xác định'}.`));
           return;
         }
 
@@ -95,6 +98,14 @@ export class OpenCodeProvider implements AIProvider {
 
         resolve({content: cleanStdout});
       });
+
+      const timeoutMs = getRequestTimeoutMs();
+      timeout = setTimeout(() => {
+        child.kill();
+        fail(new Error(
+          `Free mode không phản hồi sau ${Math.round(timeoutMs / 1000)} giây. Hãy thử model khác bằng /models.`,
+        ));
+      }, timeoutMs);
     });
   }
 
@@ -108,6 +119,29 @@ export class OpenCodeProvider implements AIProvider {
       child.kill();
     }
   }
+}
+
+export function getRequestTimeoutMs(): number {
+  const configuredValue = process.env.PXH_REQUEST_TIMEOUT_MS;
+  if (configuredValue === undefined) return defaultRequestTimeoutMs;
+  const parsedValue = Number(configuredValue);
+  return Number.isFinite(parsedValue) && parsedValue >= 1_000
+    ? parsedValue
+    : defaultRequestTimeoutMs;
+}
+
+function formatModelName(model: string): string {
+  const names: Record<string, string> = {
+    'opencode/big-pickle': 'Big Pickle',
+    'opencode/mimo-v2.5-free': 'MiMo V2.5',
+    'opencode/deepseek-v4-flash-free': 'DeepSeek V4 Flash',
+    'opencode/nemotron-3-ultra-free': 'Nemotron 3 Ultra',
+    'opencode/nemotron-3.5-lightning-free': 'Nemotron 3.5 Lightning',
+    'opencode/laguna-s-2.1-free': 'Laguna S 2.1',
+    'opencode/hy3-free': 'Hy3',
+    'opencode/ling-3.0-tiny-free': 'Ling 3.0 Tiny',
+  };
+  return names[model] ?? (model.split('/').at(-1) ?? model);
 }
 
 export function resolveOpenCodeExecutable(): string {

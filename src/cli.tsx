@@ -9,7 +9,7 @@ try {
   const providerName = parseProviderName(args);
   const provider = createProvider(
     providerName,
-    providerName === 'opencode' ? parseModelName(args) : undefined,
+    providerName === 'free' ? parseModelName(args) : undefined,
   );
   render(<App provider={provider} />);
 } catch (error: unknown) {
