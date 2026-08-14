@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
+import {TodoStrip, type TodoItem} from './components/TodoStrip.js';
 import {MessageList} from './components/MessageList.js';
 import {PromptInput} from './components/PromptInput.js';
 import type {AIProvider} from './providers/AIProvider.js';
@@ -127,6 +128,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [lastActivityAt, setLastActivityAt] = useState<number>();
   const [activityLabel, setActivityLabel] = useState('Đang khởi động worker...');
   const [phaseLabel, setPhaseLabel] = useState('khởi động');
+  const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
   const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
   const autoResumeStartedRef = useRef(false);
   const contextUsage = getContextUsage(messages);
@@ -318,6 +320,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       resumeSessionRef.current = undefined;
       setRuntimeSession(undefined);
       setLastPipeline(undefined);
+      setStickyTasks([]);
       setMessages([initialMessage]);
       setStatus('Ready');
       return;
@@ -442,6 +445,11 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     const resumeSession = pendingResumeSession;
     resumeSessionRef.current = undefined;
     setLastPipeline(pipeline);
+    setStickyTasks(pipeline.tasks.map((task, index) => ({
+      id: `${index}-${task.phase}`,
+      label: task.phase.toUpperCase(),
+      status: 'pending',
+    })));
     const requestImages = pendingImages;
     setPendingImages([]);
     const message: Message = {
@@ -528,6 +536,15 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       setLastActivityAt(Date.now());
       setPhaseLabel(`${event.phase.toUpperCase()} ${phaseIndex + 1}/${pipeline.tasks.length}`);
       setActivityLabel(event.message);
+      setStickyTasks((current) => current.map((task, index) => {
+        if (index !== phaseIndex) return task;
+        const nextStatus = event.type === 'phase_pass' || event.type === 'checkpoint'
+          ? 'pass'
+          : event.type === 'phase_fail'
+            ? 'fail'
+            : 'running';
+        return {...task, status: nextStatus};
+      }));
       const prefix = event.type === 'phase_pass' ? '✓'
         : event.type === 'phase_fail' ? '✖'
           : event.type === 'phase_retry' ? '↻'
@@ -562,6 +579,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       const storedSession = await new SessionStore(workingDirectory).load();
       if (storedSession !== undefined) setRuntimeSession(storedSession);
       if (isCancellationError(error)) {
+        setStickyTasks((current) => current.map((task) => task.status === 'running' ? {...task, status: 'cancelled'} : task));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
@@ -659,7 +677,14 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         contextPercent={contextUsage.percent}
         contextCompacted={contextUsage.compacted}
       />
-      <MessageList messages={messages} />
+      <Box flexDirection="row" flexBasis={0} flexGrow={1} minHeight={0}>
+        <Box flexDirection="column" flexBasis={0} flexGrow={4} minWidth={0}>
+          <MessageList messages={messages} />
+        </Box>
+        <Box flexDirection="column" flexBasis={0} flexGrow={1} minWidth={20}>
+          <TodoStrip tasks={stickyTasks} />
+        </Box>
+      </Box>
       {isAgentPickerOpen ? (
         <AgentPicker
           agents={availableAgents}

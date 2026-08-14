@@ -1,5 +1,79 @@
 # STATUS
 
+## Cập nhật v0.9.0: Body 80/20 và sidebar MCP-ready
+
+### Đã thay đổi gì
+
+- Chuyển body thành hai cột: history flex 4 (~80%), sidebar flex 1 (~20%).
+- Input, footer, banner và header vẫn full-width.
+- Task list chuyển từ thanh ngang sang danh sách dọc, không chiếm thêm chiều cao vùng history.
+- Sidebar có chiều rộng tối thiểu 20 cột để nhãn task không vỡ trên terminal hẹp.
+- Thêm section `MCP` dự phòng với trạng thái `Chưa cấu hình`.
+- Sidebar luôn tồn tại; trước TARGET hiển thị `Chưa có pipeline`.
+- Điều chỉnh TUI regression để phù hợp viewport hai cột.
+- Nâng version lên `v0.9.0`.
+
+### File đã sửa
+
+- `src/app.tsx`
+- `src/components/TodoStrip.tsx`
+- `src/tests/todoStrip.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 17 nhóm test.
+- Sidebar regression xác nhận task states, empty pipeline và MCP placeholder đều render đúng.
+- Slash-command regression xác nhận commands và pipeline hoạt động trong viewport hai cột.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.9.0`.
+- Global install: `pxhvibe@0.9.0`; `pxh.cmd --version` trả `PXHVibe v0.9.0`.
+
+### Vấn đề còn lại
+
+- MCP section mới là layout/status placeholder; chưa kết nối MCP runtime trong TARGET này.
+
+## Cập nhật v0.8.0: Sticky pipeline task rail
+
+### Đã thay đổi gì
+
+- Thêm task rail cố định ngay dưới header, nằm ngoài vùng history có scroll.
+- Hiển thị toàn bộ phase của pipeline và bộ đếm `đã hoàn tất/tổng số`.
+- Trạng thái dùng event thật: `○ pending`, `● running`, `✓ pass`, `✖ fail`, `■ cancelled`.
+- Task hoàn tất được gạch ngang/làm mờ; task hiện tại tô vàng và in đậm.
+- Danh sách tự wrap trên terminal hẹp và vẫn giữ lại sau khi pipeline hoàn thành.
+- `/new` xóa task rail để bắt đầu session sạch.
+- Sửa slash-command regression dùng condition polling thay vì timeout cố định.
+- Nâng version lên `v0.8.0`.
+
+### File đã tạo hoặc sửa
+
+- `src/components/TodoStrip.tsx`
+- `src/app.tsx`
+- `src/tests/todoStrip.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 17 nhóm test.
+- Sticky todo regression xác nhận `1/3 hoàn tất` và đủ ký hiệu pass/running/pending.
+- Slash-command regression xác nhận pipeline vẫn chạy đủ phase sau khi thêm sticky rail.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.8.0`.
+- Global install: `pxhvibe@0.8.0`; `pxh.cmd --version` trả `PXHVibe v0.8.0`.
+
+### Vấn đề còn lại
+
+- Task rail thể hiện phase cấp cao của workflow; các tool call nhỏ vẫn nằm trong live activity/history để tránh danh sách quá dài.
+
 ## Cập nhật v0.7.0: Live activity và cảnh báo treo
 
 ### Đã thay đổi gì

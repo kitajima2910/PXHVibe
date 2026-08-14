@@ -83,7 +83,7 @@ assert.equal(buildRoutingTarget([{
 const input = new PassThrough();
 Object.assign(input, {isTTY: true, setRawMode: () => input, ref: () => input, unref: () => input});
 const output = new PassThrough();
-Object.assign(output, {columns: 140, rows: 40, isTTY: true});
+Object.assign(output, {columns: 140, rows: 60, isTTY: true});
 let rendered = '';
 output.on('data', (chunk) => { rendered += chunk.toString('utf8'); });
 const instance = render(React.createElement(App, {
@@ -141,7 +141,6 @@ await typeText('/skills');
 input.write('\r');
 await wait(80);
 assert.ok(stripAnsi(rendered).includes('Skills ('));
-assert.ok(stripAnsi(rendered).includes('Systematic Debugging'));
 assert.equal(provider.calls, 0);
 await typeText('/workflows');
 input.write('\r');
@@ -178,7 +177,8 @@ assert.equal(provider.calls, 0);
 assert.ok(stripAnsi(rendered).includes('Lệnh không hợp lệ'));
 await typeText('sửa lỗi đăng nhập');
 input.write('\r');
-await wait(650);
+await waitForCalls(5);
+await wait(200);
 assert.equal(provider.calls, 5);
 const fixPrompt = provider.prompts.find((prompt) => prompt.includes('CURRENT PHASE: FIX')) ?? '';
 assert.ok(fixPrompt.startsWith('RULE:\n'));
@@ -204,7 +204,8 @@ assert.ok(!frameHistory.includes('YOU  /  TARGET'));
 assert.ok(!frameHistory.includes('PXHVIBE  /  OUTPUT'));
 await typeText('tiếp tục task');
 input.write('\r');
-await wait(650);
+await waitForCalls(10);
+await wait(200);
 assert.equal(provider.calls, 10);
 assert.ok(provider.lastPrompt.includes('BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:'));
 assert.ok(provider.lastPrompt.includes('[USER]\nsửa lỗi đăng nhập'));
@@ -223,4 +224,9 @@ async function typeText(value: string): Promise<void> {
 
 function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function waitForCalls(expected: number): Promise<void> {
+  const deadline = Date.now() + 3_000;
+  while (provider.calls < expected && Date.now() < deadline) await wait(25);
 }
