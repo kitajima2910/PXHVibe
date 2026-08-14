@@ -14,6 +14,7 @@ import {
   createPastePreview,
   createInputViewport,
   composePromptInput,
+  formatElapsed,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
 import {collapsePastedBlocksForDisplay, countDisplayLines} from '../utils/pastedText.js';
@@ -39,6 +40,7 @@ assert.equal(isNewlineShortcut('\r', {return: true, shift: false, meta: true}), 
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false, ctrl: true}), true);
 assert.equal(moveCursorVertically(25, 100, 20, -1), 5);
 assert.equal(moveCursorVertically(25, 100, 20, 1), 45);
+assert.equal(formatElapsed(192), '03:12');
 assert.equal(getCursorIndexFromPoint(14, 6, {x: 10, y: 5, width: 20, height: 2}, 80), 24);
 assert.equal(getCursorIndexFromPoint(2, 2, {x: 10, y: 5, width: 20, height: 2}, 80), undefined);
 assert.equal(shouldCollapsePaste('one\ntwo\nthree\nfour'), true);
@@ -147,6 +149,10 @@ const busyEditor = render(React.createElement(PromptInput, {
   attachments: [],
   onPasteImage: () => undefined,
   onRemoveLastImage: () => undefined,
+  busyStartedAt: Date.now() - 192_000,
+  lastActivityAt: Date.now() - 181_000,
+  activityLabel: 'Đang chờ model phản hồi...',
+  phaseLabel: 'CODE 3/8',
 }), {
   stdin: busyInput as unknown as NodeJS.ReadStream,
   stdout: busyOutput as unknown as NodeJS.WriteStream,
@@ -155,6 +161,9 @@ const busyEditor = render(React.createElement(PromptInput, {
   exitOnCtrlC: false,
 });
 await new Promise((resolve) => setTimeout(resolve, 30));
+assert.match(stripAnsi(busyFrame), /AGENT WORKING · 03:12/);
+assert.match(stripAnsi(busyFrame), /CODE 3\/8/);
+assert.match(stripAnsi(busyFrame), /Không có sự kiện mới 03:01/);
 busyInput.write('\x1b');
 await new Promise((resolve) => setTimeout(resolve, 40));
 assert.match(stripAnsi(busyFrame), /Nhấn ESC lần nữa để hủy task/);

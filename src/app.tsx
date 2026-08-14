@@ -123,6 +123,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [isCheckingModelHealth, setIsCheckingModelHealth] = useState(false);
   const [lastPipeline, setLastPipeline] = useState<PreparedPipeline>();
   const [runtimeSession, setRuntimeSession] = useState<RuntimeSession>();
+  const [busyStartedAt, setBusyStartedAt] = useState<number>();
+  const [lastActivityAt, setLastActivityAt] = useState<number>();
+  const [activityLabel, setActivityLabel] = useState('Đang khởi động worker...');
+  const [phaseLabel, setPhaseLabel] = useState('khởi động');
   const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
   const autoResumeStartedRef = useRef(false);
   const contextUsage = getContextUsage(messages);
@@ -460,6 +464,11 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }]);
     setIsBusy(true);
     setStatus('Thinking...');
+    const startedAt = Date.now();
+    setBusyStartedAt(startedAt);
+    setLastActivityAt(startedAt);
+    setActivityLabel('Đang chuẩn bị context và pipeline...');
+    setPhaseLabel(`phase 1/${pipeline.tasks.length}`);
     const responseMessageId = createMessageId();
 
     const appendAssistantContent = (nextContent: string): void => {
@@ -486,11 +495,13 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     };
 
     const handleAgentEvent = (event: AgentEvent): void => {
+      setLastActivityAt(Date.now());
       if (event.type === 'text_delta') {
         return;
       }
 
       if (event.type === 'activity') {
+        setActivityLabel(sanitizeOutputBranding(event.content));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
@@ -503,6 +514,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       const activity = event.type === 'tool_start'
         ? `Đang chạy ${event.toolName}...`
         : `${event.toolName}: ${event.summary}`;
+      setActivityLabel(sanitizeOutputBranding(activity));
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
@@ -512,6 +524,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     };
 
     const handleTeamEvent = (event: TeamRunnerEvent): void => {
+      const phaseIndex = Math.max(0, pipeline.tasks.findIndex((task) => task.phase === event.phase));
+      setLastActivityAt(Date.now());
+      setPhaseLabel(`${event.phase.toUpperCase()} ${phaseIndex + 1}/${pipeline.tasks.length}`);
+      setActivityLabel(event.message);
       const prefix = event.type === 'phase_pass' ? '✓'
         : event.type === 'phase_fail' ? '✖'
           : event.type === 'phase_retry' ? '↻'
@@ -675,6 +691,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           attachments={pendingImages}
           onPasteImage={() => void handlePasteImage()}
           onRemoveLastImage={handleRemoveLastImage}
+          {...(busyStartedAt === undefined ? {} : {busyStartedAt})}
+          {...(lastActivityAt === undefined ? {} : {lastActivityAt})}
+          activityLabel={activityLabel}
+          phaseLabel={phaseLabel}
         />
       )}
       <Footer />

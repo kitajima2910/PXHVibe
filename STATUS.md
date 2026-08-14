@@ -1,5 +1,39 @@
 # STATUS
 
+## Cập nhật v0.7.0: Live activity và cảnh báo treo
+
+### Đã thay đổi gì
+
+- Compose box hiển thị tổng thời gian agent đã chạy.
+- Hiển thị phase và tiến độ hiện tại, ví dụ `CODE 3/8`.
+- Hiển thị activity thật gần nhất từ provider: phân tích, tool, terminal, chỉnh sửa hoặc checkpoint.
+- Sau 60 giây không có event mới, hiển thị thời gian đang chờ model/runtime.
+- Sau 180 giây im lặng, cảnh báo chuyển đỏ; giữ `Esc×2` để hủy an toàn.
+- Không tạo thêm message heartbeat nên lịch sử TUI không bị spam.
+- Nâng version lên `v0.7.0`.
+
+### File đã sửa
+
+- `src/app.tsx`
+- `src/components/PromptInput.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 16 nhóm test.
+- TUI regression xác nhận elapsed `03:12`, phase `CODE 3/8` và cảnh báo đỏ sau `03:01` không có event.
+- `npm pack --dry-run --json`: tạo metadata `pxhvibe@0.7.0`, 336 entry.
+- Global install: `pxhvibe@0.7.0`; `pxh.cmd --version` trả `PXHVibe v0.7.0`.
+
+### Vấn đề còn lại
+
+- TUI chỉ có thể chứng minh activity khi provider phát event; khoảng im lặng có thể là model đang suy luận hoặc runtime bị chậm, vì vậy giao diện báo đúng là “đang chờ” thay vì khẳng định giả rằng vẫn đang xử lý.
+
 ## Cập nhật v0.6.0: Context meter và auto-resume
 
 ### Đã thay đổi gì

@@ -13,14 +13,19 @@ interface PromptInputProps {
   attachments: readonly ImageAttachment[];
   onPasteImage: () => void;
   onRemoveLastImage: () => void;
+  busyStartedAt?: number;
+  lastActivityAt?: number;
+  activityLabel?: string;
+  phaseLabel?: string;
 }
 
-export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage}: PromptInputProps): React.JSX.Element {
+export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage, busyStartedAt, lastActivityAt, activityLabel, phaseLabel}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [cursorIndex, setCursorIndex] = useState(0);
   const [pastedBlocks, setPastedBlocks] = useState<string[]>([]);
   const [spinnerIndex, setSpinnerIndex] = useState(0);
   const [cancelArmed, setCancelArmed] = useState(false);
+  const [clockNow, setClockNow] = useState(Date.now());
   const {exit} = useApp();
   const {stdout} = useStdout();
   const editorRef = useRef<DOMElement>(null);
@@ -36,6 +41,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
     }
     const timer = setInterval(() => {
       setSpinnerIndex((current) => (current + 1) % processingFrames.length);
+      setClockNow(Date.now());
     }, 120);
     return () => clearInterval(timer);
   }, [isBusy]);
@@ -205,13 +211,22 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
     }
   });
 
+  const elapsedSeconds = isBusy && busyStartedAt !== undefined
+    ? Math.max(0, Math.floor((clockNow - busyStartedAt) / 1_000))
+    : 0;
+  const idleSeconds = isBusy && lastActivityAt !== undefined
+    ? Math.max(0, Math.floor((clockNow - lastActivityAt) / 1_000))
+    : 0;
+  const isStalled = idleSeconds >= 60;
+  const isVeryStalled = idleSeconds >= 180;
+
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
       <Box justifyContent="space-between">
         <Text bold color={isBusy ? 'yellow' : 'green'}>
-          {isBusy ? 'AGENT WORKING' : 'NEW TARGET'}
+          {isBusy ? `AGENT WORKING · ${formatElapsed(elapsedSeconds)}` : 'NEW TARGET'}
         </Text>
-        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa' : 'Esc×2 hủy') : 'build mode'}</Text>
+        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa' : `${phaseLabel ?? 'khởi động'} · Esc×2 hủy`) : 'build mode'}</Text>
       </Box>
       {attachments.length > 0 && (
         <Box marginBottom={1}>
@@ -228,10 +243,11 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
           {pastedBlocks.length > 3 && <Text dimColor>+{pastedBlocks.length - 3} clipboard cũ</Text>}
         </Box>
       )}
-      <Box>
+      <Box flexDirection="column">
+        <Box>
         <Text bold color="cyan">❯ </Text>
         {isBusy ? (
-          <Text color="yellow">{cancelArmed ? 'Nhấn ESC lần nữa để hủy task.' : `${processingFrames[spinnerIndex]} đang phân tích và triển khai...`}</Text>
+          <Text color={isVeryStalled ? 'red' : 'yellow'}>{cancelArmed ? 'Nhấn ESC lần nữa để hủy task.' : `${processingFrames[spinnerIndex]} ${activityLabel ?? 'Đang khởi động worker...'}`}</Text>
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (
@@ -253,12 +269,25 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
             )}
           </Box>
         )}
+        </Box>
+        {isBusy && isStalled && !cancelArmed && (
+          <Text color={isVeryStalled ? 'red' : 'yellow'}>
+            {isVeryStalled ? '⚠' : '·'} Không có sự kiện mới {formatElapsed(idleSeconds)} · đang chờ model/runtime; Esc×2 để hủy an toàn.
+          </Text>
+        )}
       </Box>
     </Box>
   );
 }
 
 const processingFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+export function formatElapsed(totalSeconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
 
 export function isPasteShortcut(
   input: string,
