@@ -15,6 +15,7 @@ import {
   createInputViewport,
   composePromptInput,
   formatElapsed,
+  isSlashCommandInput,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
 import {collapsePastedBlocksForDisplay, countDisplayLines} from '../utils/pastedText.js';
@@ -38,6 +39,8 @@ assert.equal(isNewlineShortcut('[27;2;13~', {return: false, shift: false}), true
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false}), false);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false, meta: true}), true);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false, ctrl: true}), true);
+assert.equal(isSlashCommandInput('/models'), true);
+assert.equal(isSlashCommandInput('/models extra'), false);
 assert.equal(moveCursorVertically(25, 100, 20, -1), 5);
 assert.equal(moveCursorVertically(25, 100, 20, 1), 45);
 assert.equal(formatElapsed(192), '03:12');
@@ -128,6 +131,44 @@ editorInput.write('\x03');
 await new Promise((resolve) => setTimeout(resolve, 20));
 assert.equal(exitRequested, true);
 editor.unmount();
+
+const commandInput = new PassThrough();
+Object.assign(commandInput, {
+  isTTY: true,
+  setRawMode: () => commandInput,
+  ref: () => commandInput,
+  unref: () => commandInput,
+});
+const commandOutput = new PassThrough();
+Object.assign(commandOutput, {columns: 100, rows: 20, isTTY: true});
+let command = '';
+let preservedDraft: import('../components/PromptInput.js').PromptDraft | undefined;
+const commandEditor = render(React.createElement(PromptInput, {
+  onSubmit: (value, draft) => { command = value; preservedDraft = draft; },
+  onCancel: () => undefined,
+  onExit: () => undefined,
+  isBusy: false,
+  attachments: [],
+  onPasteImage: () => undefined,
+  onRemoveLastImage: () => undefined,
+}), {
+  stdin: commandInput as unknown as NodeJS.ReadStream,
+  stdout: commandOutput as unknown as NodeJS.WriteStream,
+  stderr: commandOutput as unknown as NodeJS.WriteStream,
+  debug: true,
+  exitOnCtrlC: false,
+});
+commandInput.write('\x1b[200~line one\nline two\nline three\nline four\x1b[201~');
+await new Promise((resolve) => setTimeout(resolve, 30));
+for (const character of '/models') {
+  commandInput.write(character);
+  await new Promise((resolve) => setTimeout(resolve, 3));
+}
+commandInput.write('\r');
+await new Promise((resolve) => setTimeout(resolve, 40));
+assert.equal(command, '/models');
+assert.deepEqual(preservedDraft?.pastedBlocks, ['line one\nline two\nline three\nline four']);
+commandEditor.unmount();
 
 const busyInput = new PassThrough();
 Object.assign(busyInput, {

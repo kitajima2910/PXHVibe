@@ -4,7 +4,7 @@ import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
 import {TodoStrip, type TodoItem} from './components/TodoStrip.js';
 import {MessageList} from './components/MessageList.js';
-import {PromptInput} from './components/PromptInput.js';
+import {PromptInput, type PromptDraft} from './components/PromptInput.js';
 import type {AIProvider} from './providers/AIProvider.js';
 import type {Message} from './types/message.js';
 import type {AgentEvent} from './agent/types.js';
@@ -131,6 +131,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
   const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
   const autoResumeStartedRef = useRef(false);
+  const promptDraftRef = useRef<PromptDraft | undefined>(undefined);
   const contextUsage = getContextUsage(messages);
 
   const refreshModelHealth = async (): Promise<void> => {
@@ -317,6 +318,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
 
     if (command === '/new') {
+      promptDraftRef.current = undefined;
       resumeSessionRef.current = undefined;
       setRuntimeSession(undefined);
       setLastPipeline(undefined);
@@ -411,6 +413,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
 
     if (command === '/clear') {
+      promptDraftRef.current = undefined;
       setMessages([initialMessage]);
       return;
     }
@@ -706,7 +709,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         />
       ) : (
         <PromptInput
-          onSubmit={(content) => void handleSubmit(content)}
+          onSubmit={(content, preservedDraft) => {
+            promptDraftRef.current = preservedDraft;
+            void handleSubmit(content);
+          }}
           onCancel={() => currentProvider.cancel()}
           onExit={() => {
             currentProvider.cancel();
@@ -720,6 +726,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           {...(lastActivityAt === undefined ? {} : {lastActivityAt})}
           activityLabel={activityLabel}
           phaseLabel={phaseLabel}
+          {...(promptDraftRef.current === undefined ? {} : {initialDraft: promptDraftRef.current})}
         />
       )}
       <Footer />

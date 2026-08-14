@@ -1,5 +1,48 @@
 # STATUS
 
+## Cập nhật v0.11.0: Giữ pasted draft khi dùng `/models`
+
+### Nguyên nhân gốc
+
+- Prompt dài được giữ trong `pastedBlocks`, còn `/models` nằm trong editable input.
+- Khi Enter, compose cũ ghép hai phần thành `/models + [PASTED BLOCK]` trước khi gửi lên App.
+- App không nhận diện được command vì content không còn bằng `/models`, nên route toàn bộ thành TARGET và render block dài vào history.
+- Mode picker thay thế PromptInput trong cây React, làm state local của draft mất khi component unmount.
+
+### Đã thay đổi gì
+
+- Nhận diện slash command ngay trong PromptInput trước bước compose TARGET.
+- Gửi riêng command, tuyệt đối không ghép pasted blocks vào command.
+- Snapshot draft vào App ref trước khi mở picker và restore khi PromptInput mount lại.
+- Giữ draft qua `/models`, `/agents` và các command kiểm tra; `/new`, `/clear` xóa draft có chủ ý.
+- Thêm regression mô phỏng bracketed paste → `/models` → đóng picker → draft vẫn hiện `~X dòng`.
+- Thêm unit regression xác nhận callback nhận riêng `/models` và pasted block nguyên vẹn.
+- Nâng version lên `v0.11.0`.
+
+### File đã sửa
+
+- `src/components/PromptInput.tsx`
+- `src/app.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 17 nhóm test.
+- Input regression xác nhận `/models` được gửi riêng và pasted block được snapshot nguyên vẹn.
+- App regression xác nhận model picker mở với provider call bằng 0; đóng picker thì `~4 dòng` vẫn còn.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.11.0`.
+- Global install: `pxhvibe@0.11.0`; `pxh.cmd --version` trả `PXHVibe v0.11.0`.
+
+### Vấn đề còn lại
+
+- Draft hiện được giữ trong bộ nhớ của TUI khi mở picker; nếu process bị kill trước khi gửi TARGET, draft chưa được persist xuống disk.
+
 ## Cập nhật v0.10.0: Sửa `spawn ENAMETOOLONG` cho prompt dài
 
 ### Nguyên nhân gốc

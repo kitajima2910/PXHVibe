@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.10.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.11.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +104,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.10.0
+### Capability pack v0.11.0
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
@@ -169,6 +169,10 @@ Phần `MCP` đã được dành sẵn dưới task list. Bản hiện tại hi�
 Prompt không còn được đặt trong command-line arguments. PXHVibe chỉ truyền flags/model/file paths qua argv và pipe toàn bộ prompt UTF-8 qua stdin của free runtime. Vì vậy prompt dài được paste từ ChatGPT không chạm giới hạn command line Windows và không còn làm phase cuối lỗi `spawn ENAMETOOLONG`.
 
 Phase prompt vẫn có context budget 64.000 ký tự để bảo vệ giới hạn model; khi vượt budget, PXHVibe giữ rules/identity ở đầu và TARGET/handoff mới nhất ở cuối. Nếu một runtime khác vẫn trả `ENAMETOOLONG`, lỗi được checkpoint ngay và không retry nguyên payload ba lần.
+
+### Slash command không làm mất draft
+
+Slash command được tách khỏi pasted blocks trong compose. Ví dụ sau khi paste một prompt dài, gõ `/models` chỉ mở model picker; prompt không bị gửi nhầm thành TARGET và vẫn còn nguyên khi đóng/chọn model. Cơ chế này cũng áp dụng cho các command khác; `/new` và `/clear` chủ động xóa draft theo đúng ngữ nghĩa tạo phiên sạch.
 
 ## Development
 

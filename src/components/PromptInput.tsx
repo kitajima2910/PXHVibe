@@ -5,8 +5,14 @@ import {ImageThumbnail} from './ImageThumbnail.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
 import {countDisplayLines, countTextLines} from '../utils/pastedText.js';
 
+export interface PromptDraft {
+  value: string;
+  cursorIndex: number;
+  pastedBlocks: string[];
+}
+
 interface PromptInputProps {
-  onSubmit: (value: string) => void;
+  onSubmit: (value: string, preservedDraft?: PromptDraft) => void;
   onCancel: () => void;
   onExit: () => void;
   isBusy: boolean;
@@ -17,12 +23,13 @@ interface PromptInputProps {
   lastActivityAt?: number;
   activityLabel?: string;
   phaseLabel?: string;
+  initialDraft?: PromptDraft;
 }
 
-export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage, busyStartedAt, lastActivityAt, activityLabel, phaseLabel}: PromptInputProps): React.JSX.Element {
-  const [value, setValue] = useState('');
-  const [cursorIndex, setCursorIndex] = useState(0);
-  const [pastedBlocks, setPastedBlocks] = useState<string[]>([]);
+export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage, busyStartedAt, lastActivityAt, activityLabel, phaseLabel, initialDraft}: PromptInputProps): React.JSX.Element {
+  const [value, setValue] = useState(initialDraft?.value ?? '');
+  const [cursorIndex, setCursorIndex] = useState(initialDraft?.cursorIndex ?? 0);
+  const [pastedBlocks, setPastedBlocks] = useState<string[]>(initialDraft?.pastedBlocks ?? []);
   const [spinnerIndex, setSpinnerIndex] = useState(0);
   const [cancelArmed, setCancelArmed] = useState(false);
   const [clockNow, setClockNow] = useState(Date.now());
@@ -136,6 +143,16 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         onPasteImage();
         setValue('');
         setCursorIndex(0);
+        return;
+      }
+      if (isSlashCommandInput(editablePrompt)) {
+        const shouldPreserveDraft = !['/new', '/clear'].includes(editablePrompt.toLowerCase());
+        onSubmit(editablePrompt, shouldPreserveDraft
+          ? {value: '', cursorIndex: 0, pastedBlocks: [...pastedBlocks]}
+          : undefined);
+        setValue('');
+        setCursorIndex(0);
+        if (!shouldPreserveDraft) setPastedBlocks([]);
         return;
       }
       const prompt = composePromptInput(editablePrompt, pastedBlocks);
@@ -431,4 +448,8 @@ export function composePromptInput(value: string, pastedBlocks: readonly string[
   const parts = [value, ...pastedBlocks.map((block, index) => `[PASTED BLOCK ${index + 1}]\n${block}`)]
     .filter((part) => part.trim().length > 0);
   return parts.join('\n\n');
+}
+
+export function isSlashCommandInput(value: string): boolean {
+  return /^\/[a-z][a-z-]*$/i.test(value.trim());
 }
