@@ -15,7 +15,7 @@ import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {buildAgentPrompt} from './utils/agentPrompt.js';
 import {Banner} from './components/Banner.js';
-import {agents, getAgent, routeAgent, type PXHAgent} from './agents.js';
+import {agents, getAgent, mergeAgentCatalog, routeAgent, type PXHAgent} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
 import type {ImageAttachment} from './types/attachment.js';
@@ -27,7 +27,6 @@ import {discoverOrchestration} from './orchestration/discovery.js';
 import {routeOrchestration} from './orchestration/router.js';
 import type {OrchestrationCatalog} from './orchestration/types.js';
 import {preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
-import {builtinSkills, builtinWorkflows} from './orchestration/builtins.js';
 import {appVersion} from './version.js';
 
 const initialMessage: Message = {
@@ -116,7 +115,11 @@ export function buildRoutingTarget(messages: readonly Message[], currentTarget: 
 export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
   const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(process.cwd()));
-  const availableAgents = [...agents, ...catalog.agents];
+  const availableAgents = mergeAgentCatalog(agents, catalog.agents);
+  const bundledAgentCount = catalog.agents.filter((agent) => !agent.id.startsWith('project:')).length;
+  const bundledSkillCount = catalog.skills.filter((skill) => skill.origin === 'bundled').length;
+  const bundledWorkflowCount = catalog.workflows.filter((workflow) => workflow.origin === 'bundled').length;
+  const projectAgentCount = catalog.agents.filter((agent) => agent.id.startsWith('project:')).length;
   const [currentProvider, setCurrentProvider] = useState(provider);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [status, setStatus] = useState<AppStatus>('Ready');
@@ -252,7 +255,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     if (command === '/status') {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system',
-        content: `PXHVibe v${appVersion} · ${agents.length} agents · 4 tiers · ${builtinWorkflows.length} workflows · ${builtinSkills.length} skills · 6 contracts${catalog.agents.length === 0 ? '' : ` · +${catalog.agents.length} project agents`}`,
+        content: `PXHVibe v${appVersion} · ${bundledAgentCount} agents · 4 tiers · ${bundledWorkflowCount} workflows · ${bundledSkillCount} skills · 6 contracts${projectAgentCount === 0 ? '' : ` · +${projectAgentCount} project agents`}`,
         createdAt: new Date(),
       }]);
       return;
@@ -270,7 +273,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
 
     if (command === '/validate') {
-      const errors = validateCapabilityPack(agents.length, builtinWorkflows.length, builtinSkills.length);
+      const errors = validateCapabilityPack(bundledAgentCount, bundledWorkflowCount, bundledSkillCount);
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system', ...(errors.length === 0 ? {} : {tone: 'error' as const}),
         content: errors.length === 0 ? 'Capability pack hợp lệ · 10 agents · 4 tiers · 8 workflows · 50 skills · 6 contracts.' : errors.join(' '),

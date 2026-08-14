@@ -2,15 +2,17 @@ import assert from 'node:assert/strict';
 import {mkdtemp, mkdir, rm, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {discoverOrchestration} from '../orchestration/discovery.js';
+import {discoverOrchestration, resolveBundledResourcesRoot} from '../orchestration/discovery.js';
 import {routeOrchestration} from '../orchestration/router.js';
 import {buildAgentPrompt} from '../utils/agentPrompt.js';
-import {agents, routeAgent} from '../agents.js';
+import {agents, mergeAgentCatalog, routeAgent} from '../agents.js';
 import {builtinSkills, builtinWorkflows} from '../orchestration/builtins.js';
+import {preparePipeline} from '../orchestration/pipeline.js';
 
 assert.equal(agents.length, 10);
 assert.equal(builtinSkills.length, 50);
 assert.equal(builtinWorkflows.length, 8);
+assert.match(resolveBundledResourcesRoot(), /resources$/);
 
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-orchestration-'));
 try {
@@ -52,7 +54,33 @@ Không chỉnh migration đã chạy production.
   assert.ok(catalog.agents.some((agent) => agent.id === 'project:database-specialist'));
   assert.equal(catalog.skills.length, 51);
   assert.equal(catalog.workflows.length, 9);
+  assert.equal(catalog.agents.length, 11);
   assert.ok(catalog.skills.some((skill) => skill.id === 'process-systematic-debugging'));
+  const bundledGameSkill = catalog.skills.find((skill) => skill.id === 'games-2d');
+  assert.equal(bundledGameSkill?.origin, 'bundled');
+  assert.ok((bundledGameSkill?.instructions.length ?? 0) > 1_000);
+  assert.match(bundledGameSkill?.source ?? '', /resources[\\/]skills[\\/]games-2d[\\/]SKILL\.md$/);
+  assert.match(bundledGameSkill?.instructions ?? '', /REFERENCED RESOURCE: skills[\\/]games-2d[\\/]game-h5-2d\.md/);
+  const bundledExpert = catalog.agents.find((agent) => agent.id === 'expert');
+  assert.ok((bundledExpert?.instruction.length ?? 0) > 1_000);
+  assert.match(bundledExpert?.instruction ?? '', /SKILL INTEGRATION/);
+  const bundledDebugWorkflow = catalog.workflows.find((workflow) => workflow.id === 'debug');
+  assert.equal(bundledDebugWorkflow?.origin, 'bundled');
+  assert.ok((bundledDebugWorkflow?.instructions.length ?? 0) > 1_000);
+
+  const gameTarget = 'Tạo game HTML5 có player, enemies, boss và ba level.';
+  const gameRoute = routeOrchestration(gameTarget, catalog);
+  const fullAgentCatalog = mergeAgentCatalog(agents, catalog.agents);
+  const gameAgent = routeAgent(gameRoute.workflow?.preferredAgentId ?? 'auto', gameTarget, fullAgentCatalog);
+  const gamePipeline = preparePipeline(gameTarget, gameRoute, gameAgent);
+  const fullGamePrompt = buildAgentPrompt(gameTarget, gameAgent, gameRoute, catalog, gamePipeline);
+  assert.match(fullGamePrompt, /AGENT ROLE: PXH Expert/);
+  assert.match(fullGamePrompt, /Bạn là cỗ máy vibe coding/);
+  assert.match(fullGamePrompt, /ACTIVE SKILLS:[\s\S]+# game-development/);
+  assert.match(fullGamePrompt, /AGENT TEAM HANDOFFS:/);
+  assert.match(fullGamePrompt, /pxh-qa — Kỹ sư kiểm thử/);
+  assert.match(fullGamePrompt, /Không chạy command \.opencode\/runtime/);
+  assert.ok(fullGamePrompt.length < 100_000);
 
   const route = routeOrchestration('sửa lỗi postgresql migration', catalog);
   assert.equal(route.workflow?.name, 'Database Recovery');

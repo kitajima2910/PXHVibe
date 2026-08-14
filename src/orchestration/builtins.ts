@@ -74,6 +74,7 @@ export const builtinSkills: readonly PXHSkill[] = skillDefinitions.map(([id, des
   triggers: [...triggers, ...id.split('-').filter((word) => word.length >= 3)],
   instructions: skillInstructions(id, description),
   source: 'PXHVibe capability pack',
+  origin: 'fallback',
 }));
 
 function workflow(
@@ -89,6 +90,7 @@ function workflow(
     id, name, description, triggers, preferredAgentId, skillIds, steps,
     instructions: steps.map((step, index) => `${index + 1}. ${step}`).join('\n'),
     source: 'PXHVibe capability pack',
+    origin: 'fallback',
   };
 }
 

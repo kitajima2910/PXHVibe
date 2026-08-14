@@ -1,7 +1,7 @@
 import type {OrchestrationCatalog, OrchestrationRoute, PXHSkill, PXHWorkflow} from './types.js';
 
 export function routeOrchestration(target: string, catalog: OrchestrationCatalog): OrchestrationRoute {
-  const projectWorkflow = bestMatch(target, catalog.workflows.filter((candidate) => candidate.source !== 'PXHVibe capability pack'));
+  const projectWorkflow = bestMatch(target, catalog.workflows.filter((candidate) => candidate.origin === 'project'));
   const intent = classifyWorkflowIntent(target);
   const workflow = projectWorkflow ?? (intent === undefined
     ? bestMatch(target, catalog.workflows)

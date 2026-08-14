@@ -1,5 +1,57 @@
 # STATUS
 
+## Cập nhật v0.4.0: Bundle full Skills/Agents/Workflows
+
+### Đã thay đổi gì
+
+- Vendor nguyên bộ capability assets MIT từ pxhopencode commit `0d712cf1b2dd59eaf40d225b6254f251762e2941`.
+- Thêm 10 file agent Markdown thật, 50 `SKILL.md`, 8 workflow Markdown, 173 template/helper trong skills và 28 shared files.
+- Giữ nguyên license và attribution tại `resources/LICENSE.pxhopencode` và `resources/ATTRIBUTION.md`.
+- Npm package giờ bundle `resources/`; không mang theo `.git`, executable, provider config hoặc runtime CLI của nguồn.
+- Discovery tự tìm resources từ vị trí module khi chạy source, global install hoặc package npm.
+- Bundled Markdown override instruction rút gọn TypeScript; TypeScript catalog chỉ còn vai trò fallback/trigger ổn định.
+- Project vẫn có thể bổ sung agent và override skill/workflow bằng `.pxhvibe`, `.agents`, `.opencode` hoặc thư mục gốc.
+- Selected skill lazy-load tối đa ba referenced resource với budget 20.000 ký tự; source path đầy đủ luôn có trong prompt.
+- Pipeline đưa instruction đầy đủ của các agent handoff liên quan vào BUILD prompt.
+- Thêm compatibility layer: không chạy command `.opencode/runtime`; dùng router/contracts/tools native PXHVibe.
+- `/status` và `/validate` đếm bundled assets thật thay vì đếm fallback arrays.
+- Nâng version lên `v0.4.0`.
+
+### File đã tạo hoặc sửa
+
+- `resources/agents/**`
+- `resources/skills/**`
+- `resources/workflows/**`
+- `resources/_shared/**`
+- `resources/LICENSE.pxhopencode`
+- `resources/ATTRIBUTION.md`
+- `src/orchestration/discovery.ts`
+- `src/orchestration/types.ts`
+- `src/orchestration/builtins.ts`
+- `src/orchestration/router.ts`
+- `src/orchestration/pipeline.ts`
+- `src/agents.ts`
+- `src/app.tsx`
+- `src/utils/agentPrompt.ts`
+- `src/tests/orchestration.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- Discovery test xác nhận full `games-2d`, `pxh-expert`, Debug workflow và referenced implementation được đọc từ `resources`.
+- Prompt integration test xác nhận selected full skill và agent team handoffs thật xuất hiện trong request.
+- Npm pack dry-run v0.4.0: 329 files, đúng 50 skills, 10 agents, 8 workflows; unpacked size 679.074 bytes.
+- `npm.cmd run typecheck` và toàn bộ `npm.cmd test`: thành công.
+- Global install xác nhận `pxhvibe@0.4.0` liên kết đến `D:\PXHVibe`.
+
+### Vấn đề còn lại
+
+- PXHVibe dùng runtime/provider native; các command `.opencode/runtime` trong tài liệu nguồn được compatibility layer vô hiệu hóa.
+- Các specialist handoff cùng chạy trong một BUILD model request để giữ quota free, chưa spawn model request riêng cho từng agent.
+
 ## Cập nhật v0.3.1: Sửa auto-router Game bị nhận thành Web
 
 ### Đã thay đổi gì

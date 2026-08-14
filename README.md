@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.3.1 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.4.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +104,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.3.1
+### Capability pack v0.4.0
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
@@ -120,6 +120,20 @@ Các lệnh kiểm tra:
 - `/status`: xem số lượng capability đang tích hợp.
 - `/pipeline`: xem phase/agent của TARGET gần nhất.
 - `/validate`: kiểm tra tính toàn vẹn của capability pack.
+
+### Full capability assets
+
+PXHVibe bundle trực tiếp bộ Markdown và template MIT trong npm package:
+
+- `resources/agents/*.md`: 10 agent role đầy đủ.
+- `resources/skills/*/SKILL.md`: 50 skill đầy đủ cùng templates/helper của từng skill.
+- `resources/workflows/*.workflow.md`: 8 workflow đầy đủ.
+- `resources/_shared/`: core rules, design system, phase config và shared scripts/templates.
+
+Discovery load bộ bundled trước, sau đó project có thể bổ sung hoặc override bằng `.pxhvibe/`,
+`.agents/`, `.opencode/` hoặc thư mục gốc. Router chỉ nạp workflow, tối đa ba skill và các agent
+handoff liên quan tới TARGET; referenced template được lazy-load để tránh tràn context. Source path
+tuyệt đối của từng asset được đưa vào prompt để worker có thể truy xuất file thật.
 
 ## Development
 
@@ -156,3 +170,7 @@ as part of the end-user TUI.
 PXHVibe's local Economy Router and specialist-role design are inspired by the
 MIT-licensed [pxhopencode](https://github.com/kitajima2910/pxhopencode) project;
 the implementation in this package is native to PXHVibe.
+
+The bundled capability Markdown/templates are vendored from pxhopencode commit
+`0d712cf1b2dd59eaf40d225b6254f251762e2941`. The original MIT license and detailed
+attribution are retained in `resources/LICENSE.pxhopencode` and `resources/ATTRIBUTION.md`.

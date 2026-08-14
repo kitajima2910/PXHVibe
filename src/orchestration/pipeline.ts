@@ -29,6 +29,16 @@ const phaseAgents: Readonly<Record<TaskPhase, string>> = {
   build: 'PXH DevOps', 'ui-ux': 'PXH UI/UX', persist: 'PXH Historian',
 };
 
+const phaseAgentIds: Readonly<Record<TaskPhase, string>> = {
+  analyze: 'auto', meeting: 'auto', architect: 'architect', code: 'expert',
+  fix: 'fix-bugs', test: 'qa', review: 'review-code', build: 'devops',
+  'ui-ux': 'ui-ux', persist: 'save-history',
+};
+
+export function agentIdForPhase(phase: TaskPhase): string {
+  return phaseAgentIds[phase];
+}
+
 export interface PreparedPipeline {
   request: RequestContract;
   tasks: readonly TaskContract[];

@@ -68,6 +68,19 @@ export function routeAgent(selectedAgentId: string, target: string, catalog: rea
   return getAgent('expert');
 }
 
+export function mergeAgentCatalog(base: readonly PXHAgent[], additions: readonly PXHAgent[]): PXHAgent[] {
+  const merged = new Map(base.map((item) => [item.id, item]));
+  for (const addition of additions) {
+    const existing = merged.get(addition.id);
+    merged.set(addition.id, existing === undefined ? addition : {
+      ...existing,
+      description: addition.description,
+      instruction: addition.instruction,
+    });
+  }
+  return [...merged.values()];
+}
+
 function agent(
   id: BuiltinPXHAgentId,
   label: string,

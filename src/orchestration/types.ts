@@ -7,6 +7,7 @@ export interface PXHSkill {
   instructions: string;
   triggers: readonly string[];
   source: string;
+  origin: 'fallback' | 'bundled' | 'project';
 }
 
 export interface PXHWorkflow {
@@ -19,6 +20,7 @@ export interface PXHWorkflow {
   preferredAgentId?: string;
   skillIds: readonly string[];
   source: string;
+  origin: 'fallback' | 'bundled' | 'project';
 }
 
 export interface OrchestrationCatalog {
