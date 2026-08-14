@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
-import {TodoStrip, type TodoItem} from './components/TodoStrip.js';
+import {phaseTodoLabel, TodoStrip, type TodoItem} from './components/TodoStrip.js';
 import {MessageList} from './components/MessageList.js';
 import {PromptInput, type PromptDraft} from './components/PromptInput.js';
 import type {AIProvider} from './providers/AIProvider.js';
@@ -450,8 +450,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setLastPipeline(pipeline);
     setStickyTasks(pipeline.tasks.map((task, index) => ({
       id: `${index}-${task.phase}`,
-      label: task.phase.toUpperCase(),
+      label: phaseTodoLabel(task.phase, task.workflow),
       status: 'pending',
+      agentLabel: task.agent,
     })));
     const requestImages = pendingImages;
     setPendingImages([]);
@@ -512,11 +513,15 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       }
 
       if (event.type === 'activity') {
-        setActivityLabel(sanitizeOutputBranding(event.content));
+        const visibleActivity = sanitizeOutputBranding(event.content);
+        setActivityLabel(visibleActivity);
+        setStickyTasks((current) => current.map((task) => task.status === 'running'
+          ? {...task, detail: visibleActivity}
+          : task));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
-          content: sanitizeOutputBranding(event.content),
+          content: visibleActivity,
           createdAt: new Date(),
         }]);
         return;
@@ -525,11 +530,15 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       const activity = event.type === 'tool_start'
         ? `Đang chạy ${event.toolName}...`
         : `${event.toolName}: ${event.summary}`;
-      setActivityLabel(sanitizeOutputBranding(activity));
+      const visibleActivity = sanitizeOutputBranding(activity);
+      setActivityLabel(visibleActivity);
+      setStickyTasks((current) => current.map((task) => task.status === 'running'
+        ? {...task, detail: visibleActivity}
+        : task));
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
         role: 'system',
-        content: sanitizeOutputBranding(activity),
+        content: visibleActivity,
         createdAt: new Date(),
       }]);
     };
@@ -546,7 +555,13 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           : event.type === 'phase_fail'
             ? 'fail'
             : 'running';
-        return {...task, status: nextStatus};
+        return {
+          ...task,
+          status: nextStatus,
+          agentLabel: event.agentLabel,
+          attempt: event.attempt,
+          detail: event.message,
+        };
       }));
       const prefix = event.type === 'phase_pass' ? '✓'
         : event.type === 'phase_fail' ? '✖'
@@ -582,7 +597,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       const storedSession = await new SessionStore(workingDirectory).load();
       if (storedSession !== undefined) setRuntimeSession(storedSession);
       if (isCancellationError(error)) {
-        setStickyTasks((current) => current.map((task) => task.status === 'running' ? {...task, status: 'cancelled'} : task));
+        setStickyTasks((current) => current.map((task) => task.status === 'running'
+          ? {...task, status: 'cancelled', detail: 'Đã huỷ bởi người dùng.'}
+          : task));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',

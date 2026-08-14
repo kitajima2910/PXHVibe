@@ -1,5 +1,6 @@
 import React from 'react';
 import {Box, Text} from 'ink';
+import type {TaskPhase} from '../orchestration/contracts.js';
 
 export type TodoStatus = 'pending' | 'running' | 'pass' | 'fail' | 'cancelled';
 
@@ -7,6 +8,9 @@ export interface TodoItem {
   id: string;
   label: string;
   status: TodoStatus;
+  agentLabel?: string;
+  attempt?: number;
+  detail?: string;
 }
 
 export function TodoStrip({tasks}: {tasks: readonly TodoItem[]}): React.JSX.Element {
@@ -20,10 +24,16 @@ export function TodoStrip({tasks}: {tasks: readonly TodoItem[]}): React.JSX.Elem
       <Box flexDirection="column">
         {tasks.length === 0 && <Text dimColor>○ Chưa có pipeline</Text>}
         {tasks.map((task) => (
-          <Box key={task.id}>
+          <Box key={task.id} flexDirection="column" marginBottom={task.status === 'running' ? 1 : 0}>
             <Text color={todoColor(task.status)} bold={task.status === 'running'} strikethrough={task.status === 'pass'}>
               {todoSymbol(task.status)} {task.label}
             </Text>
+            {task.status !== 'pass' && task.agentLabel !== undefined && (
+              <Text dimColor>  {task.agentLabel}{task.attempt === undefined ? '' : ` · lần ${task.attempt}`}</Text>
+            )}
+            {task.status === 'running' && task.detail !== undefined && (
+              <Text color="cyan">  ↳ {compactTodoDetail(task.detail)}</Text>
+            )}
           </Box>
         ))}
       </Box>
@@ -33,6 +43,28 @@ export function TodoStrip({tasks}: {tasks: readonly TodoItem[]}): React.JSX.Elem
       </Box>
     </Box>
   );
+}
+
+export function phaseTodoLabel(phase: TaskPhase, workflow: string): string {
+  if (phase === 'analyze') return 'Phân tích yêu cầu';
+  if (phase === 'meeting') return 'Làm rõ yêu cầu';
+  if (phase === 'architect') return 'Thiết kế kiến trúc';
+  if (phase === 'ui-ux') return 'Thiết kế UI/UX';
+  if (phase === 'code') {
+    if (workflow === 'game') return 'Xây dựng gameplay';
+    if (workflow === 'web') return 'Triển khai giao diện';
+    return 'Triển khai tính năng';
+  }
+  if (phase === 'test') return 'Chạy kiểm thử';
+  if (phase === 'fix') return 'Sửa lỗi phát hiện';
+  if (phase === 'review') return 'Review chất lượng';
+  if (phase === 'build') return workflow === 'game' ? 'Build & kiểm tra game' : 'Build & kiểm tra app';
+  return 'Lưu trạng thái';
+}
+
+export function compactTodoDetail(value: string, maxLength = 72): string {
+  const compact = value.replace(/\s+/g, ' ').trim();
+  return compact.length <= maxLength ? compact : `${compact.slice(0, Math.max(1, maxLength - 1)).trimEnd()}…`;
 }
 
 export function todoSymbol(status: TodoStatus): string {

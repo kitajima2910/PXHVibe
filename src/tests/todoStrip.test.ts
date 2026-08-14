@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {render} from 'ink';
 import {PassThrough} from 'node:stream';
-import {TodoStrip, todoSymbol, type TodoItem} from '../components/TodoStrip.js';
+import {
+  compactTodoDetail, phaseTodoLabel, TodoStrip, todoSymbol, type TodoItem,
+} from '../components/TodoStrip.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 
 assert.equal(todoSymbol('pending'), '○');
@@ -10,11 +12,16 @@ assert.equal(todoSymbol('running'), '●');
 assert.equal(todoSymbol('pass'), '✓');
 assert.equal(todoSymbol('fail'), '✖');
 assert.equal(todoSymbol('cancelled'), '■');
+assert.equal(phaseTodoLabel('code', 'game'), 'Xây dựng gameplay');
+assert.equal(phaseTodoLabel('code', 'web'), 'Triển khai giao diện');
+assert.equal(phaseTodoLabel('test', 'game'), 'Chạy kiểm thử');
+assert.equal(compactTodoDetail('  Đang   đọc\nfile...  '), 'Đang đọc file...');
+assert.equal(compactTodoDetail('123456789', 6), '12345…');
 
 const tasks: TodoItem[] = [
-  {id: '1', label: 'ANALYZE', status: 'pass'},
-  {id: '2', label: 'CODE', status: 'running'},
-  {id: '3', label: 'TEST', status: 'pending'},
+  {id: '1', label: 'Phân tích yêu cầu', status: 'pass', agentLabel: 'PXH PM (Auto)', attempt: 1},
+  {id: '2', label: 'Xây dựng gameplay', status: 'running', agentLabel: 'PXH Expert', attempt: 2, detail: 'Đang đọc file index.html...'},
+  {id: '3', label: 'Chạy kiểm thử', status: 'pending', agentLabel: 'PXH QA'},
 ];
 const output = new PassThrough();
 Object.assign(output, {columns: 80, rows: 20, isTTY: true});
@@ -28,9 +35,12 @@ await new Promise((resolve) => setTimeout(resolve, 30));
 const visible = stripAnsi(frame);
 assert.match(visible, /TASKS/);
 assert.match(visible, /1\/3 hoàn tất/);
-assert.match(visible, /✓ ANALYZE/);
-assert.match(visible, /● CODE/);
-assert.match(visible, /○ TEST/);
+assert.match(visible, /✓ Phân tích yêu cầu/);
+assert.match(visible, /● Xây dựng gameplay/);
+assert.match(visible, /PXH Expert · lần 2/);
+assert.match(visible, /Đang đọc file index\.html/);
+assert.match(visible, /○ Chạy kiểm thử/);
+assert.match(visible, /PXH QA/);
 assert.match(visible, /MCP/);
 assert.match(visible, /Chưa cấu hình/);
 instance.unmount();

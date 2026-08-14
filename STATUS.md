@@ -1,5 +1,46 @@
 # STATUS
 
+## Cập nhật v0.12.0: Task rail hiển thị work plan thật
+
+### Nguyên nhân gốc
+
+- Pipeline đã phát ra phase, specialist, attempt và activity runtime nhưng `TodoItem` chỉ giữ `id`, mã phase và trạng thái.
+- Sidebar vì vậy chỉ render danh sách phase chung chung như `ANALYZE`, `CODE`, `TEST`; người dùng không biết agent nào phụ trách hoặc task hiện tại đang làm gì.
+- Activity thật chỉ xuất hiện trong history và compose status, chưa được nối vào task đang chạy.
+
+### Đã thay đổi gì
+
+- Đổi mã phase thành tên công việc dễ hiểu, có biến thể theo workflow như `Xây dựng gameplay` hoặc `Triển khai giao diện`.
+- Task chờ hiển thị specialist dự kiến; task đang chạy hiển thị specialist, số lần thử và activity runtime gần nhất.
+- Activity được cập nhật từ event thật `activity`, `tool_start`, `tool_end` và team phase; không dùng tiến độ mô phỏng.
+- Task hoàn tất vẫn thu gọn/gạch bỏ để sidebar không chiếm quá nhiều chiều cao; task đang chạy được bung chi tiết.
+- Rút gọn activity dài, chuẩn hóa khoảng trắng để tránh làm vỡ sidebar hẹp.
+- Nâng version lên `v0.12.0` và cài bản workspace vào lệnh global `pxh`.
+
+### File đã sửa
+
+- `src/components/TodoStrip.tsx`
+- `src/app.tsx`
+- `src/tests/todoStrip.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 17 nhóm test.
+- Todo regression xác nhận tên task theo workflow, specialist, attempt, activity và trạng thái đều render đúng.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.12.0`.
+- Global install: `pxhvibe@0.12.0`; `pxh.cmd --version` trả `PXHVibe v0.12.0`.
+- `git diff --check`: đạt, chỉ có cảnh báo line ending CRLF hiện hữu trên Windows.
+
+### Vấn đề còn lại
+
+- MCP rail vẫn là vị trí dự phòng `Chưa cấu hình`; chưa có MCP registry/status runtime trong TARGET lần này.
+- Task là các bước pipeline cấp cao kèm activity đang chạy, chưa phân rã tự động thành checklist tùy ý do model tự sinh.
+
 ## Cập nhật v0.11.0: Giữ pasted draft khi dùng `/models`
 
 ### Nguyên nhân gốc
