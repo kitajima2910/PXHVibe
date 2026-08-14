@@ -465,3 +465,86 @@
 ### Vấn đề còn lại
 
 - Slash command list vẫn là text gọn; chưa có command palette riêng.
+
+## Cập nhật v0.1.5: bỏ xung đột Ctrl+J trong VS Code
+
+### Đã thay đổi gì
+
+- Bỏ `Ctrl+J` khỏi keymap và Footer vì VS Code giữ phím này để mở panel/debug console trước khi terminal nhận được.
+- Loại fallback ký tự LF (`\n`) tương đương `Ctrl+J` khỏi bộ nhận diện newline.
+- Giữ `Shift+Enter` làm phím xuống dòng trong composer; Enter thường vẫn gửi TARGET.
+- Bump version từ `0.1.4` lên `0.1.5`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.5`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- `Shift+Enter` phụ thuộc terminal truyền được modifier Enter; CLI vẫn bật keyboard protocol và giữ legacy modified-enter fallback.
+
+## Cập nhật v0.1.6: sửa Ctrl+C không thoát trong VS Code
+
+### Đã thay đổi gì
+
+- Tắt bộ `exitOnCtrlC` mặc định của Ink để phím Ctrl+C không bị nuốt khi VS Code Terminal gửi Kitty keyboard sequence.
+- Giao việc thoát cho handler của PXHVibe: ở composer Ctrl+C dọn provider/ảnh tạm rồi thoát; trong popup Ctrl+C đóng popup để lần tiếp theo thoát TUI.
+- Custom API setup cũng nhận Ctrl+C như thao tác hủy popup.
+- Thêm regression test xác nhận byte Ctrl+C đi tới `onExit` của composer.
+- Bump version từ `0.1.5` lên `0.1.6`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/cli.tsx`
+- `src/components/CustomApiSetup.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.6`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua, gồm regression test Ctrl+C.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Không có vấn đề đã biết trong phạm vi TARGET này.
+
+## Cập nhật v0.1.7: làm mới câu chào
+
+### Đã thay đổi gì
+
+- Đổi câu chào mặc định thành: “PXHVibe đã sẵn sàng. Hãy mô tả tính năng, lỗi hoặc ý tưởng bạn muốn triển khai.”
+- Bump version từ `0.1.6` lên `0.1.7`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.7`.
+- `npm.cmd run build`: thành công.
+- `npm.cmd run test:commands` và `npm.cmd run test:branding`: thành công.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Không có vấn đề đã biết trong phạm vi TARGET này.

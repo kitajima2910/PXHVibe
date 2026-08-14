@@ -32,7 +32,7 @@ assert.equal(isPasteShortcut('v', {ctrl: false, meta: true}), true);
 assert.equal(isPasteShortcut('v', {ctrl: true, meta: false}), true);
 assert.equal(isPasteShortcut('x', {ctrl: false, meta: true}), false);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: true}), true);
-assert.equal(isNewlineShortcut('\n', {return: false, shift: false}), true);
+assert.equal(isNewlineShortcut('\n', {return: false, shift: false}), false);
 assert.equal(isNewlineShortcut('[27;2;13~', {return: false, shift: false}), true);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false}), false);
 assert.equal(isNewlineShortcut('\r', {return: true, shift: false, meta: true}), true);
@@ -83,10 +83,11 @@ const editorOutput = new PassThrough();
 Object.assign(editorOutput, {columns: 100, rows: 30, isTTY: true});
 let editorFrame = '';
 let submitted = '';
+let exitRequested = false;
 editorOutput.on('data', (chunk) => { editorFrame += chunk.toString('utf8'); });
 const editor = render(React.createElement(PromptInput, {
   onSubmit: (value: string) => { submitted = value; },
-  onExit: () => undefined,
+  onExit: () => { exitRequested = true; },
   isBusy: false,
   attachments: [],
   onPasteImage: () => undefined,
@@ -110,6 +111,9 @@ await new Promise((resolve) => setTimeout(resolve, 20));
 editorInput.write('\r');
 await new Promise((resolve) => setTimeout(resolve, 30));
 assert.equal(submitted, 'five\n\n[PASTED BLOCK 1]\none\ntwo\nthree\nfour');
+editorInput.write('\x03');
+await new Promise((resolve) => setTimeout(resolve, 20));
+assert.equal(exitRequested, true);
 editor.unmount();
 
 console.log('Image clipboard tests passed.');

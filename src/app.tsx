@@ -26,7 +26,7 @@ import {collapsePastedBlocksForDisplay} from './utils/pastedText.js';
 const initialMessage: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: 'Xin chào! Tôi có thể giúp bạn đọc và chỉnh sửa project.',
+  content: 'PXHVibe đã sẵn sàng. Hãy mô tả tính năng, lỗi hoặc ý tưởng bạn muốn triển khai.',
   createdAt: new Date(),
 };
 

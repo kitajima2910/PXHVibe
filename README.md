@@ -74,7 +74,7 @@ pxh --provider=custom
 ### Keymap TUI
 
 - `Enter`: gửi TARGET.
-- `Shift+Enter` hoặc `Ctrl+J`: xuống dòng.
+- `Shift+Enter`: xuống dòng.
 - `←` / `→` / `↑` / `↓`, `Home`, `End`: di chuyển con trỏ.
 - `PageUp` / `PageDown` hoặc con lăn chuột: xem lịch sử.
 - `Alt+V`: dán ảnh; `Ctrl+C`: dừng và thoát.

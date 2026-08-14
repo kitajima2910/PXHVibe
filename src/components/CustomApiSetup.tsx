@@ -28,7 +28,7 @@ export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): Rea
 
   useInput((input, key) => {
     if (parseTerminalMouse(input) !== undefined) return;
-    if (key.escape) {
+    if (key.escape || (key.ctrl && input.toLowerCase() === 'c')) {
       onCancel();
       return;
     }

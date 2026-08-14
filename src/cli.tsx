@@ -16,6 +16,9 @@ try {
   const terminalScreen = enterTerminalScreen();
   const instance = render(<App provider={provider} />, {
     kittyKeyboard: {mode: 'enabled', flags: ['disambiguateEscapeCodes']},
+    // Ink's built-in Ctrl+C handler only recognizes the legacy byte. Let the
+    // components handle it so Kitty keyboard sequences from VS Code also work.
+    exitOnCtrlC: false,
   });
   void instance.waitUntilExit().finally(() => terminalScreen.restore());
 } catch (error: unknown) {

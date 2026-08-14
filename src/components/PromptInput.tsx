@@ -243,7 +243,6 @@ export function isNewlineShortcut(
   return (key.return && key.shift)
     || (key.return && key.meta === true)
     || (key.return && key.ctrl === true)
-    || input === '\n'
     || input === '[27;2;13~';
 }
 
