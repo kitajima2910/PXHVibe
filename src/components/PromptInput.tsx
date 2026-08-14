@@ -3,7 +3,7 @@ import {Box, Text, measureElement, useApp, useInput, usePaste, useStdout, type D
 import type {ImageAttachment} from '../types/attachment.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
-import {countTextLines} from '../utils/pastedText.js';
+import {countDisplayLines, countTextLines} from '../utils/pastedText.js';
 
 interface PromptInputProps {
   onSubmit: (value: string) => void;
@@ -188,10 +188,10 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
         <Box flexDirection="column">
           {pastedBlocks.slice(-3).map((block, index) => (
             <Text key={`${block.length}-${index}`}>
-              <Text bold color="cyan">~ {countTextLines(block)} lines</Text>
+              <Text bold color="cyan">~{countDisplayLines(block, editorWidth)} dòng</Text>
             </Text>
           ))}
-          {pastedBlocks.length > 3 && <Text dimColor>+{pastedBlocks.length - 3} pasted blocks cũ</Text>}
+          {pastedBlocks.length > 3 && <Text dimColor>+{pastedBlocks.length - 3} clipboard cũ</Text>}
         </Box>
       )}
       <Box>

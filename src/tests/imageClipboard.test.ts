@@ -16,7 +16,7 @@ import {
   composePromptInput,
 } from '../components/PromptInput.js';
 import {parseClipboardPayload, thumbnailSize} from '../utils/imageClipboard.js';
-import {collapsePastedBlocksForDisplay} from '../utils/pastedText.js';
+import {collapsePastedBlocksForDisplay, countDisplayLines} from '../utils/pastedText.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 
 const payload = parseClipboardPayload(JSON.stringify({
@@ -44,6 +44,8 @@ assert.equal(getCursorIndexFromPoint(2, 2, {x: 10, y: 5, width: 20, height: 2}, 
 assert.equal(shouldCollapsePaste('one\ntwo\nthree\nfour'), true);
 assert.equal(shouldCollapsePaste('short text'), false);
 assert.equal(countLines('one\ntwo\nthree'), 3);
+assert.equal(countDisplayLines('1234567890abcdefghij', 10), 2);
+assert.equal(countDisplayLines('1234567890\nabcdefghijK', 10), 3);
 assert.equal(createPastePreview('  one\n   two  '), 'one two');
 const inputViewport = createInputViewport('1234567890abcdefghijKLMNOP', 22, 10, 2);
 assert.equal(inputViewport.text, 'abcdefghij\nKLMNOP');
@@ -52,7 +54,15 @@ assert.equal(inputViewport.cursorIndex, 13);
 assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
 assert.equal(
   collapsePastedBlocksForDisplay('review this\n\n[PASTED BLOCK 1]\nline one\nline two'),
-  'review this\n\n~ 2 lines',
+  'review this\n\n~2 dòng',
+);
+assert.equal(
+  composePromptInput('', ['{\n  "name": "PXHVibe",\n  "enabled": true\n}']),
+  '[PASTED BLOCK 1]\n{\n  "name": "PXHVibe",\n  "enabled": true\n}',
+);
+assert.equal(
+  collapsePastedBlocksForDisplay(`[PASTED BLOCK 1]\n${'x'.repeat(161)}`, 80),
+  '~3 dòng',
 );
 
 const output = new PassThrough();
@@ -102,7 +112,7 @@ const editor = render(React.createElement(PromptInput, {
 await new Promise((resolve) => setTimeout(resolve, 30));
 editorInput.write('\x1b[200~one\ntwo\nthree\nfour\x1b[201~');
 await new Promise((resolve) => setTimeout(resolve, 30));
-assert.match(stripAnsi(editorFrame), /~ 4 lines/);
+assert.match(stripAnsi(editorFrame), /~4 dòng/);
 // Match the existing VS Code keybinding: Shift+Enter sends ESC + Enter.
 editorInput.write('\x1b\r');
 await new Promise((resolve) => setTimeout(resolve, 20));

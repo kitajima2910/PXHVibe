@@ -10,11 +10,44 @@ import {stripAnsi} from '../utils/stripAnsi.js';
 const missingCliMessage =
   'Không tìm thấy PXHVibe Free runtime. Hãy cài đặt lại PXHVibe.';
 export const defaultOpenCodeModel = 'opencode/big-pickle';
-const defaultRequestTimeoutMs = 120_000;
+const defaultRequestTimeoutMs = 300_000;
+
+type TimeoutHandle = ReturnType<typeof setTimeout>;
+type TimeoutScheduler = (callback: () => void, delay: number) => TimeoutHandle;
+type TimeoutCanceller = (handle: TimeoutHandle) => void;
+
+export interface InactivityTimer {
+  touch(): void;
+  clear(): void;
+}
+
+export function createInactivityTimer(
+  timeoutMs: number,
+  onTimeout: () => void,
+  schedule: TimeoutScheduler = (callback, delay) => setTimeout(callback, delay),
+  cancel: TimeoutCanceller = (handle) => clearTimeout(handle),
+): InactivityTimer {
+  let handle: TimeoutHandle | undefined;
+  return {
+    touch() {
+      if (handle !== undefined) cancel(handle);
+      handle = schedule(() => {
+        handle = undefined;
+        onTimeout();
+      }, timeoutMs);
+    },
+    clear() {
+      if (handle === undefined) return;
+      cancel(handle);
+      handle = undefined;
+    },
+  };
+}
 
 export class OpenCodeProvider implements AIProvider {
   readonly name: string;
   private activeProcess: ChildProcessWithoutNullStreams | undefined;
+  private activeCleanup: (() => void) | undefined;
 
   constructor(
     private readonly model = defaultOpenCodeModel,
@@ -49,17 +82,21 @@ export class OpenCodeProvider implements AIProvider {
       let stderr = '';
       let stepCount = 0;
       let settled = false;
-      let timeout: ReturnType<typeof setTimeout> | undefined;
+      let inactivityTimer: InactivityTimer | undefined;
 
       const cleanup = (): void => {
-        if (timeout !== undefined) clearTimeout(timeout);
+        inactivityTimer?.clear();
         if (this.activeProcess === child) {
           this.activeProcess = undefined;
+        }
+        if (this.activeCleanup === cleanup) {
+          this.activeCleanup = undefined;
         }
         child.removeAllListeners();
         child.stdout.removeAllListeners();
         child.stderr.removeAllListeners();
       };
+      this.activeCleanup = cleanup;
 
       const fail = (error: Error): void => {
         if (settled) {
@@ -73,6 +110,7 @@ export class OpenCodeProvider implements AIProvider {
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
       child.stdout.on('data', (chunk: string) => {
+        inactivityTimer?.touch();
         stdoutBuffer += chunk;
         const lines = stdoutBuffer.split(/\r?\n/);
         stdoutBuffer = lines.pop() ?? '';
@@ -85,6 +123,7 @@ export class OpenCodeProvider implements AIProvider {
         }
       });
       child.stderr.on('data', (chunk: string) => {
+        inactivityTimer?.touch();
         stderr += chunk;
       });
       child.on('error', (error: NodeJS.ErrnoException) => {
@@ -120,22 +159,23 @@ export class OpenCodeProvider implements AIProvider {
       });
 
       const timeoutMs = this.requestTimeoutMs ?? getRequestTimeoutMs();
-      timeout = setTimeout(() => {
+      inactivityTimer = createInactivityTimer(timeoutMs, () => {
         child.kill();
         fail(new Error(
-          `Free mode không phản hồi sau ${Math.round(timeoutMs / 1000)} giây. Hãy thử model khác bằng /models.`,
+          `Free mode không có hoạt động trong ${Math.round(timeoutMs / 1000)} giây. Hãy thử lại hoặc chọn model khác bằng /models.`,
         ));
-      }, timeoutMs);
+      });
+      inactivityTimer.touch();
     });
   }
 
   cancel(): void {
     const child = this.activeProcess;
     this.activeProcess = undefined;
+    const cleanup = this.activeCleanup;
+    this.activeCleanup = undefined;
+    cleanup?.();
     if (child !== undefined) {
-      child.removeAllListeners();
-      child.stdout.removeAllListeners();
-      child.stderr.removeAllListeners();
       child.kill();
     }
   }

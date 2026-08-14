@@ -676,3 +676,68 @@
 ### Vấn đề còn lại
 
 - Health check dùng request thật tới cloud và phản ánh tình trạng tại thời điểm kiểm tra; độ trễ có thể thay đổi giữa các lần chạy.
+
+## Cập nhật v0.1.12: giữ nguyên clipboard và đếm đúng dòng
+
+### Đã thay đổi gì
+
+- Sửa nguyên nhân clipboard dài một dòng vật lý luôn hiện `~ 1 lines`: bộ đếm mới tính cả newline thật và dòng wrap theo chiều rộng composer.
+- Chuẩn hóa nhãn tiếng Việt thành `~X dòng` trong composer và message USER sau khi gửi.
+- Giữ nguyên raw clipboard, bao gồm indentation, khoảng trắng và newline, trong `[PASTED BLOCK]` chuyển cho model; chỉ phần hiển thị TUI được thu gọn.
+- Đổi nhãn `pasted blocks cũ` thành `clipboard cũ`.
+- Bump version từ `0.1.11` lên `0.1.12`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/PromptInput.tsx`
+- `src/utils/pastedText.ts`
+- `src/tests/imageClipboard.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.12`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Regression tests xác nhận text dài 161 ký tự ở width 80 hiện `~3 dòng`, JSON giữ nguyên indentation và bracketed paste 4 dòng hiện `~4 dòng`.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Số dòng wrap phụ thuộc chiều rộng terminal tại thời điểm paste/gửi; resize terminal có thể làm số dòng hiển thị thay đổi ở lượt mới.
+
+## Cập nhật v0.1.13: sửa timeout giả ở task dài
+
+### Đã thay đổi gì
+
+- Sửa root cause timeout bị tính tuyệt đối từ lúc request bắt đầu dù model vẫn stream activity/tool output.
+- Chuyển sang inactivity timeout: mỗi stdout/stderr mới sẽ reset timer; task có thể chạy lâu miễn là vẫn có hoạt động.
+- Tăng mặc định từ 120 giây tổng thời gian lên 300 giây không có hoạt động; `PXH_REQUEST_TIMEOUT_MS` vẫn có thể tùy chỉnh.
+- Cập nhật thông báo thành “không có hoạt động trong X giây”, không còn khẳng định sai rằng model không phản hồi.
+- Sửa `cancel()` để dọn timer và listener ngay, tránh timer giữ tiến trình Node sau Ctrl+C.
+- Health check `/models` vẫn dùng timeout riêng 30 giây.
+- Bump version từ `0.1.12` lên `0.1.13`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/providers/OpenCodeProvider.ts`
+- `src/tests/openCodeProvider.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.13`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Regression test xác nhận `touch()` lần hai hủy timer cũ, lập timer mới và chỉ callback mới làm inactivity timeout hết hạn.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Nếu runtime thực sự không phát bất kỳ stdout/stderr nào liên tục 300 giây, PXHVibe vẫn hủy request để tránh treo vô hạn.

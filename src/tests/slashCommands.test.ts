@@ -45,12 +45,12 @@ assert.equal(getSystemMessageColor({
 const bridgedTarget = buildContextualTarget([{
   id: 'raw-paste',
   role: 'user',
-  content: '~ 2 lines',
+  content: '~2 dòng',
   contextContent: '[PASTED BLOCK 1]\ndòng một\ndòng hai',
   createdAt: new Date(),
 }], 'tiếp tục task');
 assert.match(bridgedTarget, /dòng một\ndòng hai/);
-assert.doesNotMatch(bridgedTarget, /~ 2 lines/);
+assert.doesNotMatch(bridgedTarget, /~2 dòng/);
 assert.match(bridgedTarget, /TARGET HIỆN TẠI:\ntiếp tục task$/);
 const input = new PassThrough();
 Object.assign(input, {isTTY: true, setRawMode: () => input, ref: () => input, unref: () => input});

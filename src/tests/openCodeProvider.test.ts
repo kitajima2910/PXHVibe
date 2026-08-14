@@ -4,6 +4,7 @@ import {parseModelName, parseProviderName} from '../providers/createProvider.js'
 import {
   defaultOpenCodeModel,
   buildOpenCodeArguments,
+  createInactivityTimer,
   OpenCodeProvider,
   getRequestTimeoutMs,
   parseOpenCodeEvent,
@@ -19,7 +20,28 @@ assert.equal(
 assert.equal(defaultOpenCodeModel, 'opencode/big-pickle');
 assert.equal(new OpenCodeProvider().name, 'Free · Big Pickle');
 delete process.env.PXH_REQUEST_TIMEOUT_MS;
-assert.equal(getRequestTimeoutMs(), 120_000);
+assert.equal(getRequestTimeoutMs(), 300_000);
+let inactivityExpired = 0;
+let cancelledTimers = 0;
+const scheduledCallbacks: Array<() => void> = [];
+const inactivityTimer = createInactivityTimer(
+  300_000,
+  () => { inactivityExpired += 1; },
+  (callback, delay) => {
+    assert.equal(delay, 300_000);
+    scheduledCallbacks.push(callback);
+    return scheduledCallbacks.length as unknown as ReturnType<typeof setTimeout>;
+  },
+  () => { cancelledTimers += 1; },
+);
+inactivityTimer.touch();
+inactivityTimer.touch();
+assert.equal(scheduledCallbacks.length, 2);
+assert.equal(cancelledTimers, 1);
+scheduledCallbacks[1]?.();
+assert.equal(inactivityExpired, 1);
+inactivityTimer.clear();
+assert.equal(cancelledTimers, 1);
 const buildArguments = buildOpenCodeArguments('target', defaultOpenCodeModel);
 assert.ok(buildArguments.includes('--auto'));
 assert.deepEqual(buildArguments.slice(-4), ['--agent', 'build', '--auto', 'target']);

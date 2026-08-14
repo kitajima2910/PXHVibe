@@ -236,7 +236,7 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
     const message: Message = {
       id: createMessageId(),
       role: 'user',
-      content: collapsePastedBlocksForDisplay(content),
+      content: collapsePastedBlocksForDisplay(content, Math.max(20, (stdout.columns ?? 80) - 21)),
       contextContent: content,
       ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
       createdAt: new Date(),

@@ -61,7 +61,7 @@ pxh --provider=custom
 - `←` / `→` / `Home` / `End`: di chuyển con trỏ soạn thảo; `↑` / `↓` di chuyển theo dòng wrap.
 - Click vào text trong `NEW TARGET`: đặt con trỏ tại vị trí muốn sửa.
 - `Shift+Enter`: chèn dòng mới; `Enter`: gửi TARGET.
-- Text paste dài hiện thành `~ N lines` trong input và TARGET đã gửi; nội dung đầy đủ vẫn được chuyển cho model.
+- Clipboard dài hiện thành `~X dòng` theo cả newline và dòng wrap của composer; định dạng đầy đủ vẫn được giữ nguyên khi chuyển cho model.
 - `Alt+C` hoặc `/copy`: copy response gần nhất vào Windows Clipboard.
 - Giữ `Shift`, bôi chọn nội dung trong terminal rồi nhấn `Ctrl+C` để copy đoạn tùy chọn.
 - Input text chỉ hiển thị tối đa 5 dòng; dùng `↑`/`↓` hoặc mouse wheel trong input để cuộn.
@@ -85,7 +85,7 @@ phải hỗ trợ vision; nếu model không nhận ảnh, hãy đổi model b�
 VS Code giữ `Ctrl+V` ở lớp terminal nên PXHVibe không nhận được phím này khi clipboard là ảnh;
 hãy dùng `Alt+V` hoặc `/paste` trong VS Code. `Ctrl+V` vẫn được nhận ở terminal nào chuyển tiếp phím đó.
 
-Free request tự dừng sau 120 giây nếu cloud model không phản hồi. Có thể thay đổi
+Free request chỉ tự dừng khi không có text hoặc activity mới trong 300 giây; activity mới sẽ gia hạn timer. Có thể thay đổi
 bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Development
