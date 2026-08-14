@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {render} from 'ink';
 import {PassThrough} from 'node:stream';
-import {App, buildContextualTarget, getErrorMessage, isCancellationError, isImageUnsupportedError, isModelLimitError} from '../app.js';
+import {App, buildContextualTarget, buildRoutingTarget, getErrorMessage, isCancellationError, isImageUnsupportedError, isModelLimitError} from '../app.js';
 import {getSystemMessageColor} from '../components/MessageList.js';
 import type {AIProvider} from '../providers/AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
@@ -54,6 +54,12 @@ const bridgedTarget = buildContextualTarget([{
 assert.match(bridgedTarget, /dòng một\ndòng hai/);
 assert.doesNotMatch(bridgedTarget, /~2 dòng/);
 assert.match(bridgedTarget, /TARGET HIỆN TẠI:\ntiếp tục task$/);
+assert.equal(buildRoutingTarget([{
+  id: 'old', role: 'user', content: 'tạo website', createdAt: new Date(),
+}], 'làm game HTML5 có player và enemies'), 'làm game HTML5 có player và enemies');
+assert.equal(buildRoutingTarget([{
+  id: 'old', role: 'user', content: 'làm game HTML5', createdAt: new Date(),
+}], 'tiếp tục task'), 'làm game HTML5\ntiếp tục task');
 const input = new PassThrough();
 Object.assign(input, {isTTY: true, setRawMode: () => input, ref: () => input, unref: () => input});
 const output = new PassThrough();

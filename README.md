@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.3.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.3.1 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +104,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.3.0
+### Capability pack v0.3.1
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
@@ -112,6 +112,8 @@ capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 - 50 skills thuộc AI, game, process, tool, UI/UX và web.
 - 6 runtime contracts: Request, Task, Result, Response, Event và State.
 - Mỗi TARGET tạo pipeline phase có agent phụ trách; ví dụ lỗi dùng `analyze → fix → test → review → persist`.
+- Auto-router ưu tiên tín hiệu miền mạnh: gameplay/player/enemy chọn Game dù spec có HTML5, web UI hoặc frontend.
+- Prompt trước chỉ ảnh hưởng routing khi TARGET mới bắt đầu bằng `tiếp tục`, `làm tiếp` hoặc từ tương đương.
 
 Các lệnh kiểm tra:
 

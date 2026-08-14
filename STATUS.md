@@ -1,5 +1,42 @@
 # STATUS
 
+## Cập nhật v0.3.1: Sửa auto-router Game bị nhận thành Web
+
+### Đã thay đổi gì
+
+- Tái hiện lỗi bằng spec game HTML5 có nhiều từ `web app`, `frontend UI`, `responsive` và `canvas`.
+- Root cause: router cộng điểm mọi keyword ngang hàng nên nhiều tín hiệu delivery Web lấn át domain Game.
+- Thêm classifier hai lớp: task intent (`debug/release/meeting`) trước, sau đó domain intent (`game/ai/tool/web`) với trọng số tín hiệu chuyên biệt.
+- `gameplay`, `player`, `enemy`, `boss`, `level`, Phaser/Godot/Unity và từ tiếng Việt tương ứng giờ ưu tiên Game workflow.
+- Route event hiển thị confidence, ví dụ `Workflow → Game (99%)`.
+- Không còn ghép prompt trước vào mọi lần phân loại; chỉ kế thừa intent khi người dùng nhập `tiếp tục`, `làm tiếp`, `sửa tiếp` hoặc từ tương đương.
+- Nâng version lên `v0.3.1`.
+
+### File đã sửa
+
+- `src/orchestration/types.ts`
+- `src/orchestration/router.ts`
+- `src/app.tsx`
+- `src/tests/pipeline.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- Regression spec game HTML5 chứa Web/UI terms: chọn Game workflow, PXH Expert, `game-development` và `games-testing`.
+- Mixed intent `Fix crash ... trong game`: chọn Debug workflow và vẫn nạp game skill.
+- Routing context test: TARGET mới không bị prompt trước làm lệch; `tiếp tục task` vẫn kế thừa prompt trước.
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công, toàn bộ regression suite.
+- Global install xác nhận `pxhvibe@0.3.1` liên kết đến `D:\PXHVibe`.
+
+### Vấn đề còn lại
+
+- Classifier là deterministic local intent routing, không gọi thêm model để phân loại nhằm giữ tốc độ và quota free.
+
 ## Cập nhật v0.3.0: Capability pack và runtime contracts
 
 ### Đã thay đổi gì

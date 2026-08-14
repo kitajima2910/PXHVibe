@@ -31,4 +31,6 @@ export interface OrchestrationCatalog {
 export interface OrchestrationRoute {
   workflow?: PXHWorkflow;
   skills: readonly PXHSkill[];
+  confidence?: number;
+  reason?: string;
 }

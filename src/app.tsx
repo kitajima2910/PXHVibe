@@ -104,6 +104,15 @@ export function buildContextualTarget(messages: readonly Message[], currentTarge
   return `BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:\nHãy tiếp tục nhất quán và không yêu cầu người dùng lặp lại nội dung đã cung cấp.\n\n${selectedTurns.join('\n\n')}\n\nTARGET HIỆN TẠI:\n${currentTarget}`;
 }
 
+export function buildRoutingTarget(messages: readonly Message[], currentTarget: string): string {
+  if (!/^(?:tiếp tục|làm tiếp|sửa tiếp|triển khai tiếp|continue|go on)\b/iu.test(currentTarget.trim())) {
+    return currentTarget;
+  }
+  const previousUserMessage = [...messages].reverse().find((item) => item.role === 'user');
+  const previousTarget = previousUserMessage?.contextContent ?? previousUserMessage?.content;
+  return previousTarget === undefined ? currentTarget : `${previousTarget}\n${currentTarget}`;
+}
+
 export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
   const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(process.cwd()));
@@ -290,8 +299,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
-    const previousUserMessage = [...messages].reverse().find((item) => item.role === 'user');
-    const routingTarget = `${previousUserMessage?.contextContent ?? previousUserMessage?.content ?? ''}\n${content}`;
+    const routingTarget = buildRoutingTarget(messages, content);
     const orchestrationRoute = routeOrchestration(routingTarget, catalog);
     const preferredAgentId = orchestrationRoute.workflow?.preferredAgentId;
     const resolvedPreferredAgentId = preferredAgentId === undefined
@@ -321,7 +329,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
     const routeSummary = [
       `Agent → ${routedAgent.label}`,
-      orchestrationRoute.workflow === undefined ? undefined : `Workflow → ${orchestrationRoute.workflow.name}`,
+      orchestrationRoute.workflow === undefined ? undefined : `Workflow → ${orchestrationRoute.workflow.name}${orchestrationRoute.confidence === undefined ? '' : ` (${Math.round(orchestrationRoute.confidence * 100)}%)`}`,
       orchestrationRoute.skills.length === 0 ? undefined : `Skills → ${orchestrationRoute.skills.map((skill) => skill.name).join(', ')}`,
       `Pipeline → ${pipeline.tasks.map((task) => task.phase).join('→')}`,
     ].filter((value): value is string => value !== undefined).join(' · ');
