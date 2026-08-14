@@ -1,5 +1,48 @@
 # STATUS
 
+## Cập nhật v0.2.0: Skills, agents và workflows native
+
+### Đã thay đổi gì
+
+- Phân tích kiến trúc `kitajima2910/pxhopencode`: metadata agent, thư mục `SKILL.md`, workflow Markdown và router intent → workflow → skills.
+- Thêm orchestration native cho PXHVibe; không gọi hoặc phụ thuộc CLI của dự án tham khảo.
+- Tự đọc `AGENTS.md` từ project hiện tại đến git root trước khi tạo prompt.
+- Tự khám phá skills trong `.pxhvibe/skills`, `.agents/skills`, `.opencode/skills` và `skills`; chỉ nạp tối đa ba skill khớp TARGET vào prompt.
+- Tự khám phá project agents và workflows từ các thư mục tương ứng; workflow có thể khai báo `triggers`, `agent`, `skills` bằng YAML frontmatter.
+- Thêm bộ tích hợp Debug, UI/UX, Build, Release cùng các skill Systematic Debugging, Focused Implementation, Frontend UI/UX, Verification, Code Review và Build & Release.
+- Economy Router giờ chọn workflow, skills và agent ưu tiên; TUI hiển thị route đã chọn trước khi xử lý.
+- Thêm `/skills` và `/workflows`; `/agents` hiển thị cả project agents được khám phá.
+- Nâng version từ `v0.1.14` lên `v0.2.0`.
+
+### File đã tạo hoặc sửa
+
+- `src/orchestration/types.ts`
+- `src/orchestration/builtins.ts`
+- `src/orchestration/discovery.ts`
+- `src/orchestration/router.ts`
+- `src/agents.ts`
+- `src/utils/agentPrompt.ts`
+- `src/app.tsx`
+- `src/tests/orchestration.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công; gồm discovery, routing, project agent, prompt injection và toàn bộ regression suite hiện có.
+- Regression test xác nhận `/skills` và `/workflows` không gọi model.
+- `npm.cmd install --global D:\PXHVibe`: thành công.
+- `npm.cmd list --global pxhvibe --depth=0`: xác nhận `pxhvibe@0.2.0` đang liên kết đến workspace.
+
+### Vấn đề còn lại
+
+- Workflow v0.2.0 điều phối các phase trong một agent request; chưa chạy từng phase thành nhiều child-agent process độc lập.
+- Chỉ đọc file orchestration trong project; chưa tải skill từ registry hoặc URL từ xa.
+
 ## Đã thay đổi gì
 
 - Sửa lỗi `/models` bị gửi nhầm thành AI prompt và làm UI kẹt ở `Thinking...`.

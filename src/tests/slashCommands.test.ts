@@ -78,6 +78,18 @@ const instance = render(React.createElement(App, {
 await wait(50);
 assert.ok(stripAnsi(rendered).includes('Error404-Labs.Info.VN - Phạm Xuân Hoài'));
 assert.ok(stripAnsi(rendered).includes(`PXHVibe v${appVersion}`));
+await typeText('/skills');
+input.write('\r');
+await wait(80);
+assert.ok(stripAnsi(rendered).includes('Skills ('));
+assert.ok(stripAnsi(rendered).includes('Systematic Debugging'));
+assert.equal(provider.calls, 0);
+await typeText('/workflows');
+input.write('\r');
+await wait(80);
+assert.ok(stripAnsi(rendered).includes('Workflows ('));
+assert.ok(stripAnsi(rendered).includes('Debug'));
+assert.equal(provider.calls, 0);
 await typeText('/agents');
 input.write('\r');
 await wait(80);
@@ -114,6 +126,9 @@ assert.ok(provider.lastPrompt.includes('- Đọc STATUS.md nếu tồn tại tr�
 assert.ok(provider.lastPrompt.includes('- Cập nhật STATUS.md gồm:'));
 assert.ok(provider.lastPrompt.includes('AGENT MODE: BUILD'));
 assert.ok(provider.lastPrompt.includes('AGENT ROLE: PXH Bug Hunter'));
+assert.ok(provider.lastPrompt.includes('WORKFLOW: Debug'));
+assert.ok(provider.lastPrompt.includes('### Systematic Debugging'));
+assert.ok(provider.lastPrompt.includes('### Verification'));
 assert.ok(provider.lastPrompt.endsWith('TARGET:\n\nsửa lỗi đăng nhập'));
 const frameHistory = stripAnsi(rendered);
 assert.ok(frameHistory.includes('BUILD / PXH PM (Auto)'));

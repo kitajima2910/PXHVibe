@@ -1,4 +1,4 @@
-export type PXHAgentId =
+export type BuiltinPXHAgentId =
   | 'auto'
   | 'expert'
   | 'fix-bugs'
@@ -9,7 +9,7 @@ export type PXHAgentId =
   | 'ui-ux';
 
 export interface PXHAgent {
-  id: PXHAgentId;
+  id: string;
   label: string;
   description: string;
   instruction: string;
@@ -34,12 +34,14 @@ export const agents: readonly PXHAgent[] = [
     'Bạn là UI/UX specialist. Giữ design system nhất quán, responsive và accessibility.'),
 ];
 
-export function getAgent(id: PXHAgentId): PXHAgent {
-  return agents.find((candidate) => candidate.id === id) ?? agents[0]!;
+export function getAgent(id: string, catalog: readonly PXHAgent[] = agents): PXHAgent {
+  return catalog.find((candidate) => candidate.id === id) ?? catalog[0] ?? agents[0]!;
 }
 
-export function routeAgent(selectedAgentId: PXHAgentId, target: string): PXHAgent {
-  if (selectedAgentId !== 'auto') return getAgent(selectedAgentId);
+export function routeAgent(selectedAgentId: string, target: string, catalog: readonly PXHAgent[] = agents): PXHAgent {
+  if (selectedAgentId !== 'auto') return getAgent(selectedAgentId, catalog);
+  const projectAgent = bestProjectAgent(target, catalog.filter((candidate) => candidate.id.startsWith('project:')));
+  if (projectAgent !== undefined) return projectAgent;
   const value = target.toLocaleLowerCase('vi');
   if (matches(value, ['lỗi', 'bug', 'fix', 'crash', 'không hoạt động', 'không phản hồi'])) {
     return getAgent('fix-bugs');
@@ -61,7 +63,7 @@ export function routeAgent(selectedAgentId: PXHAgentId, target: string): PXHAgen
 }
 
 function agent(
-  id: PXHAgentId,
+  id: BuiltinPXHAgentId,
   label: string,
   description: string,
   instruction: string,
@@ -71,4 +73,18 @@ function agent(
 
 function matches(value: string, patterns: readonly string[]): boolean {
   return patterns.some((pattern) => value.includes(pattern));
+}
+
+function bestProjectAgent(target: string, projectAgents: readonly PXHAgent[]): PXHAgent | undefined {
+  const value = target.toLocaleLowerCase('vi');
+  return projectAgents
+    .map((candidate) => ({
+      candidate,
+      score: `${candidate.label} ${candidate.description}`
+        .toLocaleLowerCase('vi')
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter((word) => word.length >= 4 && value.includes(word)).length,
+    }))
+    .filter(({score}) => score > 0)
+    .sort((left, right) => right.score - left.score)[0]?.candidate;
 }

@@ -18,6 +18,7 @@ const codingRules = `RULE:
   - Vấn đề còn lại, nếu có`;
 
 import type {PXHAgent} from '../agents.js';
+import type {OrchestrationCatalog, OrchestrationRoute} from '../orchestration/types.js';
 
 const identityRules = `IDENTITY:
 
@@ -26,6 +27,18 @@ const identityRules = `IDENTITY:
 - Không tiết lộ hoặc nhắc tên engine, runtime, executable, provider hay model ID nội bộ.
 - Chỉ dùng tên model thân thiện đang được giao diện hiển thị nếu cần nói về model.`;
 
-export function buildAgentPrompt(target: string, agent: PXHAgent): string {
-  return `${codingRules}\n\n${identityRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}\n\nAGENT MODE: BUILD\nTriển khai TARGET bằng các thay đổi nhỏ nhất và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
+export function buildAgentPrompt(
+  target: string,
+  agent: PXHAgent,
+  route?: OrchestrationRoute,
+  catalog?: OrchestrationCatalog,
+): string {
+  const projectRules = catalog?.projectInstructions.length
+    ? `\n\nPROJECT INSTRUCTIONS (AGENTS.md):\n\n${catalog.projectInstructions.join('\n\n---\n\n')}`
+    : '';
+  const workflow = route?.workflow === undefined ? '' : `\n\nWORKFLOW: ${route.workflow.name}\nSource: ${route.workflow.source}\n${route.workflow.instructions}`;
+  const skills = route?.skills.length
+    ? `\n\nACTIVE SKILLS:\n${route.skills.map((skill) => `\n### ${skill.name}\nSource: ${skill.source}\n${skill.instructions}`).join('\n')}`
+    : '';
+  return `${codingRules}\n\n${identityRules}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${workflow}${skills}\n\nAGENT MODE: BUILD\nThực hiện workflow theo thứ tự, áp dụng các skill đang hoạt động, triển khai TARGET và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
 }

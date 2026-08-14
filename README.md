@@ -68,6 +68,8 @@ pxh --provider=custom
 - Khi ô nhập trống, `Backspace` hoặc `Delete`: bỏ ảnh đính kèm cuối cùng (tối đa 4 ảnh mỗi TARGET).
 - `/models`: tự kiểm tra model free, hiển thị online/offline và đề xuất model phản hồi nhanh nhất.
 - `/agents`: chọn specialist hoặc Economy Router tự động.
+- `/skills`: xem skill đang được PXHVibe khám phá và tự kích hoạt theo TARGET.
+- `/workflows`: xem workflow có thể được router tự chọn.
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
 
@@ -79,7 +81,7 @@ pxh --provider=custom
 - `←` / `→` / `↑` / `↓`, `Home`, `End`: di chuyển con trỏ.
 - `PageUp` / `PageDown` hoặc con lăn chuột: xem lịch sử.
 - `Alt+V`: dán ảnh; `Ctrl+C`: dừng và thoát.
-- Các chức năng khác dùng slash command: `/models`, `/agents`, `/copy`, `/help`.
+- Các chức năng khác dùng slash command: `/models`, `/agents`, `/skills`, `/workflows`, `/copy`, `/help`.
 
 Ảnh clipboard được sao chép vào file tạm, gửi cùng TARGET rồi tự động xóa. Model đang chọn
 phải hỗ trợ vision; nếu model không nhận ảnh, hãy đổi model bằng `/models`.
@@ -88,6 +90,19 @@ hãy dùng `Alt+V` hoặc `/paste` trong VS Code. `Ctrl+V` vẫn được nhận
 
 Free request chỉ tự dừng khi không có text hoặc activity mới trong 300 giây; activity mới sẽ gia hạn timer. Có thể thay đổi
 bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
+
+## Skills, agents và workflows
+
+PXHVibe v0.2.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+
+- Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
+- Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
+- Workflows: các file `*.workflow.md` trong những thư mục `workflows` tương ứng.
+
+`SKILL.md` dùng YAML frontmatter tối thiểu với `name`, `description` và tùy chọn `triggers`.
+Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự chọn một workflow, tối đa ba
+skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
+workflow Debug, UI/UX, Build và Release để dùng ngay khi project chưa khai báo cấu hình riêng.
 
 ## Development
 

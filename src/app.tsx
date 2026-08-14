@@ -15,7 +15,7 @@ import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {buildAgentPrompt} from './utils/agentPrompt.js';
 import {Banner} from './components/Banner.js';
-import {agents, getAgent, routeAgent, type PXHAgent, type PXHAgentId} from './agents.js';
+import {agents, getAgent, routeAgent, type PXHAgent} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
 import type {ImageAttachment} from './types/attachment.js';
@@ -23,6 +23,9 @@ import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipbo
 import {copyTextToClipboard} from './utils/clipboard.js';
 import {collapsePastedBlocksForDisplay} from './utils/pastedText.js';
 import {checkFreeModelHealth, isModelHealthFresh, type ModelHealthReport} from './utils/modelHealth.js';
+import {discoverOrchestration} from './orchestration/discovery.js';
+import {routeOrchestration} from './orchestration/router.js';
+import type {OrchestrationCatalog} from './orchestration/types.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -38,6 +41,7 @@ function createMessageId(): string {
 interface AppProps {
   provider: AIProvider;
   checkModels?: typeof checkFreeModelHealth;
+  orchestrationCatalog?: OrchestrationCatalog;
 }
 
 type AppStatus = 'Ready' | 'Thinking...' | 'Error';
@@ -97,15 +101,17 @@ export function buildContextualTarget(messages: readonly Message[], currentTarge
   return `BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:\nHãy tiếp tục nhất quán và không yêu cầu người dùng lặp lại nội dung đã cung cấp.\n\n${selectedTurns.join('\n\n')}\n\nTARGET HIỆN TẠI:\n${currentTarget}`;
 }
 
-export function App({provider, checkModels = checkFreeModelHealth}: AppProps): React.JSX.Element {
+export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
+  const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(process.cwd()));
+  const availableAgents = [...agents, ...catalog.agents];
   const [currentProvider, setCurrentProvider] = useState(provider);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [status, setStatus] = useState<AppStatus>('Ready');
   const [isBusy, setIsBusy] = useState(false);
   const [isModePickerOpen, setIsModePickerOpen] = useState(false);
   const [isCustomSetupOpen, setIsCustomSetupOpen] = useState(false);
-  const [selectedAgentId, setSelectedAgentId] = useState<PXHAgentId>('auto');
+  const [selectedAgentId, setSelectedAgentId] = useState('auto');
   const [activeAgent, setActiveAgent] = useState<PXHAgent>(getAgent('auto'));
   const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
   const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([]);
@@ -175,7 +181,7 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
     setMessages((currentMessages) => [...currentMessages, {
       id: createMessageId(),
       role: 'system',
-      content: 'Lệnh: /models · /agents · /paste · /copy · /help',
+      content: 'Lệnh: /models · /agents · /skills · /workflows · /paste · /copy · /help',
       createdAt: new Date(),
     }]);
   };
@@ -212,6 +218,24 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
       return;
     }
 
+    if (command === '/skills') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: `Skills (${catalog.skills.length}): ${catalog.skills.map((skill) => skill.name).join(' · ')}`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/workflows') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: `Workflows (${catalog.workflows.length}): ${catalog.workflows.map((workflow) => workflow.name).join(' · ')}`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
     if (command === '/help') {
       showCommandList();
       return;
@@ -234,7 +258,19 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
 
     const previousUserMessage = [...messages].reverse().find((item) => item.role === 'user');
     const routingTarget = `${previousUserMessage?.contextContent ?? previousUserMessage?.content ?? ''}\n${content}`;
-    const routedAgent = routeAgent(selectedAgentId, routingTarget);
+    const orchestrationRoute = routeOrchestration(routingTarget, catalog);
+    const preferredAgentId = orchestrationRoute.workflow?.preferredAgentId;
+    const resolvedPreferredAgentId = preferredAgentId === undefined
+      ? undefined
+      : availableAgents.some((agent) => agent.id === preferredAgentId)
+        ? preferredAgentId
+        : availableAgents.some((agent) => agent.id === `project:${preferredAgentId}`)
+          ? `project:${preferredAgentId}`
+          : undefined;
+    const automaticAgentId = selectedAgentId === 'auto'
+      ? resolvedPreferredAgentId ?? 'auto'
+      : selectedAgentId;
+    const routedAgent = routeAgent(automaticAgentId, routingTarget, availableAgents);
     const contextualTarget = buildContextualTarget(messages, content);
     const requestImages = pendingImages;
     setPendingImages([]);
@@ -247,11 +283,13 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
       createdAt: new Date(),
     };
 
+    const routeSummary = [
+      `Agent → ${routedAgent.label}`,
+      orchestrationRoute.workflow === undefined ? undefined : `Workflow → ${orchestrationRoute.workflow.name}`,
+      orchestrationRoute.skills.length === 0 ? undefined : `Skills → ${orchestrationRoute.skills.map((skill) => skill.name).join(', ')}`,
+    ].filter((value): value is string => value !== undefined).join(' · ');
     setMessages((currentMessages) => [...currentMessages, message, {
-      id: createMessageId(),
-      role: 'system',
-      content: `Economy Router → ${routedAgent.label}`,
-      createdAt: new Date(),
+      id: createMessageId(), role: 'system', content: routeSummary, createdAt: new Date(),
     }]);
     setIsBusy(true);
     setStatus('Thinking...');
@@ -311,7 +349,7 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
     };
 
     try {
-      const response = await currentProvider.sendMessage(buildAgentPrompt(contextualTarget, routedAgent), {
+      const response = await currentProvider.sendMessage(buildAgentPrompt(contextualTarget, routedAgent, orchestrationRoute, catalog), {
         cwd: process.cwd(),
         ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
         onEvent: handleAgentEvent,
@@ -406,7 +444,7 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
       <MessageList messages={messages} />
       {isAgentPickerOpen ? (
         <AgentPicker
-          agents={agents}
+          agents={availableAgents}
           onSelect={handleAgentSelect}
           onCancel={() => setIsAgentPickerOpen(false)}
         />

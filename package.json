@@ -1,6 +1,6 @@
 {
   "name": "pxhvibe",
-  "version": "0.1.14",
+  "version": "0.2.0",
   "description": "PXHVibe terminal coding agent with free and custom API modes.",
   "license": "MIT",
   "publishConfig": {
@@ -30,9 +30,10 @@
     "clean": "node --input-type=module -e \"import {rm} from 'node:fs/promises'; await rm('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc -p tsconfig.json",
     "start": "node dist/cli.js",
-    "test": "npm run build && npm run test:free && npm run test:agent && npm run test:router && npm run test:format && npm run test:title && npm run test:modes && npm run test:custom && npm run test:commands && npm run test:branding && npm run test:image && npm run test:viewport",
+    "test": "npm run build && npm run test:free && npm run test:agent && npm run test:router && npm run test:orchestration && npm run test:format && npm run test:title && npm run test:modes && npm run test:custom && npm run test:commands && npm run test:branding && npm run test:image && npm run test:viewport",
     "test:agent": "node dist/tests/nativeAgent.test.js",
     "test:router": "node dist/tests/agents.test.js",
+    "test:orchestration": "node dist/tests/orchestration.test.js",
     "test:format": "node dist/tests/terminalFormat.test.js",
     "test:title": "node dist/tests/terminalTitle.test.js",
     "test:free": "node dist/tests/openCodeProvider.test.js",
