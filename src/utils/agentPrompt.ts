@@ -19,6 +19,7 @@ const codingRules = `RULE:
 
 import type {PXHAgent} from '../agents.js';
 import type {OrchestrationCatalog, OrchestrationRoute} from '../orchestration/types.js';
+import {formatPipelineForPrompt, type PreparedPipeline} from '../orchestration/pipeline.js';
 
 const identityRules = `IDENTITY:
 
@@ -32,6 +33,7 @@ export function buildAgentPrompt(
   agent: PXHAgent,
   route?: OrchestrationRoute,
   catalog?: OrchestrationCatalog,
+  pipeline?: PreparedPipeline,
 ): string {
   const projectRules = catalog?.projectInstructions.length
     ? `\n\nPROJECT INSTRUCTIONS (AGENTS.md):\n\n${catalog.projectInstructions.join('\n\n---\n\n')}`
@@ -40,5 +42,6 @@ export function buildAgentPrompt(
   const skills = route?.skills.length
     ? `\n\nACTIVE SKILLS:\n${route.skills.map((skill) => `\n### ${skill.name}\nSource: ${skill.source}\n${skill.instructions}`).join('\n')}`
     : '';
-  return `${codingRules}\n\n${identityRules}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${workflow}${skills}\n\nAGENT MODE: BUILD\nThực hiện workflow theo thứ tự, áp dụng các skill đang hoạt động, triển khai TARGET và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
+  const phases = pipeline === undefined ? '' : `\n\n4-TIER PIPELINE (contract v${pipeline.request.version}):\n${formatPipelineForPrompt(pipeline)}\nHoàn thành lần lượt từng phase trong cùng BUILD session. Mỗi phase phải tạo evidence trước khi chuyển tiếp; nếu test/review phát hiện lỗi thì quay lại FIX rồi verify lại.`;
+  return `${codingRules}\n\n${identityRules}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${workflow}${skills}${phases}\n\nAGENT MODE: BUILD\nThực hiện workflow theo thứ tự, áp dụng các skill đang hoạt động, triển khai TARGET và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
 }

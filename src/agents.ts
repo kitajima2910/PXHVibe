@@ -6,7 +6,9 @@ export type BuiltinPXHAgentId =
   | 'qa'
   | 'review-code'
   | 'devops'
-  | 'ui-ux';
+  | 'ui-ux'
+  | 'help'
+  | 'save-history';
 
 export interface PXHAgent {
   id: string;
@@ -32,6 +34,10 @@ export const agents: readonly PXHAgent[] = [
     'Bạn là DevOps engineer. Chẩn đoán build/deploy bằng log và giữ thay đổi hạ tầng tối thiểu.'),
   agent('ui-ux', 'PXH UI/UX', 'Thiết kế giao diện, accessibility và responsive.',
     'Bạn là UI/UX specialist. Giữ design system nhất quán, responsive và accessibility.'),
+  agent('help', 'PXH Guide', 'Giải thích project, command và cách sử dụng.',
+    'Bạn là technical guide. Đọc project, trả lời rõ ràng và vẫn triển khai TARGET khi người dùng yêu cầu thay đổi.'),
+  agent('save-history', 'PXH Historian', 'Cập nhật STATUS, quyết định và lịch sử project.',
+    'Bạn là project historian. Ghi lại thay đổi có bằng chứng và vẫn thực hiện BUILD nếu TARGET yêu cầu.'),
 ];
 
 export function getAgent(id: string, catalog: readonly PXHAgent[] = agents): PXHAgent {

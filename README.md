@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.2.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.3.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -102,7 +102,22 @@ PXHVibe v0.2.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá c�
 `SKILL.md` dùng YAML frontmatter tối thiểu với `name`, `description` và tùy chọn `triggers`.
 Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự chọn một workflow, tối đa ba
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
-workflow Debug, UI/UX, Build và Release để dùng ngay khi project chưa khai báo cấu hình riêng.
+capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
+
+### Capability pack v0.3.0
+
+- 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
+- Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
+- 8 workflows: AI, Company, Debug, Game, Meeting, Release, Tool và Web.
+- 50 skills thuộc AI, game, process, tool, UI/UX và web.
+- 6 runtime contracts: Request, Task, Result, Response, Event và State.
+- Mỗi TARGET tạo pipeline phase có agent phụ trách; ví dụ lỗi dùng `analyze → fix → test → review → persist`.
+
+Các lệnh kiểm tra:
+
+- `/status`: xem số lượng capability đang tích hợp.
+- `/pipeline`: xem phase/agent của TARGET gần nhất.
+- `/validate`: kiểm tra tính toàn vẹn của capability pack.
 
 ## Development
 

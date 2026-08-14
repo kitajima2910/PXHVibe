@@ -26,6 +26,9 @@ import {checkFreeModelHealth, isModelHealthFresh, type ModelHealthReport} from '
 import {discoverOrchestration} from './orchestration/discovery.js';
 import {routeOrchestration} from './orchestration/router.js';
 import type {OrchestrationCatalog} from './orchestration/types.js';
+import {preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
+import {builtinSkills, builtinWorkflows} from './orchestration/builtins.js';
+import {appVersion} from './version.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -118,6 +121,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [isPastingImage, setIsPastingImage] = useState(false);
   const [modelHealthReport, setModelHealthReport] = useState<ModelHealthReport>();
   const [isCheckingModelHealth, setIsCheckingModelHealth] = useState(false);
+  const [lastPipeline, setLastPipeline] = useState<PreparedPipeline>();
 
   const refreshModelHealth = async (): Promise<void> => {
     if (isCheckingModelHealth || isModelHealthFresh(modelHealthReport)) return;
@@ -181,7 +185,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setMessages((currentMessages) => [...currentMessages, {
       id: createMessageId(),
       role: 'system',
-      content: 'Lệnh: /models · /agents · /skills · /workflows · /paste · /copy · /help',
+      content: 'Lệnh: /models · /agents · /skills · /workflows · /status · /pipeline · /validate · /paste · /copy · /help',
       createdAt: new Date(),
     }]);
   };
@@ -236,6 +240,36 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
+    if (command === '/status') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: `PXHVibe v${appVersion} · ${agents.length} agents · 4 tiers · ${builtinWorkflows.length} workflows · ${builtinSkills.length} skills · 6 contracts${catalog.agents.length === 0 ? '' : ` · +${catalog.agents.length} project agents`}`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/pipeline') {
+      const pipelineState = lastPipeline;
+      const phases = pipelineState?.state.steps.map((step) => `${step.phase}:${step.agent}`).join(' → ');
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: phases === undefined ? 'Pipeline chưa có TARGET.' : `Pipeline ${pipelineState?.state.workflow ?? 'unknown'} · ${phases}`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/validate') {
+      const errors = validateCapabilityPack(agents.length, builtinWorkflows.length, builtinSkills.length);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', ...(errors.length === 0 ? {} : {tone: 'error' as const}),
+        content: errors.length === 0 ? 'Capability pack hợp lệ · 10 agents · 4 tiers · 8 workflows · 50 skills · 6 contracts.' : errors.join(' '),
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
     if (command === '/help') {
       showCommandList();
       return;
@@ -272,6 +306,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       : selectedAgentId;
     const routedAgent = routeAgent(automaticAgentId, routingTarget, availableAgents);
     const contextualTarget = buildContextualTarget(messages, content);
+    const pipeline = preparePipeline(contextualTarget, orchestrationRoute, routedAgent);
+    setLastPipeline(pipeline);
     const requestImages = pendingImages;
     setPendingImages([]);
     const message: Message = {
@@ -287,6 +323,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       `Agent → ${routedAgent.label}`,
       orchestrationRoute.workflow === undefined ? undefined : `Workflow → ${orchestrationRoute.workflow.name}`,
       orchestrationRoute.skills.length === 0 ? undefined : `Skills → ${orchestrationRoute.skills.map((skill) => skill.name).join(', ')}`,
+      `Pipeline → ${pipeline.tasks.map((task) => task.phase).join('→')}`,
     ].filter((value): value is string => value !== undefined).join(' · ');
     setMessages((currentMessages) => [...currentMessages, message, {
       id: createMessageId(), role: 'system', content: routeSummary, createdAt: new Date(),
@@ -349,7 +386,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     };
 
     try {
-      const response = await currentProvider.sendMessage(buildAgentPrompt(contextualTarget, routedAgent, orchestrationRoute, catalog), {
+      const response = await currentProvider.sendMessage(buildAgentPrompt(contextualTarget, routedAgent, orchestrationRoute, catalog, pipeline), {
         cwd: process.cwd(),
         ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
         onEvent: handleAgentEvent,

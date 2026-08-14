@@ -1,5 +1,48 @@
 # STATUS
 
+## Cập nhật v0.3.0: Capability pack và runtime contracts
+
+### Đã thay đổi gì
+
+- Đối chiếu trực tiếp manifest pxhopencode v82.6 tại commit `0d712cf1b2dd59eaf40d225b6254f251762e2941`.
+- Mở rộng capability pack native từ 8 lên 10 agents, từ 4 lên 8 workflows và từ 6 lên đúng 50 skills chuyên biệt.
+- Thêm kiến trúc runtime 4 tầng: Interface, Orchestration, Workers và Infrastructure.
+- Thêm 6 contract TypeScript có runtime validation: Request, Task, Result, Response, Event và State.
+- Mỗi TARGET tạo pipeline theo workflow, gắn agent vào từng phase và đưa contract/phase vào BUILD prompt.
+- Workflow Debug chạy `analyze → fix → test → review → persist`; Company/Web/Game/AI/Tool/Release/Meeting có phase riêng.
+- Thêm `/status`, `/pipeline`, `/validate` để kiểm tra capability và pipeline trong TUI.
+- Nâng version từ `v0.2.0` lên `v0.3.0`.
+
+### File đã tạo hoặc sửa
+
+- `src/orchestration/builtins.ts`
+- `src/orchestration/contracts.ts`
+- `src/orchestration/pipeline.ts`
+- `src/agents.ts`
+- `src/app.tsx`
+- `src/utils/agentPrompt.ts`
+- `src/tests/pipeline.test.ts`
+- `src/tests/orchestration.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- Capability assertions: 10 agents, 4 tiers, 8 workflows, 50 skills và 6 contracts.
+- Pipeline/contract tests: thành công.
+- Slash command tests cho `/status`, `/pipeline`, `/validate`: thành công.
+- `npm.cmd run typecheck`: thành công.
+- `npm.cmd test`: thành công, toàn bộ regression suite.
+- `npm.cmd install --global D:\PXHVibe`: thành công; `npm.cmd list --global pxhvibe --depth=0` xác nhận `pxhvibe@0.3.0`.
+
+### Vấn đề còn lại
+
+- Pipeline điều phối specialist phases trong một BUILD request để tiết kiệm quota model free; chưa spawn một model request riêng cho từng specialist.
+- PXHVibe chưa có 23 slash command hay 119 self-test; không hiển thị các con số này trong TUI để tránh gây hiểu nhầm.
+
 ## Cập nhật v0.2.0: Skills, agents và workflows native
 
 ### Đã thay đổi gì

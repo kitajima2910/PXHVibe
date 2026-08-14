@@ -6,6 +6,11 @@ import {discoverOrchestration} from '../orchestration/discovery.js';
 import {routeOrchestration} from '../orchestration/router.js';
 import {buildAgentPrompt} from '../utils/agentPrompt.js';
 import {agents, routeAgent} from '../agents.js';
+import {builtinSkills, builtinWorkflows} from '../orchestration/builtins.js';
+
+assert.equal(agents.length, 10);
+assert.equal(builtinSkills.length, 50);
+assert.equal(builtinWorkflows.length, 8);
 
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-orchestration-'));
 try {
@@ -26,7 +31,7 @@ name: Database Recovery
 description: Workflow sửa database
 triggers: [postgresql, migration]
 agent: database-specialist
-skills: [database-debug, verification]
+skills: [database-debug, process-verification]
 ---
 # Database Recovery
 1. Reproduce the migration failure.
@@ -45,12 +50,14 @@ Không chỉnh migration đã chạy production.
   assert.ok(catalog.skills.some((skill) => skill.id === 'database-debug'));
   assert.ok(catalog.workflows.some((workflow) => workflow.id === 'database-recovery'));
   assert.ok(catalog.agents.some((agent) => agent.id === 'project:database-specialist'));
-  assert.ok(catalog.skills.some((skill) => skill.id === 'systematic-debugging'));
+  assert.equal(catalog.skills.length, 51);
+  assert.equal(catalog.workflows.length, 9);
+  assert.ok(catalog.skills.some((skill) => skill.id === 'process-systematic-debugging'));
 
   const route = routeOrchestration('sửa lỗi postgresql migration', catalog);
   assert.equal(route.workflow?.name, 'Database Recovery');
   assert.equal(route.skills[0]?.id, 'database-debug');
-  assert.ok(route.skills.some((skill) => skill.id === 'verification'));
+  assert.ok(route.skills.some((skill) => skill.id === 'process-verification'));
 
   const availableAgents = [...agents, ...catalog.agents];
   const projectAgent = routeAgent('project:database-specialist', 'sửa migration', availableAgents);
