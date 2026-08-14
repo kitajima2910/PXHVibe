@@ -22,6 +22,7 @@ import type {ImageAttachment} from './types/attachment.js';
 import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
 import {copyTextToClipboard} from './utils/clipboard.js';
 import {collapsePastedBlocksForDisplay} from './utils/pastedText.js';
+import {checkFreeModelHealth, isModelHealthFresh, type ModelHealthReport} from './utils/modelHealth.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -36,6 +37,7 @@ function createMessageId(): string {
 
 interface AppProps {
   provider: AIProvider;
+  checkModels?: typeof checkFreeModelHealth;
 }
 
 type AppStatus = 'Ready' | 'Thinking...' | 'Error';
@@ -90,7 +92,7 @@ export function buildContextualTarget(messages: readonly Message[], currentTarge
   return `BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:\nHãy tiếp tục nhất quán và không yêu cầu người dùng lặp lại nội dung đã cung cấp.\n\n${selectedTurns.join('\n\n')}\n\nTARGET HIỆN TẠI:\n${currentTarget}`;
 }
 
-export function App({provider}: AppProps): React.JSX.Element {
+export function App({provider, checkModels = checkFreeModelHealth}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
   const [currentProvider, setCurrentProvider] = useState(provider);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
@@ -103,6 +105,30 @@ export function App({provider}: AppProps): React.JSX.Element {
   const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
   const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([]);
   const [isPastingImage, setIsPastingImage] = useState(false);
+  const [modelHealthReport, setModelHealthReport] = useState<ModelHealthReport>();
+  const [isCheckingModelHealth, setIsCheckingModelHealth] = useState(false);
+
+  const refreshModelHealth = async (): Promise<void> => {
+    if (isCheckingModelHealth || isModelHealthFresh(modelHealthReport)) return;
+    setIsCheckingModelHealth(true);
+    try {
+      const report = await checkModels(modes, process.cwd());
+      setModelHealthReport(report);
+      const recommended = modes.find((mode) => mode.id === report.recommendedModeId);
+      const onlineCount = report.results.filter((result) => result.ok).length;
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(),
+        role: 'system',
+        ...(recommended === undefined ? {tone: 'error' as const} : {}),
+        content: recommended === undefined
+          ? 'Không có model free nào phản hồi. Hãy thử lại sau hoặc dùng Custom API.'
+          : `Đề xuất ${recommended.label} · ${onlineCount}/${report.results.length} model free đang online.`,
+        createdAt: new Date(),
+      }]);
+    } finally {
+      setIsCheckingModelHealth(false);
+    }
+  };
 
   const handlePasteImage = async (): Promise<void> => {
     if (isBusy || isPastingImage) return;
@@ -172,6 +198,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     const command = content.toLowerCase();
     if (command === '/models') {
       setIsModePickerOpen(true);
+      void refreshModelHealth();
       return;
     }
 
@@ -379,6 +406,8 @@ export function App({provider}: AppProps): React.JSX.Element {
       ) : isModePickerOpen ? (
         <ModePicker
           modes={modes}
+          healthReport={modelHealthReport}
+          isCheckingHealth={isCheckingModelHealth}
           onSelect={handleModeSelect}
           onCancel={() => setIsModePickerOpen(false)}
         />

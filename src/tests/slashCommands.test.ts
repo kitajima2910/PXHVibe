@@ -58,7 +58,14 @@ const output = new PassThrough();
 Object.assign(output, {columns: 140, rows: 40, isTTY: true});
 let rendered = '';
 output.on('data', (chunk) => { rendered += chunk.toString('utf8'); });
-const instance = render(React.createElement(App, {provider}), {
+const instance = render(React.createElement(App, {
+  provider,
+  checkModels: async () => ({
+    checkedAt: Date.now(),
+    results: [{modeId: 'pickle', ok: true, latencyMs: 10}],
+    recommendedModeId: 'pickle',
+  }),
+}), {
   stdin: input as unknown as NodeJS.ReadStream,
   stdout: output as unknown as NodeJS.WriteStream,
   stderr: output as unknown as NodeJS.WriteStream,
@@ -81,6 +88,8 @@ input.write('\r');
 await wait(80);
 const visible = stripAnsi(rendered);
 assert.ok(visible.includes('Big Pickle (Free)'));
+assert.ok(visible.includes('online 0.0s'));
+assert.ok(visible.includes('ĐỀ XUẤT'));
 assert.equal(provider.calls, 0);
 input.write('\x1b');
 await wait(50);

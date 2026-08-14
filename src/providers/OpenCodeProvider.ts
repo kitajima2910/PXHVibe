@@ -16,7 +16,10 @@ export class OpenCodeProvider implements AIProvider {
   readonly name: string;
   private activeProcess: ChildProcessWithoutNullStreams | undefined;
 
-  constructor(private readonly model = defaultOpenCodeModel) {
+  constructor(
+    private readonly model = defaultOpenCodeModel,
+    private readonly requestTimeoutMs?: number,
+  ) {
     this.name = `Free · ${formatModelName(model)}`;
   }
 
@@ -116,7 +119,7 @@ export class OpenCodeProvider implements AIProvider {
         resolve({content: cleanStdout});
       });
 
-      const timeoutMs = getRequestTimeoutMs();
+      const timeoutMs = this.requestTimeoutMs ?? getRequestTimeoutMs();
       timeout = setTimeout(() => {
         child.kill();
         fail(new Error(

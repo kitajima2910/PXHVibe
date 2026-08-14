@@ -639,3 +639,40 @@
 ### Vấn đề còn lại
 
 - Ảnh của request cũ vẫn được xóa sau khi request kết thúc; cầu nối hiện giữ nội dung text, không gửi lại binary ảnh cũ.
+
+## Cập nhật v0.1.11: tự kiểm tra và đề xuất model free
+
+### Đã thay đổi gì
+
+- Khi mở `/models`, PXHVibe tự probe song song toàn bộ model free bằng prompt không dùng tool.
+- Mode picker hiển thị `checking`, `online + độ trễ` hoặc `offline`; model online phản hồi nhanh nhất được đánh dấu `★ ĐỀ XUẤT` và tự focus.
+- Kết quả được cache 10 phút trong phiên để không tốn request khi mở lại `/models` liên tục.
+- Nếu không model nào phản hồi, TUI hiển thị cảnh báo đỏ và gợi ý dùng Custom API; PXHVibe không tự đổi model.
+- Health probe có timeout riêng 30 giây, không thay đổi timeout 120 giây của task coding.
+- Cho phép inject health checker giả trong regression test để test không gọi cloud hoặc tiêu tốn quota.
+- Bump version từ `0.1.10` lên `0.1.11`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/ModePicker.tsx`
+- `src/providers/OpenCodeProvider.ts`
+- `src/utils/modelHealth.ts`
+- `src/tests/modes.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.11`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Mode tests xác nhận chọn model online nhanh nhất và cache hết hạn sau 10 phút; command tests xác nhận UI hiện `online` và `ĐỀ XUẤT` mà không gọi cloud thật.
+- Live probe trước khi triển khai xác nhận 7/8 model free online; Ling 3.0 Tiny trả server error.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Health check dùng request thật tới cloud và phản ánh tình trạng tại thời điểm kiểm tra; độ trễ có thể thay đổi giữa các lần chạy.

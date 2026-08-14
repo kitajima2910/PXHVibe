@@ -66,7 +66,7 @@ pxh --provider=custom
 - Giữ `Shift`, bôi chọn nội dung trong terminal rồi nhấn `Ctrl+C` để copy đoạn tùy chọn.
 - Input text chỉ hiển thị tối đa 5 dòng; dùng `↑`/`↓` hoặc mouse wheel trong input để cuộn.
 - Khi ô nhập trống, `Backspace` hoặc `Delete`: bỏ ảnh đính kèm cuối cùng (tối đa 4 ảnh mỗi TARGET).
-- `/models`: chọn model/mode.
+- `/models`: tự kiểm tra model free, hiển thị online/offline và đề xuất model phản hồi nhanh nhất.
 - `/agents`: chọn specialist hoặc Economy Router tự động.
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
