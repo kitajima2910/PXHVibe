@@ -39,8 +39,9 @@ export interface TeamRunResult {
   phaseOutputs: Readonly<Record<string, string>>;
 }
 
-const maximumAttempts = 2;
+const maximumAttempts = 3;
 const handoffCharacterBudget = 16_000;
+const phasePromptCharacterBudget = 64_000;
 
 export async function runTeamPipeline(options: TeamRunOptions): Promise<TeamRunResult> {
   const store = new SessionStore(options.cwd);
@@ -75,7 +76,7 @@ export async function runTeamPipeline(options: TeamRunOptions): Promise<TeamRunR
 
       try {
         const handoff = buildHandoffContext(session, index);
-        const prompt = buildPhasePrompt(options, agent, step.phase, handoff);
+        const prompt = compactPhasePrompt(buildPhasePrompt(options, agent, step.phase, handoff));
         const response = await options.provider.sendMessage(prompt, {
           cwd: options.cwd,
           ...(options.attachments === undefined || options.attachments.length === 0 ? {} : {attachments: options.attachments}),
@@ -172,6 +173,13 @@ function buildHandoffContext(session: RuntimeSession, currentIndex: number): str
     remaining -= selected.length;
   }
   return values.join('\n\n');
+}
+
+function compactPhasePrompt(prompt: string): string {
+  if (prompt.length <= phasePromptCharacterBudget) return prompt;
+  const headBudget = 28_000;
+  const tailBudget = phasePromptCharacterBudget - headBudget;
+  return `${prompt.slice(0, headBudget)}\n\n[CONTEXT AUTO-COMPACTED]\n\n${prompt.slice(prompt.length - tailBudget)}`;
 }
 
 function isCancellation(error: unknown): boolean {

@@ -70,9 +70,23 @@ try {
     await rm(retryRoot, {recursive: true, force: true});
   }
 
+  const continuationRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-team-continuation-'));
+  try {
+    const continuationProvider = new SequenceProvider(2);
+    const continuationResult = await runTeamPipeline({
+      provider: continuationProvider, cwd: continuationRoot, target, route, catalog: emptyCatalog,
+      pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
+    });
+    assert.equal(continuationProvider.calls, 7);
+    assert.equal(continuationResult.session.steps[0]?.attempts, 3);
+    assert.equal(continuationResult.session.status, 'pass');
+  } finally {
+    await rm(continuationRoot, {recursive: true, force: true});
+  }
+
   const resumeRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-team-resume-'));
   try {
-    const failingProvider = new SequenceProvider(2);
+    const failingProvider = new SequenceProvider(3);
     await assert.rejects(runTeamPipeline({
       provider: failingProvider, cwd: resumeRoot, target, route, catalog: emptyCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
@@ -80,7 +94,7 @@ try {
     const failed = await new SessionStore(resumeRoot).load();
     assert.equal(failed?.status, 'fail');
     assert.equal(failed?.currentIndex, 0);
-    assert.equal(failed?.steps[0]?.attempts, 2);
+    assert.equal(failed?.steps[0]?.attempts, 3);
     assert.ok(failed !== undefined);
     const resumable: typeof failed = {
       ...failed,

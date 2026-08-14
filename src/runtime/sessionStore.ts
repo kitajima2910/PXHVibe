@@ -56,3 +56,12 @@ export function summarizeSession(session: RuntimeSession): string {
   const active = session.steps[session.currentIndex];
   return `${session.workflowId} · ${session.status} · ${passed}/${session.steps.length} phases${active === undefined ? '' : ` · ${active.phase}:${active.agentLabel}`}`;
 }
+
+export function makeSessionResumable(session: RuntimeSession): RuntimeSession {
+  const steps = session.steps.map((step, index) => {
+    if (index < session.currentIndex && step.status === 'pass') return step;
+    const {error: _error, ...rest} = step;
+    return {...rest, status: 'pending' as const, attempts: 0};
+  });
+  return {...session, status: 'running', steps};
+}

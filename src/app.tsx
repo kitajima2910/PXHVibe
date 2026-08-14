@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
@@ -28,8 +28,9 @@ import type {OrchestrationCatalog} from './orchestration/types.js';
 import {preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
 import {appVersion} from './version.js';
 import {runTeamPipeline, type TeamRunnerEvent} from './runtime/teamRunner.js';
-import {SessionStore, summarizeSession, type RuntimeSession} from './runtime/sessionStore.js';
+import {makeSessionResumable, SessionStore, summarizeSession, type RuntimeSession} from './runtime/sessionStore.js';
 import {commandDefinitions, detectProject, formatCommandList, getGitDiffSummary} from './runtime/commands.js';
+import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -84,26 +85,10 @@ export function isCancellationError(error: unknown): boolean {
   return error.name === 'AbortError' || /(?:aborted|abort|đã được hủy)/i.test(error.message);
 }
 
-const maxConversationContextCharacters = 24_000;
-
 export function buildContextualTarget(messages: readonly Message[], currentTarget: string): string {
-  const turns = messages
-    .filter((message) => message.id !== 'welcome' && (message.role === 'user' || message.role === 'assistant'))
-    .map((message) => `[${message.role === 'user' ? 'USER' : 'ASSISTANT'}]\n${message.contextContent ?? message.content}`)
-    .filter((turn) => turn.trim().length > 0);
+  const turns = selectConversationContext(messages);
   if (turns.length === 0) return currentTarget;
-
-  const selectedTurns: string[] = [];
-  let remaining = maxConversationContextCharacters;
-  for (let index = turns.length - 1; index >= 0 && remaining > 0; index -= 1) {
-    const turn = turns[index];
-    if (turn === undefined) continue;
-    const selected = turn.length <= remaining ? turn : turn.slice(turn.length - remaining);
-    selectedTurns.unshift(selected);
-    remaining -= selected.length;
-  }
-
-  return `BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:\nHãy tiếp tục nhất quán và không yêu cầu người dùng lặp lại nội dung đã cung cấp.\n\n${selectedTurns.join('\n\n')}\n\nTARGET HIỆN TẠI:\n${currentTarget}`;
+  return `BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:\nHãy tiếp tục nhất quán và không yêu cầu người dùng lặp lại nội dung đã cung cấp.\n\n${turns.join('\n\n')}\n\nTARGET HIỆN TẠI:\n${currentTarget}`;
 }
 
 export function buildRoutingTarget(messages: readonly Message[], currentTarget: string): string {
@@ -139,6 +124,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [lastPipeline, setLastPipeline] = useState<PreparedPipeline>();
   const [runtimeSession, setRuntimeSession] = useState<RuntimeSession>();
   const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
+  const autoResumeStartedRef = useRef(false);
+  const contextUsage = getContextUsage(messages);
 
   const refreshModelHealth = async (): Promise<void> => {
     if (isCheckingModelHealth || isModelHealthFresh(modelHealthReport)) return;
@@ -342,12 +329,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         }]);
         return;
       }
-      const steps = stored.steps.map((step, index) => {
-        if (index < stored.currentIndex && step.status === 'pass') return step;
-        const {error: _error, ...rest} = step;
-        return {...rest, status: 'pending' as const, attempts: 0};
-      });
-      resumeSessionRef.current = {...stored, status: 'running', steps};
+      resumeSessionRef.current = makeSessionResumable(stored);
       await handleSubmit(stored.target);
       return;
     }
@@ -363,10 +345,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
 
     if (command === '/context') {
-      const characterCount = messages.reduce((sum, message) => sum + (message.contextContent ?? message.content).length, 0);
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system',
-        content: `Context · ${messages.length} messages · ${characterCount.toLocaleString('vi')} chars · ${runtimeSession?.steps.filter((step) => step.output !== undefined).length ?? 0} phase outputs.`,
+        content: `Context ${contextUsage.percent}% · ~${contextUsage.estimatedTokens.toLocaleString('vi')} tokens · ${contextUsage.activeCharacters.toLocaleString('vi')}/24.000 chars${contextUsage.compacted ? ' · AUTO-COMPACT đang bật' : ''} · ${runtimeSession?.steps.filter((step) => step.output !== undefined).length ?? 0} phase outputs.`,
         createdAt: new Date(),
       }]);
       return;
@@ -635,6 +616,22 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }]);
   };
 
+  useEffect(() => {
+    if (autoResumeStartedRef.current) return;
+    autoResumeStartedRef.current = true;
+    void (async () => {
+      const stored = await new SessionStore(workingDirectory).load();
+      if (stored === undefined || (stored.status !== 'fail' && stored.status !== 'running')) return;
+      resumeSessionRef.current = makeSessionResumable(stored);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: `AUTO-RESUME · tiếp tục session ${stored.sessionId} từ checkpoint ${stored.currentIndex + 1}/${stored.steps.length}.`,
+        createdAt: new Date(),
+      }]);
+      await handleSubmit(stored.target);
+    })();
+  }, []);
+
   return (
     <Box flexDirection="column" height={stdout.rows}>
       <Banner />
@@ -643,6 +640,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         providerName={currentProvider.name}
         agentLabel={activeAgent.label}
         status={status}
+        contextPercent={contextUsage.percent}
+        contextCompacted={contextUsage.compacted}
       />
       <MessageList messages={messages} />
       {isAgentPickerOpen ? (

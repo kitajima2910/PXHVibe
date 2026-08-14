@@ -8,6 +8,7 @@ import type {AIProvider} from '../providers/AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 import {appVersion} from '../version.js';
+import {getContextUsage} from '../runtime/contextManager.js';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -60,6 +61,19 @@ const bridgedTarget = buildContextualTarget([{
 assert.match(bridgedTarget, /dòng một\ndòng hai/);
 assert.doesNotMatch(bridgedTarget, /~2 dòng/);
 assert.match(bridgedTarget, /TARGET HIỆN TẠI:\ntiếp tục task$/);
+const oversizedMessages = [
+  {id: 'anchor', role: 'user' as const, content: `TARGET-GỐC ${'a'.repeat(5_000)}`},
+  {id: 'middle', role: 'assistant' as const, content: 'b'.repeat(20_000)},
+  {id: 'latest', role: 'user' as const, content: `LƯỢT-MỚI ${'c'.repeat(10_000)}`},
+];
+const compactedTarget = buildContextualTarget(oversizedMessages.map((message) => ({...message, createdAt: new Date()})), 'tiếp tục');
+assert.match(compactedTarget, /TARGET-GỐC/);
+assert.match(compactedTarget, /LƯỢT-MỚI/);
+assert.match(compactedTarget, /CONTEXT AUTO-COMPACTED/);
+const contextUsage = getContextUsage(oversizedMessages);
+assert.equal(contextUsage.percent, 100);
+assert.equal(contextUsage.compacted, true);
+assert.equal(contextUsage.estimatedTokens, 6_000);
 assert.equal(buildRoutingTarget([{
   id: 'old', role: 'user', content: 'tạo website', createdAt: new Date(),
 }], 'làm game HTML5 có player và enemies'), 'làm game HTML5 có player và enemies');
@@ -91,6 +105,7 @@ const instance = render(React.createElement(App, {
 await wait(50);
 assert.ok(stripAnsi(rendered).includes('Error404-Labs.Info.VN - Phạm Xuân Hoài'));
 assert.ok(stripAnsi(rendered).includes(`PXHVibe v${appVersion}`));
+assert.ok(stripAnsi(rendered).includes('CTX 0%'));
 await typeText('/status');
 input.write('\r');
 await wait(80);

@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.5.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.6.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +104,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.5.0
+### Capability pack v0.6.0
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
@@ -147,6 +147,12 @@ Mỗi TARGET được chạy thành nhiều phase thật thay vì chỉ mô ph�
 - CLI hỗ trợ `pxh --version` và `pxh --help` mà không khởi động TUI.
 
 Nên thêm `.pxhvibe/` vào `.gitignore` nếu không muốn commit checkpoint phiên làm việc.
+
+### Context tự quản lý
+
+Header hiển thị `CTX n%` theo cửa sổ hội thoại 24.000 ký tự của PXHVibe (token chỉ là ước lượng vì provider miễn phí không trả usage chuẩn). Khi đầy, PXHVibe tự giữ TARGET gốc cùng các lượt gần nhất và hiện `CTX 100% ↻`; prompt phase cũng được chặn ở ngân sách an toàn để tránh lỗi context quá dài.
+
+Lỗi tạm thời được tự tiếp tục tối đa ba lượt. Nếu TUI hoặc terminal đóng giữa pipeline, lần chạy `pxh` tiếp theo tự đọc checkpoint và tiếp tục session `fail/running` mà không cần gõ `/resume`. Session do người dùng chủ động hủy không tự chạy lại; `/resume` vẫn được giữ làm phương án thủ công.
 
 ## Development
 

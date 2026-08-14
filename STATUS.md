@@ -1,5 +1,46 @@
 # STATUS
 
+## Cập nhật v0.6.0: Context meter và auto-resume
+
+### Đã thay đổi gì
+
+- Hiển thị `CTX n%` trên header; `↻` xuất hiện khi lịch sử đã được auto-compact.
+- `/context` báo phần trăm, token ước lượng, số ký tự đang hoạt động và trạng thái auto-compact.
+- Khi vượt 24.000 ký tự hội thoại, giữ TARGET gốc và các lượt mới nhất thay vì chỉ cắt đuôi mù.
+- Giới hạn prompt từng phase ở 64.000 ký tự, giữ phần rule/identity đầu và TARGET/handoff cuối.
+- Tự tiếp tục lỗi tạm thời tối đa ba attempt.
+- Khi khởi động TUI, tự resume session `fail/running` từ checkpoint; không tự chạy lại session người dùng đã hủy.
+- Giữ `/resume` làm phương án khôi phục thủ công.
+- Nâng version lên `v0.6.0`.
+
+### File đã tạo hoặc sửa
+
+- `src/runtime/contextManager.ts`
+- `src/runtime/sessionStore.ts`
+- `src/runtime/teamRunner.ts`
+- `src/app.tsx`
+- `src/components/Header.tsx`
+- `src/tests/teamRunner.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 16 nhóm test.
+- Context regression xác nhận giữ TARGET gốc + lượt mới nhất, báo `100%`, `~6.000 tokens` và trạng thái compact.
+- Team-runner regression xác nhận lỗi tạm thời tự tiếp tục ở attempt thứ ba; checkpoint thủ công vẫn resume đúng phase.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.6.0`.
+- Global install: `pxhvibe@0.6.0`; `pxh.cmd --version` trả `PXHVibe v0.6.0`.
+
+### Vấn đề còn lại
+
+- Context không thể vô cực về vật lý; PXHVibe dùng rolling context + STATUS.md + checkpoint để duy trì công việc dài hạn.
+- Token là ước lượng theo ký tự vì free provider không cung cấp usage/context-window thống nhất cho mọi model.
+
 ## Cập nhật v0.5.0: Native multi-agent execution runtime
 
 ### Đã thay đổi gì

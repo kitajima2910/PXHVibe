@@ -6,9 +6,11 @@ interface HeaderProps {
   providerName: string;
   agentLabel: string;
   status: 'Ready' | 'Thinking...' | 'Error';
+  contextPercent: number;
+  contextCompacted: boolean;
 }
 
-export function Header({workingDirectory, providerName, agentLabel, status}: HeaderProps): React.JSX.Element {
+export function Header({workingDirectory, providerName, agentLabel, status, contextPercent, contextCompacted}: HeaderProps): React.JSX.Element {
   const statusColor = status === 'Error' ? 'red' : status === 'Thinking...' ? 'yellow' : 'green';
   return (
     <Box borderStyle="single" borderColor={statusColor} paddingX={1} justifyContent="space-between">
@@ -18,7 +20,10 @@ export function Header({workingDirectory, providerName, agentLabel, status}: Hea
         <Text bold color="green">{providerName}</Text>
       </Box>
       <Text><Text color="gray">BUILD / </Text><Text bold color="cyan">{agentLabel}</Text></Text>
-      <Text color="gray">{workingDirectory}</Text>
+      <Box gap={1}>
+        <Text color={contextPercent >= 90 ? 'yellow' : 'gray'}>CTX {contextPercent}%{contextCompacted ? ' ↻' : ''}</Text>
+        <Text color="gray">{workingDirectory}</Text>
+      </Box>
     </Box>
   );
 }
