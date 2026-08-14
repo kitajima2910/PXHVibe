@@ -189,7 +189,7 @@ function isCancellation(error: unknown): boolean {
 function isRetryable(error: unknown): boolean {
   if (isCancellation(error)) return false;
   const message = error instanceof Error ? error.message : '';
-  return !/(?:\b429\b|quota|rate[_ -]?limit|does not support image|không hỗ trợ hình ảnh)/i.test(message);
+  return !/(?:\b429\b|quota|rate[_ -]?limit|does not support image|không hỗ trợ hình ảnh|ENAMETOOLONG|argument list too long|command line.*too long)/i.test(message);
 }
 
 function validateRuntimeContract(name: 'event' | 'result' | 'response', value: unknown): void {

@@ -28,6 +28,16 @@ class SequenceProvider implements AIProvider {
   cancel(): void { this.cancelled = true; }
 }
 
+class TooLongProvider implements AIProvider {
+  readonly name = 'TooLong';
+  calls = 0;
+  async sendMessage(): Promise<ProviderResponse> {
+    this.calls += 1;
+    throw Object.assign(new Error('spawn ENAMETOOLONG'), {code: 'ENAMETOOLONG'});
+  }
+  cancel(): void {}
+}
+
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-team-'));
 try {
   const target = 'sửa lỗi đăng nhập bị crash';
@@ -113,6 +123,18 @@ try {
     assert.equal(resumed.session.status, 'pass');
   } finally {
     await rm(resumeRoot, {recursive: true, force: true});
+  }
+
+  const tooLongRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-team-too-long-'));
+  try {
+    const tooLongProvider = new TooLongProvider();
+    await assert.rejects(runTeamPipeline({
+      provider: tooLongProvider, cwd: tooLongRoot, target, route, catalog: emptyCatalog,
+      pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
+    }), /ENAMETOOLONG/);
+    assert.equal(tooLongProvider.calls, 1);
+  } finally {
+    await rm(tooLongRoot, {recursive: true, force: true});
   }
 } finally {
   await rm(root, {recursive: true, force: true});

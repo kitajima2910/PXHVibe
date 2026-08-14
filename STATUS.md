@@ -1,5 +1,49 @@
 # STATUS
 
+## Cập nhật v0.10.0: Sửa `spawn ENAMETOOLONG` cho prompt dài
+
+### Nguyên nhân gốc
+
+- Free provider đặt toàn bộ phase prompt vào argv cuối của `opencode run`.
+- Trên Windows, prompt sau khi ghép RULE, agent, workflow, skills và handoff có thể vượt giới hạn command line dù prompt người dùng ban đầu không dài.
+- Phase `PERSIST` tích lũy nhiều handoff nhất nên thường phát lỗi đầu tiên.
+- `ENAMETOOLONG` trước đây bị coi là transient và retry nguyên prompt ba lần.
+
+### Đã thay đổi gì
+
+- Loại prompt khỏi `buildOpenCodeArguments`; argv chỉ còn flags, model và file attachments.
+- Pipe toàn bộ prompt qua stdin UTF-8 rồi đóng EOF để runtime bắt đầu xử lý.
+- Bắt lỗi stdin; bỏ qua `EPIPE` khi process đã kết thúc sớm, báo các lỗi pipe khác.
+- Phân loại `ENAMETOOLONG`, `argument list too long` và command-line-too-long là không retryable.
+- Thêm regression với prompt “Bắn Ruồi Đại Chiến” lặp 10.000 lần, xác nhận prompt không xuất hiện trong argv và được chuyển nguyên vẹn qua stdin.
+- Thêm team-runner regression xác nhận `ENAMETOOLONG` chỉ gọi provider một lần.
+- Nâng version lên `v0.10.0`.
+
+### File đã sửa
+
+- `src/providers/OpenCodeProvider.ts`
+- `src/runtime/teamRunner.ts`
+- `src/tests/openCodeProvider.test.ts`
+- `src/tests/teamRunner.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 17 nhóm test.
+- Free-provider regression xác nhận prompt rất dài không nằm trong argv và được pipe nguyên vẹn qua stdin.
+- Team-runner regression xác nhận `ENAMETOOLONG` không bị retry mù.
+- End-to-end free runtime stdin smoke test: trả đúng `PXH_STDIN_OK`.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.10.0`.
+- Global install: `pxhvibe@0.10.0`; `pxh.cmd --version` trả `PXHVibe v0.10.0`.
+
+### Vấn đề còn lại
+
+- Model vẫn có context-window riêng; PXHVibe giải quyết giới hạn argv của Windows nhưng không thể loại bỏ giới hạn token của model.
+
 ## Cập nhật v0.9.0: Body 80/20 và sidebar MCP-ready
 
 ### Đã thay đổi gì

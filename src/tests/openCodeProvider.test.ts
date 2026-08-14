@@ -9,6 +9,7 @@ import {
   getRequestTimeoutMs,
   parseOpenCodeEvent,
   resolveOpenCodeExecutable,
+  writePromptToStdin,
 } from '../providers/OpenCodeProvider.js';
 
 assert.equal(parseProviderName([]), 'free');
@@ -42,11 +43,23 @@ scheduledCallbacks[1]?.();
 assert.equal(inactivityExpired, 1);
 inactivityTimer.clear();
 assert.equal(cancelledTimers, 1);
-const buildArguments = buildOpenCodeArguments('target', defaultOpenCodeModel);
+const buildArguments = buildOpenCodeArguments(defaultOpenCodeModel);
 assert.ok(buildArguments.includes('--auto'));
-assert.deepEqual(buildArguments.slice(-4), ['--agent', 'build', '--auto', 'target']);
-const imageArguments = buildOpenCodeArguments('describe', defaultOpenCodeModel, ['C:\\Temp\\shot.png']);
-assert.deepEqual(imageArguments.slice(-3), ['--file', 'C:\\Temp\\shot.png', 'describe']);
+assert.deepEqual(buildArguments.slice(-3), ['--agent', 'build', '--auto']);
+const imageArguments = buildOpenCodeArguments(defaultOpenCodeModel, ['C:\\Temp\\shot.png']);
+assert.deepEqual(imageArguments.slice(-2), ['--file', 'C:\\Temp\\shot.png']);
+const longPrompt = 'Tạo game Bắn Ruồi Đại Chiến.\n'.repeat(10_000);
+const longPromptArguments = buildOpenCodeArguments(defaultOpenCodeModel);
+assert.equal(longPromptArguments.includes(longPrompt), false);
+assert.ok(longPromptArguments.every((argument) => argument.length < 1_000));
+let pipedPrompt = '';
+writePromptToStdin({
+  end(chunk, encoding) {
+    assert.equal(encoding, 'utf8');
+    pipedPrompt = chunk;
+  },
+}, longPrompt);
+assert.equal(pipedPrompt, longPrompt);
 
 const step = parseOpenCodeEvent(JSON.stringify({type: 'step_start', part: {type: 'step-start'}}));
 assert.deepEqual(step.events, [{type: 'activity', content: 'Đang phân tích yêu cầu...'}]);

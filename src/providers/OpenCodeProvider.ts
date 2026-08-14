@@ -64,7 +64,6 @@ export class OpenCodeProvider implements AIProvider {
     return new Promise((resolve, reject) => {
       // Automatic coding mode allows the selected agent to modify project files.
       const child = spawn(resolveOpenCodeExecutable(), buildOpenCodeArguments(
-        prompt,
         this.model,
         options.attachments?.map((attachment) => attachment.path) ?? [],
       ), {
@@ -72,9 +71,6 @@ export class OpenCodeProvider implements AIProvider {
         shell: false,
         windowsHide: true,
       });
-      // The runtime reads piped stdin before processing positional prompts.
-      // Signal EOF immediately so it does not wait forever on Node's default pipe.
-      child.stdin.end();
       this.activeProcess = child;
 
       let stdoutBuffer = '';
@@ -98,6 +94,7 @@ export class OpenCodeProvider implements AIProvider {
           this.activeAbort = undefined;
         }
         child.removeAllListeners();
+        child.stdin.removeAllListeners();
         child.stdout.removeAllListeners();
         child.stderr.removeAllListeners();
       };
@@ -118,6 +115,13 @@ export class OpenCodeProvider implements AIProvider {
         fail(error);
       };
       this.activeAbort = abortRequest;
+
+      // Keep the full prompt out of argv. Windows rejects long command lines with
+      // ENAMETOOLONG; run mode officially merges piped stdin into its message.
+      child.stdin.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code !== 'EPIPE') fail(error);
+      });
+      writePromptToStdin(child.stdin, prompt);
 
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
@@ -199,7 +203,6 @@ export class OpenCodeProvider implements AIProvider {
 }
 
 export function buildOpenCodeArguments(
-  prompt: string,
   model: string,
   files: readonly string[] = [],
 ): string[] {
@@ -214,8 +217,14 @@ export function buildOpenCodeArguments(
     'build',
     '--auto',
     ...files.flatMap((file) => ['--file', file]),
-    prompt,
   ];
+}
+
+export function writePromptToStdin(
+  stdin: {end(chunk: string, encoding: BufferEncoding): unknown},
+  prompt: string,
+): void {
+  stdin.end(prompt, 'utf8');
 }
 
 interface ParsedRuntimeEvent {
