@@ -125,9 +125,11 @@ export function buildScrollbar(height: number, messageCount: number, scrollOffse
 
 function MessageCard({message}: {message: Message}): React.JSX.Element {
   if (message.role === 'system') {
+    const color = getSystemMessageColor(message);
+    const isError = message.tone === 'error';
     return (
       <Box paddingX={1} flexShrink={0}>
-        <Text color="gray"><Text color="green">↳</Text>{' '}{message.content}</Text>
+        <Text bold={isError} color={color}><Text color={isError ? 'red' : 'green'}>{isError ? '✖' : '↳'}</Text>{' '}{message.content}</Text>
       </Box>
     );
   }
@@ -157,6 +159,10 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
       <FormattedText content={message.content} accent={isUser ? 'yellow' : 'green'} />
     </Box>
   );
+}
+
+export function getSystemMessageColor(message: Message): 'red' | 'gray' {
+  return message.tone === 'error' ? 'red' : 'gray';
 }
 
 function formatTime(date: Date): string {

@@ -6,6 +6,7 @@ export interface Message {
   id: string;
   role: MessageRole;
   content: string;
+  tone?: 'error';
   attachments?: readonly ImageAttachment[];
   createdAt: Date;
 }

@@ -1,6 +1,6 @@
 {
   "name": "pxhvibe",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "PXHVibe terminal coding agent with free and custom API modes.",
   "license": "MIT",
   "publishConfig": {

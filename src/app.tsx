@@ -40,8 +40,14 @@ interface AppProps {
 
 type AppStatus = 'Ready' | 'Thinking...' | 'Error';
 
-function getErrorMessage(error: unknown): string {
+export function getErrorMessage(error: unknown, hasImages = false): string {
   const message = error instanceof Error ? error.message : 'Provider đã gặp lỗi không xác định.';
+  if (isImageUnsupportedError(message, hasImages)) {
+    return 'MODEL KHÔNG HỖ TRỢ HÌNH ẢNH · Hãy bỏ ảnh hoặc chọn model vision khác bằng /models.';
+  }
+  if (isModelLimitError(message)) {
+    return 'MODEL ĐÃ HẾT GIỚI HẠN · Hãy chờ quota được làm mới hoặc chọn model khác bằng /models.';
+  }
   if (
     message.includes('AGENT ROLE:')
     || message.includes('AGENT MODE:')
@@ -50,6 +56,16 @@ function getErrorMessage(error: unknown): string {
     return 'Model không thể xử lý TARGET này. Hãy thử lại hoặc chọn model khác bằng /models.';
   }
   return message;
+}
+
+export function isImageUnsupportedError(message: string, hasImages = false): boolean {
+  const explicitImageError = /(?:(?:model|provider).*(?:does not|doesn't|cannot|can't).*(?:support|accept|process).*(?:image|vision)|(?:image|vision|multimodal).*(?:not supported|unsupported|not available|not enabled)|unsupported.*(?:image|vision)|không hỗ trợ.*(?:ảnh|hình ảnh|vision))/i;
+  if (explicitImageError.test(message)) return true;
+  return hasImages && /(?:(?:unsupported|not supported|does not support).*(?:input|content|media|attachment|file)|(?:input|content|media|attachment|file).*(?:unsupported|not supported)|(?:text[- ]only|only supports? text))/i.test(message);
+}
+
+export function isModelLimitError(message: string): boolean {
+  return /(?:\b429\b|rate[_ -]?limit|usage[_ -]?limit|limit (?:reached|exceeded)|quota|too many requests|insufficient[_ -]?quota|credits? exhausted|no credits|hết (?:giới hạn|lượt|quota))/i.test(message);
 }
 
 export function App({provider}: AppProps): React.JSX.Element {
@@ -254,7 +270,8 @@ export function App({provider}: AppProps): React.JSX.Element {
         {
           id: createMessageId(),
           role: 'system',
-          content: sanitizeOutputBranding(getErrorMessage(error)),
+          tone: 'error',
+          content: sanitizeOutputBranding(getErrorMessage(error, requestImages.length > 0)),
           createdAt: new Date(),
         },
       ]);

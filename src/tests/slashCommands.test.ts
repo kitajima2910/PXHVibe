@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {render} from 'ink';
 import {PassThrough} from 'node:stream';
-import {App} from '../app.js';
+import {App, getErrorMessage, isImageUnsupportedError, isModelLimitError} from '../app.js';
+import {getSystemMessageColor} from '../components/MessageList.js';
 import type {AIProvider} from '../providers/AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
@@ -23,6 +24,24 @@ class CountingProvider implements AIProvider {
 }
 
 const provider = new CountingProvider();
+assert.equal(isModelLimitError('HTTP 429 rate_limit_exceeded'), true);
+assert.equal(isModelLimitError('Quota exceeded for this model'), true);
+assert.equal(isModelLimitError('Network unavailable'), false);
+assert.equal(isImageUnsupportedError('This model does not support image input'), true);
+assert.equal(isImageUnsupportedError('Vision is not enabled for this model'), true);
+assert.equal(isImageUnsupportedError('Unsupported content type', true), true);
+assert.equal(isImageUnsupportedError('Unsupported content type', false), false);
+assert.equal(
+  getErrorMessage(new Error('This model does not support image input'), true),
+  'MODEL KHÔNG HỖ TRỢ HÌNH ẢNH · Hãy bỏ ảnh hoặc chọn model vision khác bằng /models.',
+);
+assert.equal(
+  getErrorMessage(new Error('HTTP 429: too many requests')),
+  'MODEL ĐÃ HẾT GIỚI HẠN · Hãy chờ quota được làm mới hoặc chọn model khác bằng /models.',
+);
+assert.equal(getSystemMessageColor({
+  id: 'limit', role: 'system', tone: 'error', content: 'limit', createdAt: new Date(),
+}), 'red');
 const input = new PassThrough();
 Object.assign(input, {isTTY: true, setRawMode: () => input, ref: () => input, unref: () => input});
 const output = new PassThrough();

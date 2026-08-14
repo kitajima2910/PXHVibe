@@ -524,6 +524,36 @@
 
 - Không có vấn đề đã biết trong phạm vi TARGET này.
 
+## Cập nhật v0.1.8: cảnh báo đỏ khi model hết giới hạn
+
+### Đã thay đổi gì
+
+- Nhận diện lỗi hết giới hạn qua các mẫu phổ biến như HTTP 429, rate limit, usage limit, quota, too many requests và exhausted credits.
+- Chuẩn hóa nội dung thành: “MODEL ĐÃ HẾT GIỚI HẠN · Hãy chờ quota được làm mới hoặc chọn model khác bằng /models.”
+- Thêm `tone: error` cho lỗi provider và render toàn bộ dòng cảnh báo bằng màu đỏ, chữ đậm, biểu tượng `✖`; Header vẫn chuyển sang trạng thái Error màu đỏ.
+- Bump version từ `0.1.7` lên `0.1.8`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/MessageList.tsx`
+- `src/types/message.ts`
+- `src/tests/slashCommands.test.ts`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.8`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Regression assertions xác nhận lỗi 429/quota được nhận diện, lỗi mạng không bị nhận nhầm và system error dùng màu đỏ.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Nội dung lỗi cụ thể phụ thuộc provider; bộ nhận diện bao phủ các định dạng giới hạn phổ biến hiện tại.
+
 ## Cập nhật v0.1.7: làm mới câu chào
 
 ### Đã thay đổi gì
@@ -548,3 +578,33 @@
 ### Vấn đề còn lại
 
 - Không có vấn đề đã biết trong phạm vi TARGET này.
+
+## Cập nhật v0.1.9: cảnh báo đỏ khi model không hỗ trợ ảnh
+
+### Đã thay đổi gì
+
+- Nhận diện riêng lỗi model/provider không hỗ trợ image, vision hoặc multimodal input.
+- Khi TARGET có ảnh, nhận diện thêm các lỗi provider chung như unsupported input/content/media/attachment và text-only.
+- Chuẩn hóa nội dung thành: “MODEL KHÔNG HỖ TRỢ HÌNH ẢNH · Hãy bỏ ảnh hoặc chọn model vision khác bằng /models.”
+- Thông báo dùng `tone: error`, vì vậy toàn bộ dòng và biểu tượng `✖` hiển thị màu đỏ; Header cũng giữ trạng thái Error màu đỏ.
+- Ưu tiên phân loại lỗi ảnh trước lỗi quota để tránh thông báo sai.
+- Bump version từ `0.1.8` lên `0.1.9`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/tests/slashCommands.test.ts`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.9`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Regression assertions xác nhận lỗi vision rõ ràng và unsupported content kèm ảnh được nhận diện, đồng thời không nhận nhầm khi không có ảnh.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Nội dung lỗi cụ thể phụ thuộc provider; bộ nhận diện bao phủ các định dạng vision phổ biến hiện tại.
