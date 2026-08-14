@@ -68,6 +68,28 @@ export function isModelLimitError(message: string): boolean {
   return /(?:\b429\b|rate[_ -]?limit|usage[_ -]?limit|limit (?:reached|exceeded)|quota|too many requests|insufficient[_ -]?quota|credits? exhausted|no credits|hết (?:giới hạn|lượt|quota))/i.test(message);
 }
 
+const maxConversationContextCharacters = 24_000;
+
+export function buildContextualTarget(messages: readonly Message[], currentTarget: string): string {
+  const turns = messages
+    .filter((message) => message.id !== 'welcome' && (message.role === 'user' || message.role === 'assistant'))
+    .map((message) => `[${message.role === 'user' ? 'USER' : 'ASSISTANT'}]\n${message.contextContent ?? message.content}`)
+    .filter((turn) => turn.trim().length > 0);
+  if (turns.length === 0) return currentTarget;
+
+  const selectedTurns: string[] = [];
+  let remaining = maxConversationContextCharacters;
+  for (let index = turns.length - 1; index >= 0 && remaining > 0; index -= 1) {
+    const turn = turns[index];
+    if (turn === undefined) continue;
+    const selected = turn.length <= remaining ? turn : turn.slice(turn.length - remaining);
+    selectedTurns.unshift(selected);
+    remaining -= selected.length;
+  }
+
+  return `BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:\nHãy tiếp tục nhất quán và không yêu cầu người dùng lặp lại nội dung đã cung cấp.\n\n${selectedTurns.join('\n\n')}\n\nTARGET HIỆN TẠI:\n${currentTarget}`;
+}
+
 export function App({provider}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
   const [currentProvider, setCurrentProvider] = useState(provider);
@@ -178,13 +200,17 @@ export function App({provider}: AppProps): React.JSX.Element {
       return;
     }
 
-    const routedAgent = routeAgent(selectedAgentId, content);
+    const previousUserMessage = [...messages].reverse().find((item) => item.role === 'user');
+    const routingTarget = `${previousUserMessage?.contextContent ?? previousUserMessage?.content ?? ''}\n${content}`;
+    const routedAgent = routeAgent(selectedAgentId, routingTarget);
+    const contextualTarget = buildContextualTarget(messages, content);
     const requestImages = pendingImages;
     setPendingImages([]);
     const message: Message = {
       id: createMessageId(),
       role: 'user',
       content: collapsePastedBlocksForDisplay(content),
+      contextContent: content,
       ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
       createdAt: new Date(),
     };
@@ -253,7 +279,7 @@ export function App({provider}: AppProps): React.JSX.Element {
     };
 
     try {
-      const response = await currentProvider.sendMessage(buildAgentPrompt(content, routedAgent), {
+      const response = await currentProvider.sendMessage(buildAgentPrompt(contextualTarget, routedAgent), {
         cwd: process.cwd(),
         ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
         onEvent: handleAgentEvent,

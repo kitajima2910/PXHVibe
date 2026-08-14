@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {render} from 'ink';
 import {PassThrough} from 'node:stream';
-import {App, getErrorMessage, isImageUnsupportedError, isModelLimitError} from '../app.js';
+import {App, buildContextualTarget, getErrorMessage, isImageUnsupportedError, isModelLimitError} from '../app.js';
 import {getSystemMessageColor} from '../components/MessageList.js';
 import type {AIProvider} from '../providers/AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
@@ -42,6 +42,16 @@ assert.equal(
 assert.equal(getSystemMessageColor({
   id: 'limit', role: 'system', tone: 'error', content: 'limit', createdAt: new Date(),
 }), 'red');
+const bridgedTarget = buildContextualTarget([{
+  id: 'raw-paste',
+  role: 'user',
+  content: '~ 2 lines',
+  contextContent: '[PASTED BLOCK 1]\ndòng một\ndòng hai',
+  createdAt: new Date(),
+}], 'tiếp tục task');
+assert.match(bridgedTarget, /dòng một\ndòng hai/);
+assert.doesNotMatch(bridgedTarget, /~ 2 lines/);
+assert.match(bridgedTarget, /TARGET HIỆN TẠI:\ntiếp tục task$/);
 const input = new PassThrough();
 Object.assign(input, {isTTY: true, setRawMode: () => input, ref: () => input, unref: () => input});
 const output = new PassThrough();
@@ -99,6 +109,14 @@ assert.ok(frameHistory.includes('BUILD / PXH PM (Auto)'));
 assert.ok(!frameHistory.includes('BUILD / PXH Bug Hunter'));
 assert.ok(!frameHistory.includes('YOU  /  TARGET'));
 assert.ok(!frameHistory.includes('PXHVIBE  /  OUTPUT'));
+await typeText('tiếp tục task');
+input.write('\r');
+await wait(80);
+assert.equal(provider.calls, 2);
+assert.ok(provider.lastPrompt.includes('BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:'));
+assert.ok(provider.lastPrompt.includes('[USER]\nsửa lỗi đăng nhập'));
+assert.ok(provider.lastPrompt.includes('[ASSISTANT]\nunexpected'));
+assert.ok(provider.lastPrompt.endsWith('TARGET HIỆN TẠI:\ntiếp tục task'));
 instance.unmount();
 console.log('Slash command tests: passed');
 

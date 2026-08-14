@@ -608,3 +608,34 @@
 ### Vấn đề còn lại
 
 - Nội dung lỗi cụ thể phụ thuộc provider; bộ nhận diện bao phủ các định dạng vision phổ biến hiện tại.
+
+## Cập nhật v0.1.10: giữ ngữ cảnh khi đổi model
+
+### Đã thay đổi gì
+
+- Tách nội dung hiển thị đã thu gọn khỏi `contextContent` nguyên bản, nên pasted block vẫn hiện `~ N lines` trong TUI nhưng model nhận đủ nội dung.
+- Mỗi TARGET mới nhận các lượt USER/ASSISTANT gần nhất, kể cả sau khi đổi model bằng `/models`.
+- Giới hạn cầu nối hội thoại ở 24.000 ký tự gần nhất để tránh prompt tăng không giới hạn.
+- Không đưa welcome message hoặc system activity/debug events vào context.
+- Economy Router dùng TARGET hiện tại cùng user task gần nhất để giữ đúng specialist khi người dùng nói “tiếp tục task”.
+- Bump version từ `0.1.9` lên `0.1.10`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/types/message.ts`
+- `src/tests/slashCommands.test.ts`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.10`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Regression test xác nhận pasted block dùng bản raw trong context và lượt “tiếp tục task” nhận đủ USER/ASSISTANT trước đó.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Ảnh của request cũ vẫn được xóa sau khi request kết thúc; cầu nối hiện giữ nội dung text, không gửi lại binary ảnh cũ.
