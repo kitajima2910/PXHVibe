@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
@@ -13,11 +13,10 @@ import {createProvider} from './providers/createProvider.js';
 import {createCustomProvider} from './providers/createProvider.js';
 import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
-import {buildAgentPrompt} from './utils/agentPrompt.js';
 import {Banner} from './components/Banner.js';
 import {agents, getAgent, mergeAgentCatalog, routeAgent, type PXHAgent} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
-import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
+import {sanitizeOutputBranding} from './utils/outputBranding.js';
 import type {ImageAttachment} from './types/attachment.js';
 import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
 import {copyTextToClipboard} from './utils/clipboard.js';
@@ -28,6 +27,9 @@ import {routeOrchestration} from './orchestration/router.js';
 import type {OrchestrationCatalog} from './orchestration/types.js';
 import {preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
 import {appVersion} from './version.js';
+import {runTeamPipeline, type TeamRunnerEvent} from './runtime/teamRunner.js';
+import {SessionStore, summarizeSession, type RuntimeSession} from './runtime/sessionStore.js';
+import {commandDefinitions, detectProject, formatCommandList, getGitDiffSummary} from './runtime/commands.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -44,6 +46,7 @@ interface AppProps {
   provider: AIProvider;
   checkModels?: typeof checkFreeModelHealth;
   orchestrationCatalog?: OrchestrationCatalog;
+  workingDirectory?: string;
 }
 
 type AppStatus = 'Ready' | 'Thinking...' | 'Error';
@@ -112,9 +115,9 @@ export function buildRoutingTarget(messages: readonly Message[], currentTarget: 
   return previousTarget === undefined ? currentTarget : `${previousTarget}\n${currentTarget}`;
 }
 
-export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog}: AppProps): React.JSX.Element {
+export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog, workingDirectory = process.cwd()}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
-  const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(process.cwd()));
+  const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(workingDirectory));
   const availableAgents = mergeAgentCatalog(agents, catalog.agents);
   const bundledAgentCount = catalog.agents.filter((agent) => !agent.id.startsWith('project:')).length;
   const bundledSkillCount = catalog.skills.filter((skill) => skill.origin === 'bundled').length;
@@ -134,12 +137,14 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [modelHealthReport, setModelHealthReport] = useState<ModelHealthReport>();
   const [isCheckingModelHealth, setIsCheckingModelHealth] = useState(false);
   const [lastPipeline, setLastPipeline] = useState<PreparedPipeline>();
+  const [runtimeSession, setRuntimeSession] = useState<RuntimeSession>();
+  const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
 
   const refreshModelHealth = async (): Promise<void> => {
     if (isCheckingModelHealth || isModelHealthFresh(modelHealthReport)) return;
     setIsCheckingModelHealth(true);
     try {
-      const report = await checkModels(modes, process.cwd());
+      const report = await checkModels(modes, workingDirectory);
       setModelHealthReport(report);
       const recommended = modes.find((mode) => mode.id === report.recommendedModeId);
       const onlineCount = report.results.filter((result) => result.ok).length;
@@ -197,7 +202,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setMessages((currentMessages) => [...currentMessages, {
       id: createMessageId(),
       role: 'system',
-      content: 'Lệnh: /models · /agents · /skills · /workflows · /status · /pipeline · /validate · /paste · /copy · /help',
+      content: `Lệnh (${commandDefinitions.length}): ${formatCommandList()}`,
       createdAt: new Date(),
     }]);
   };
@@ -263,7 +268,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
     if (command === '/pipeline') {
       const pipelineState = lastPipeline;
-      const phases = pipelineState?.state.steps.map((step) => `${step.phase}:${step.agent}`).join(' → ');
+      const phases = runtimeSession?.steps.map((step) => `${step.phase}:${step.agentLabel}[${step.status}]`).join(' → ')
+        ?? pipelineState?.state.steps.map((step) => `${step.phase}:${step.agent}`).join(' → ');
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system',
         content: phases === undefined ? 'Pipeline chưa có TARGET.' : `Pipeline ${pipelineState?.state.workflow ?? 'unknown'} · ${phases}`,
@@ -292,6 +298,135 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
+    if (command === '/paste') {
+      await handlePasteImage();
+      return;
+    }
+
+    if (command === '/cancel') {
+      currentProvider.cancel();
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: 'Đã gửi yêu cầu hủy phase hiện tại.', createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/retry') {
+      const previous = [...messages].reverse().find((message) => message.role === 'user');
+      if (previous === undefined) {
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(), role: 'system', content: 'Chưa có TARGET để retry.', createdAt: new Date(),
+        }]);
+        return;
+      }
+      await handleSubmit(previous.contextContent ?? previous.content);
+      return;
+    }
+
+    if (command === '/new') {
+      resumeSessionRef.current = undefined;
+      setRuntimeSession(undefined);
+      setLastPipeline(undefined);
+      setMessages([initialMessage]);
+      setStatus('Ready');
+      return;
+    }
+
+    if (command === '/resume') {
+      const stored = await new SessionStore(workingDirectory).load();
+      if (stored === undefined || stored.status === 'pass') {
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(), role: 'system',
+          content: stored === undefined ? 'Không có checkpoint để resume.' : 'Session gần nhất đã hoàn tất.',
+          createdAt: new Date(),
+        }]);
+        return;
+      }
+      const steps = stored.steps.map((step, index) => {
+        if (index < stored.currentIndex && step.status === 'pass') return step;
+        const {error: _error, ...rest} = step;
+        return {...rest, status: 'pending' as const, attempts: 0};
+      });
+      resumeSessionRef.current = {...stored, status: 'running', steps};
+      await handleSubmit(stored.target);
+      return;
+    }
+
+    if (command === '/session') {
+      const stored = runtimeSession ?? await new SessionStore(workingDirectory).load();
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: stored === undefined ? 'Chưa có runtime session.' : `Session ${stored.sessionId} · ${summarizeSession(stored)}`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/context') {
+      const characterCount = messages.reduce((sum, message) => sum + (message.contextContent ?? message.content).length, 0);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: `Context · ${messages.length} messages · ${characterCount.toLocaleString('vi')} chars · ${runtimeSession?.steps.filter((step) => step.output !== undefined).length ?? 0} phase outputs.`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/detect') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: detectProject(workingDirectory), createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/doctor') {
+      const errors = validateCapabilityPack(bundledAgentCount, bundledWorkflowCount, bundledSkillCount);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', ...(errors.length === 0 ? {} : {tone: 'error' as const}),
+        content: errors.length === 0
+          ? `Doctor OK · Node ${process.version} · ${currentProvider.name} · state ${new SessionStore(workingDirectory).path}`
+          : `Doctor lỗi · ${errors.join(' ')}`,
+        createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/diff') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: getGitDiffSummary(workingDirectory), createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/history') {
+      const stored = runtimeSession ?? await new SessionStore(workingDirectory).load();
+      const history = stored?.steps.map((step) => `${step.phase}:${step.status}(${step.attempts})`).join(' → ');
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: history ?? 'Chưa có phase history.', createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/version') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: `PXHVibe v${appVersion}`, createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/about') {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        content: 'PXHVibe · Terminal coding team · Error404-Labs.Info.VN · Phạm Xuân Hoài.', createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/clear') {
+      setMessages([initialMessage]);
+      return;
+    }
+
     if (command.startsWith('/')) {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(),
@@ -316,8 +451,11 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       ? resolvedPreferredAgentId ?? 'auto'
       : selectedAgentId;
     const routedAgent = routeAgent(automaticAgentId, routingTarget, availableAgents);
-    const contextualTarget = buildContextualTarget(messages, content);
+    const pendingResumeSession = resumeSessionRef.current;
+    const contextualTarget = pendingResumeSession?.target ?? buildContextualTarget(messages, content);
     const pipeline = preparePipeline(contextualTarget, orchestrationRoute, routedAgent);
+    const resumeSession = pendingResumeSession;
+    resumeSessionRef.current = undefined;
     setLastPipeline(pipeline);
     const requestImages = pendingImages;
     setPendingImages([]);
@@ -342,8 +480,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setIsBusy(true);
     setStatus('Thinking...');
     const responseMessageId = createMessageId();
-    let hasStreamedResponse = false;
-    const streamSanitizer = new StreamingBrandSanitizer();
 
     const appendAssistantContent = (nextContent: string): void => {
       if (nextContent.length === 0) {
@@ -370,8 +506,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
     const handleAgentEvent = (event: AgentEvent): void => {
       if (event.type === 'text_delta') {
-        hasStreamedResponse = true;
-        appendAssistantContent(streamSanitizer.push(event.content));
         return;
       }
 
@@ -396,19 +530,40 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       }]);
     };
 
+    const handleTeamEvent = (event: TeamRunnerEvent): void => {
+      const prefix = event.type === 'phase_pass' ? '✓'
+        : event.type === 'phase_fail' ? '✖'
+          : event.type === 'phase_retry' ? '↻'
+            : event.type === 'checkpoint' ? '◇' : '▶';
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system',
+        ...(event.type === 'phase_fail' ? {tone: 'error' as const} : {}),
+        content: `${prefix} ${event.phase.toUpperCase()} · ${event.agentLabel} · ${event.message}`,
+        createdAt: new Date(),
+      }]);
+    };
+
     try {
-      const response = await currentProvider.sendMessage(buildAgentPrompt(contextualTarget, routedAgent, orchestrationRoute, catalog, pipeline), {
-        cwd: process.cwd(),
+      const result = await runTeamPipeline({
+        provider: currentProvider,
+        cwd: workingDirectory,
+        target: contextualTarget,
+        route: orchestrationRoute,
+        catalog,
+        pipeline,
+        agents: availableAgents,
+        selectedAgent: routedAgent,
         ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
-        onEvent: handleAgentEvent,
+        onAgentEvent: handleAgentEvent,
+        onEvent: handleTeamEvent,
+        ...(resumeSession === undefined ? {} : {resumeSession}),
       });
-      if (hasStreamedResponse) {
-        appendAssistantContent(streamSanitizer.flush());
-      } else {
-        appendAssistantContent(sanitizeOutputBranding(response.content));
-      }
+      setRuntimeSession(result.session);
+      appendAssistantContent(sanitizeOutputBranding(result.content));
       setStatus('Ready');
     } catch (error: unknown) {
+      const storedSession = await new SessionStore(workingDirectory).load();
+      if (storedSession !== undefined) setRuntimeSession(storedSession);
       if (isCancellationError(error)) {
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
@@ -484,7 +639,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     <Box flexDirection="column" height={stdout.rows}>
       <Banner />
       <Header
-        workingDirectory={process.cwd()}
+        workingDirectory={workingDirectory}
         providerName={currentProvider.name}
         agentLabel={activeAgent.label}
         status={status}

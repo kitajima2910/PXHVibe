@@ -13,14 +13,14 @@ export const runtimeTiers = [
 ] as const;
 
 const workflowPhases: Readonly<Record<string, readonly TaskPhase[]>> = {
-  ai: ['analyze', 'architect', 'code', 'test', 'review', 'build', 'persist'],
+  ai: ['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'],
   company: ['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'],
   debug: ['analyze', 'fix', 'test', 'review', 'persist'],
   game: ['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'],
   meeting: ['meeting', 'architect', 'persist'],
-  release: ['test', 'review', 'build', 'persist'],
-  tool: ['analyze', 'architect', 'code', 'test', 'review', 'build', 'persist'],
-  web: ['analyze', 'architect', 'ui-ux', 'code', 'test', 'review', 'build', 'persist'],
+  release: ['test', 'fix', 'review', 'build', 'persist'],
+  tool: ['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'],
+  web: ['analyze', 'architect', 'ui-ux', 'code', 'test', 'fix', 'review', 'build', 'persist'],
 };
 
 const phaseAgents: Readonly<Record<TaskPhase, string>> = {
@@ -60,7 +60,7 @@ export function preparePipeline(target: string, route: OrchestrationRoute, agent
     target,
     skills: route.skills.map((skill) => skill.id),
     workflow,
-    agent: phase === 'code' || phase === 'fix' || phase === 'ui-ux' ? agent.label : phaseAgents[phase],
+    agent: phaseAgents[phase],
   }));
   const state: StateContract = {
     version: contractVersion,

@@ -1,5 +1,54 @@
 # STATUS
 
+## Cập nhật v0.5.0: Native multi-agent execution runtime
+
+### Đã thay đổi gì
+
+- Thay pipeline một request bằng phase runner: mỗi specialist thực hiện một lượt model riêng và nhận handoff từ phase trước.
+- Workflow Debug chạy Analyze → Fix → Test → Review → Persist; các workflow AI, Web, Tool và Release cũng có phase Fix thực thi thật.
+- Nạp đầy đủ agent Markdown, skills và workflow tương ứng cho từng phase.
+- Thêm enforcement gate trước/sau phase và validate đủ 6 contract: Event, Result, Response, Config, Tools, Agent.
+- Thêm retry có giới hạn cho lỗi tạm thời, checkpoint atomic và khôi phục từ phase lỗi bằng `/resume`.
+- Lưu trạng thái tại `.pxhvibe/runtime-state.json`; hỗ trợ hủy qua signal hiện có và lệnh `/cancel`.
+- Triển khai đủ 23 command handler native; thêm `/retry`, `/new`, `/resume`, `/session`, `/context`, `/detect`, `/doctor`, `/diff`, `/history`, `/version`, `/about`, `/clear`.
+- Thêm `pxh --version` và `pxh --help` không cần mở TUI.
+- Tách working directory trong test để không tạo state trong source project.
+- Nâng version lên `v0.5.0`.
+
+### File đã tạo hoặc sửa
+
+- `src/runtime/sessionStore.ts`
+- `src/runtime/teamRunner.ts`
+- `src/runtime/enforcer.ts`
+- `src/runtime/commands.ts`
+- `src/app.tsx`
+- `src/cli.tsx`
+- `src/orchestration/pipeline.ts`
+- `src/tests/teamRunner.test.ts`
+- `src/tests/runtimeCommands.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `src/tests/pipeline.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 16 nhóm test, gồm provider, agent, router, orchestration, 6 contracts, team runner, 23 commands, TUI, image và viewport.
+- Team runner regression xác nhận 5 provider call thật cho Debug, handoff đúng specialist, retry lỗi tạm thời và resume từ checkpoint.
+- `pxh --version`: trả `PXHVibe v0.5.0`; `pxh --help`: liệt kê đủ 23 command.
+- `npm pack --dry-run --json`: đạt; gói `pxhvibe@0.5.0` có 335 entry, gồm runtime mới và capability assets.
+- Kiểm kê asset: 10 agents, 8 workflows, 50 skills.
+- `git diff --check`: đạt; chỉ có cảnh báo chuyển LF sang CRLF của Git trên Windows.
+- Global install: `pxhvibe@0.5.0`; `pxh --version` xác nhận đúng bản.
+
+### Vấn đề còn lại
+
+- Runtime đạt tương thích chức năng native với capability pack, không sao chép executable/runtime nội bộ của pxhopencode.
+- Chất lượng và giới hạn thực tế vẫn phụ thuộc model/provider miễn phí đang được chọn.
+
 ## Cập nhật v0.4.0: Bundle full Skills/Agents/Workflows
 
 ### Đã thay đổi gì

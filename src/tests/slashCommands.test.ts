@@ -8,15 +8,20 @@ import type {AIProvider} from '../providers/AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
 import {appVersion} from '../version.js';
+import {mkdtemp, rm} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
 
 class CountingProvider implements AIProvider {
   readonly name = 'Test';
   calls = 0;
   lastPrompt = '';
+  prompts: string[] = [];
   lastOptions: ProviderRequestOptions | undefined;
   async sendMessage(prompt: string, options: ProviderRequestOptions): Promise<ProviderResponse> {
     this.calls += 1;
     this.lastPrompt = prompt;
+    this.prompts.push(prompt);
     this.lastOptions = options;
     return {content: 'unexpected'};
   }
@@ -24,6 +29,7 @@ class CountingProvider implements AIProvider {
 }
 
 const provider = new CountingProvider();
+const appRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-app-'));
 assert.equal(isModelLimitError('HTTP 429 rate_limit_exceeded'), true);
 assert.equal(isModelLimitError('Quota exceeded for this model'), true);
 assert.equal(isModelLimitError('Network unavailable'), false);
@@ -68,6 +74,7 @@ let rendered = '';
 output.on('data', (chunk) => { rendered += chunk.toString('utf8'); });
 const instance = render(React.createElement(App, {
   provider,
+  workingDirectory: appRoot,
   checkModels: async () => ({
     checkedAt: Date.now(),
     results: [{modeId: 'pickle', ok: true, latencyMs: 10}],
@@ -98,6 +105,22 @@ await typeText('/pipeline');
 input.write('\r');
 await wait(80);
 assert.ok(stripAnsi(rendered).includes('Pipeline chưa có TARGET'));
+assert.equal(provider.calls, 0);
+for (const command of ['/version', '/about', '/detect', '/doctor', '/session', '/history', '/context', '/diff', '/resume', '/retry', '/cancel', '/help']) {
+  await typeText(command);
+  input.write('\r');
+  await wait(55);
+}
+const commandOutput = stripAnsi(rendered);
+assert.ok(commandOutput.includes(`PXHVibe v${appVersion}`));
+assert.ok(commandOutput.includes('Error404-Labs.Info.VN'));
+assert.ok(commandOutput.includes('Project trống'));
+assert.ok(commandOutput.includes('Doctor OK'));
+assert.ok(commandOutput.includes('Chưa có runtime session'));
+assert.ok(commandOutput.includes('Chưa có phase history'));
+assert.ok(commandOutput.includes('Không có checkpoint để resume'));
+assert.ok(commandOutput.includes('Chưa có TARGET để retry'));
+assert.ok(commandOutput.includes('Lệnh (23)'));
 assert.equal(provider.calls, 0);
 await typeText('/skills');
 input.write('\r');
@@ -140,22 +163,24 @@ assert.equal(provider.calls, 0);
 assert.ok(stripAnsi(rendered).includes('Lệnh không hợp lệ'));
 await typeText('sửa lỗi đăng nhập');
 input.write('\r');
-await wait(80);
-assert.equal(provider.calls, 1);
-assert.ok(provider.lastPrompt.startsWith('RULE:\n'));
-assert.ok(provider.lastPrompt.includes('- Đọc STATUS.md nếu tồn tại trước khi bắt đầu.'));
-assert.ok(provider.lastPrompt.includes('- Cập nhật STATUS.md gồm:'));
-assert.ok(provider.lastPrompt.includes('AGENT MODE: BUILD'));
-assert.ok(provider.lastPrompt.includes('AGENT ROLE: PXH Bug Hunter'));
-assert.ok(provider.lastPrompt.includes('WORKFLOW: Debug'));
-assert.ok(provider.lastPrompt.includes('### Systematic Debugging'));
-assert.ok(provider.lastPrompt.includes('### Verification'));
-assert.ok(provider.lastPrompt.includes('4-TIER PIPELINE (contract v1.0):'));
-assert.ok(provider.lastPrompt.endsWith('TARGET:\n\nsửa lỗi đăng nhập'));
+await wait(650);
+assert.equal(provider.calls, 5);
+const fixPrompt = provider.prompts.find((prompt) => prompt.includes('CURRENT PHASE: FIX')) ?? '';
+assert.ok(fixPrompt.startsWith('RULE:\n'));
+assert.ok(fixPrompt.includes('- Đọc STATUS.md nếu tồn tại trước khi bắt đầu.'));
+assert.ok(fixPrompt.includes('- Cập nhật STATUS.md gồm:'));
+assert.ok(fixPrompt.includes('AGENT MODE: BUILD'));
+assert.ok(fixPrompt.includes('AGENT ROLE: PXH Bug Hunter'));
+assert.ok(fixPrompt.includes('WORKFLOW: Debug'));
+assert.ok(fixPrompt.includes('### Systematic Debugging'));
+assert.ok(fixPrompt.includes('### Verification'));
+assert.ok(fixPrompt.includes('TARGET:\n\nsửa lỗi đăng nhập'));
+assert.deepEqual(provider.prompts.slice(0, 5).map((prompt) => /CURRENT PHASE: ([A-Z-]+)/.exec(prompt)?.[1]),
+  ['ANALYZE', 'FIX', 'TEST', 'REVIEW', 'PERSIST']);
 await typeText('/pipeline');
 input.write('\r');
 await wait(80);
-assert.equal(provider.calls, 1);
+assert.equal(provider.calls, 5);
 assert.ok(stripAnsi(rendered).includes('Pipeline debug'));
 const frameHistory = stripAnsi(rendered);
 assert.ok(frameHistory.includes('BUILD / PXH PM (Auto)'));
@@ -164,13 +189,14 @@ assert.ok(!frameHistory.includes('YOU  /  TARGET'));
 assert.ok(!frameHistory.includes('PXHVIBE  /  OUTPUT'));
 await typeText('tiếp tục task');
 input.write('\r');
-await wait(80);
-assert.equal(provider.calls, 2);
+await wait(650);
+assert.equal(provider.calls, 10);
 assert.ok(provider.lastPrompt.includes('BỐI CẢNH HỘI THOẠI TRƯỚC ĐÓ:'));
 assert.ok(provider.lastPrompt.includes('[USER]\nsửa lỗi đăng nhập'));
 assert.ok(provider.lastPrompt.includes('[ASSISTANT]\nunexpected'));
-assert.ok(provider.lastPrompt.endsWith('TARGET HIỆN TẠI:\ntiếp tục task'));
+assert.ok(provider.lastPrompt.includes('TARGET HIỆN TẠI:\ntiếp tục task'));
 instance.unmount();
+await rm(appRoot, {recursive: true, force: true});
 console.log('Slash command tests: passed');
 
 async function typeText(value: string): Promise<void> {

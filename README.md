@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.4.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.5.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +104,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.4.0
+### Capability pack v0.5.0
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
@@ -134,6 +134,19 @@ Discovery load bộ bundled trước, sau đó project có thể bổ sung hoặ
 `.agents/`, `.opencode/` hoặc thư mục gốc. Router chỉ nạp workflow, tối đa ba skill và các agent
 handoff liên quan tới TARGET; referenced template được lazy-load để tránh tràn context. Source path
 tuyệt đối của từng asset được đưa vào prompt để worker có thể truy xuất file thật.
+
+### Native team execution runtime
+
+Mỗi TARGET được chạy thành nhiều phase thật thay vì chỉ mô phỏng pipeline trong giao diện. Ví dụ workflow Debug chạy lần lượt PM phân tích, Bug Hunter sửa lỗi, QA kiểm tra, Reviewer review và Historian lưu kết quả. Mỗi phase là một request riêng, nhận đầy đủ Markdown của agent, skill/workflow phù hợp và handoff từ phase trước.
+
+- Enforcement gate kiểm tra thứ tự phase và evidence đầu ra.
+- Sáu contract Event, Result, Response, Config, Tools và Agent được validate trong runtime.
+- Lỗi tạm thời được retry tối đa hai lần; quota, image capability và thao tác hủy không bị retry mù.
+- Checkpoint được ghi atomically tại `.pxhvibe/runtime-state.json`; dùng `/resume` để tiếp tục từ phase lỗi hoặc `/retry` để chạy lại TARGET gần nhất.
+- Có 23 lệnh native: `/help`, `/models`, `/agents`, `/skills`, `/workflows`, `/status`, `/pipeline`, `/validate`, `/paste`, `/copy`, `/cancel`, `/retry`, `/new`, `/resume`, `/session`, `/context`, `/detect`, `/doctor`, `/diff`, `/history`, `/version`, `/about`, `/clear`.
+- CLI hỗ trợ `pxh --version` và `pxh --help` mà không khởi động TUI.
+
+Nên thêm `.pxhvibe/` vào `.gitignore` nếu không muốn commit checkpoint phiên làm việc.
 
 ## Development
 

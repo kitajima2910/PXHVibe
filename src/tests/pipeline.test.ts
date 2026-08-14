@@ -38,6 +38,9 @@ assert.equal(pipeline.tasks[1]?.agent, 'PXH Bug Hunter');
 assert.equal(validateContract('request', pipeline.request).length, 0);
 assert.equal(validateContract('task', pipeline.tasks[0]).length, 0);
 assert.equal(validateContract('state', pipeline.state).length, 0);
+assert.equal(validateContract('event', {version: contractVersion, type: 'phase_start', phase: 'fix', tier: 'worker'}).length, 0);
+assert.equal(validateContract('result', {version: contractVersion, status: 'pass', artifacts: []}).length, 0);
+assert.equal(validateContract('response', {version: contractVersion, status: 'ok', summary: 'done'}).length, 0);
 assert.ok(validateContract('request', {version: '0', target: ''}).length >= 2);
 
 const prompt = buildAgentPrompt('sửa lỗi đăng nhập bị crash', worker, route, emptyCatalog, pipeline);
