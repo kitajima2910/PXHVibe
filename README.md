@@ -75,6 +75,7 @@ pxh --provider=custom
 
 - `Enter`: gửi TARGET.
 - `Shift+Enter`: xuống dòng.
+- `Esc` hai lần trong 1 giây: hủy task đang chạy nhưng giữ TUI mở.
 - `←` / `→` / `↑` / `↓`, `Home`, `End`: di chuyển con trỏ.
 - `PageUp` / `PageDown` hoặc con lăn chuột: xem lịch sử.
 - `Alt+V`: dán ảnh; `Ctrl+C`: dừng và thoát.

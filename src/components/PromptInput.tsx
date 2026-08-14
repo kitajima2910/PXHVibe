@@ -7,6 +7,7 @@ import {countDisplayLines, countTextLines} from '../utils/pastedText.js';
 
 interface PromptInputProps {
   onSubmit: (value: string) => void;
+  onCancel: () => void;
   onExit: () => void;
   isBusy: boolean;
   attachments: readonly ImageAttachment[];
@@ -14,14 +15,17 @@ interface PromptInputProps {
   onRemoveLastImage: () => void;
 }
 
-export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage}: PromptInputProps): React.JSX.Element {
+export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, onPasteImage, onRemoveLastImage}: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [cursorIndex, setCursorIndex] = useState(0);
   const [pastedBlocks, setPastedBlocks] = useState<string[]>([]);
   const [spinnerIndex, setSpinnerIndex] = useState(0);
+  const [cancelArmed, setCancelArmed] = useState(false);
   const {exit} = useApp();
   const {stdout} = useStdout();
   const editorRef = useRef<DOMElement>(null);
+  const lastEscapeAtRef = useRef(0);
+  const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const editorWidth = Math.max(20, (stdout.columns ?? 80) - 21);
   const inputViewport = createInputViewport(value, cursorIndex, editorWidth, 5);
 
@@ -35,6 +39,17 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     }, 120);
     return () => clearInterval(timer);
   }, [isBusy]);
+
+  useEffect(() => {
+    if (isBusy) return;
+    lastEscapeAtRef.current = 0;
+    setCancelArmed(false);
+    if (cancelTimerRef.current !== undefined) clearTimeout(cancelTimerRef.current);
+  }, [isBusy]);
+
+  useEffect(() => () => {
+    if (cancelTimerRef.current !== undefined) clearTimeout(cancelTimerRef.current);
+  }, []);
 
   usePaste((text) => {
     if (isBusy || text.length === 0) return;
@@ -73,6 +88,25 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
     if (key.ctrl && input.toLowerCase() === 'c') {
       onExit();
       exit();
+      return;
+    }
+
+    if (isBusy && key.escape) {
+      const now = Date.now();
+      if (now - lastEscapeAtRef.current <= 1_000) {
+        lastEscapeAtRef.current = 0;
+        setCancelArmed(false);
+        if (cancelTimerRef.current !== undefined) clearTimeout(cancelTimerRef.current);
+        onCancel();
+        return;
+      }
+      lastEscapeAtRef.current = now;
+      setCancelArmed(true);
+      if (cancelTimerRef.current !== undefined) clearTimeout(cancelTimerRef.current);
+      cancelTimerRef.current = setTimeout(() => {
+        lastEscapeAtRef.current = 0;
+        setCancelArmed(false);
+      }, 1_000);
       return;
     }
 
@@ -177,7 +211,7 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
         <Text bold color={isBusy ? 'yellow' : 'green'}>
           {isBusy ? 'AGENT WORKING' : 'NEW TARGET'}
         </Text>
-        <Text dimColor>{isBusy ? 'input locked' : 'build mode'}</Text>
+        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa' : 'Esc×2 hủy') : 'build mode'}</Text>
       </Box>
       {attachments.length > 0 && (
         <Box marginBottom={1}>
@@ -197,7 +231,7 @@ export function PromptInput({onSubmit, onExit, isBusy, attachments, onPasteImage
       <Box>
         <Text bold color="cyan">❯ </Text>
         {isBusy ? (
-          <Text color="yellow">{processingFrames[spinnerIndex]} đang phân tích và triển khai...</Text>
+          <Text color="yellow">{cancelArmed ? 'Nhấn ESC lần nữa để hủy task.' : `${processingFrames[spinnerIndex]} đang phân tích và triển khai...`}</Text>
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (

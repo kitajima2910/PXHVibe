@@ -741,3 +741,40 @@
 ### Vấn đề còn lại
 
 - Nếu runtime thực sự không phát bất kỳ stdout/stderr nào liên tục 300 giây, PXHVibe vẫn hủy request để tránh treo vô hạn.
+
+## Cập nhật v0.1.14: nhấn ESC hai lần để hủy task
+
+### Đã thay đổi gì
+
+- Khi agent đang chạy, ESC lần đầu arm thao tác trong 1 giây và TUI hiện “Nhấn ESC lần nữa để hủy task.”
+- ESC lần hai trong cửa sổ đó hủy request hiện tại nhưng giữ PXHVibe mở; nếu quá 1 giây thì tự disarm.
+- Footer và trạng thái composer hiển thị shortcut `Esc×2 hủy`.
+- Sửa Free provider để `cancel()` reject Promise bằng `AbortError`, dọn child/timer/listener và cho `handleSubmit` đi tới `finally` thay vì treo nền.
+- Lỗi hủy được xử lý thành system message thường “Đã hủy task hiện tại.” và Header trở về Ready, không hiện cảnh báo đỏ.
+- Custom API dùng AbortController cũng được nhận diện cùng luồng cancellation.
+- Bump version từ `0.1.13` lên `0.1.14`.
+
+### File đã sửa
+
+- `package.json`
+- `package-lock.json`
+- `src/app.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/Footer.tsx`
+- `src/providers/OpenCodeProvider.ts`
+- `src/tests/imageClipboard.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm.cmd run typecheck`: thành công trên `pxhvibe@0.1.14`.
+- `npm.cmd test`: thành công; toàn bộ 11 nhóm test đều qua.
+- Ink input regression test xác nhận ESC đầu chỉ arm/hiện nhắc và ESC thứ hai mới gọi cancel đúng một lần.
+- Cancellation assertions xác nhận AbortError được nhận diện nhưng lỗi mạng không bị nhận nhầm.
+- `git diff --check`: không phát hiện lỗi whitespace trong patch.
+
+### Vấn đề còn lại
+
+- Double ESC chỉ hoạt động khi composer đang ở trạng thái agent busy; ở model/agent picker, ESC vẫn đóng picker như trước.

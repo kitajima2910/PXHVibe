@@ -48,6 +48,7 @@ export class OpenCodeProvider implements AIProvider {
   readonly name: string;
   private activeProcess: ChildProcessWithoutNullStreams | undefined;
   private activeCleanup: (() => void) | undefined;
+  private activeAbort: (() => void) | undefined;
 
   constructor(
     private readonly model = defaultOpenCodeModel,
@@ -83,6 +84,7 @@ export class OpenCodeProvider implements AIProvider {
       let stepCount = 0;
       let settled = false;
       let inactivityTimer: InactivityTimer | undefined;
+      let abortRequest: (() => void) | undefined;
 
       const cleanup = (): void => {
         inactivityTimer?.clear();
@@ -91,6 +93,9 @@ export class OpenCodeProvider implements AIProvider {
         }
         if (this.activeCleanup === cleanup) {
           this.activeCleanup = undefined;
+        }
+        if (this.activeAbort === abortRequest) {
+          this.activeAbort = undefined;
         }
         child.removeAllListeners();
         child.stdout.removeAllListeners();
@@ -106,6 +111,13 @@ export class OpenCodeProvider implements AIProvider {
         cleanup();
         reject(error);
       };
+      abortRequest = () => {
+        child.kill();
+        const error = new Error('Yêu cầu đã được hủy.');
+        error.name = 'AbortError';
+        fail(error);
+      };
+      this.activeAbort = abortRequest;
 
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
@@ -170,6 +182,11 @@ export class OpenCodeProvider implements AIProvider {
   }
 
   cancel(): void {
+    const abort = this.activeAbort;
+    if (abort !== undefined) {
+      abort();
+      return;
+    }
     const child = this.activeProcess;
     this.activeProcess = undefined;
     const cleanup = this.activeCleanup;

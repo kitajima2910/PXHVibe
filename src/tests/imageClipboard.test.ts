@@ -97,6 +97,7 @@ let exitRequested = false;
 editorOutput.on('data', (chunk) => { editorFrame += chunk.toString('utf8'); });
 const editor = render(React.createElement(PromptInput, {
   onSubmit: (value: string) => { submitted = value; },
+  onCancel: () => undefined,
   onExit: () => { exitRequested = true; },
   isBusy: false,
   attachments: [],
@@ -125,5 +126,42 @@ editorInput.write('\x03');
 await new Promise((resolve) => setTimeout(resolve, 20));
 assert.equal(exitRequested, true);
 editor.unmount();
+
+const busyInput = new PassThrough();
+Object.assign(busyInput, {
+  isTTY: true,
+  setRawMode: () => busyInput,
+  ref: () => busyInput,
+  unref: () => busyInput,
+});
+const busyOutput = new PassThrough();
+Object.assign(busyOutput, {columns: 100, rows: 20, isTTY: true});
+let busyFrame = '';
+let cancelled = 0;
+busyOutput.on('data', (chunk) => { busyFrame += chunk.toString('utf8'); });
+const busyEditor = render(React.createElement(PromptInput, {
+  onSubmit: () => undefined,
+  onCancel: () => { cancelled += 1; },
+  onExit: () => undefined,
+  isBusy: true,
+  attachments: [],
+  onPasteImage: () => undefined,
+  onRemoveLastImage: () => undefined,
+}), {
+  stdin: busyInput as unknown as NodeJS.ReadStream,
+  stdout: busyOutput as unknown as NodeJS.WriteStream,
+  stderr: busyOutput as unknown as NodeJS.WriteStream,
+  debug: true,
+  exitOnCtrlC: false,
+});
+await new Promise((resolve) => setTimeout(resolve, 30));
+busyInput.write('\x1b');
+await new Promise((resolve) => setTimeout(resolve, 40));
+assert.match(stripAnsi(busyFrame), /Nhấn ESC lần nữa để hủy task/);
+assert.equal(cancelled, 0);
+busyInput.write('\x1b');
+await new Promise((resolve) => setTimeout(resolve, 40));
+assert.equal(cancelled, 1);
+busyEditor.unmount();
 
 console.log('Image clipboard tests passed.');

@@ -70,6 +70,11 @@ export function isModelLimitError(message: string): boolean {
   return /(?:\b429\b|rate[_ -]?limit|usage[_ -]?limit|limit (?:reached|exceeded)|quota|too many requests|insufficient[_ -]?quota|credits? exhausted|no credits|hết (?:giới hạn|lượt|quota))/i.test(message);
 }
 
+export function isCancellationError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return error.name === 'AbortError' || /(?:aborted|abort|đã được hủy)/i.test(error.message);
+}
+
 const maxConversationContextCharacters = 24_000;
 
 export function buildContextualTarget(messages: readonly Message[], currentTarget: string): string {
@@ -318,17 +323,24 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
       }
       setStatus('Ready');
     } catch (error: unknown) {
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
+      if (isCancellationError(error)) {
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(),
+          role: 'system',
+          content: 'Đã hủy task hiện tại.',
+          createdAt: new Date(),
+        }]);
+        setStatus('Ready');
+      } else {
+        setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
           tone: 'error',
           content: sanitizeOutputBranding(getErrorMessage(error, requestImages.length > 0)),
           createdAt: new Date(),
-        },
-      ]);
-      setStatus('Error');
+        }]);
+        setStatus('Error');
+      }
     } finally {
       await Promise.all(requestImages.map(removeTemporaryImage));
       setIsBusy(false);
@@ -414,6 +426,7 @@ export function App({provider, checkModels = checkFreeModelHealth}: AppProps): R
       ) : (
         <PromptInput
           onSubmit={(content) => void handleSubmit(content)}
+          onCancel={() => currentProvider.cancel()}
           onExit={() => {
             currentProvider.cancel();
             for (const image of pendingImages) void removeTemporaryImage(image);
