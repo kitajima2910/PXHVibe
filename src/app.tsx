@@ -677,10 +677,15 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         : event.type === 'phase_fail' ? '✖'
           : event.type === 'phase_retry' ? '↻'
             : event.type === 'checkpoint' ? '◇' : '▶';
+      const phaseLine = `${prefix} ${event.phase.toUpperCase()} · ${event.agentLabel} · ${event.message}`;
+      if (event.type === 'phase_pass' && event.output !== undefined && event.output.trim().length > 0) {
+        // Hiển thị output của phase ngay khi hoàn tất, giống tiến trình từng bước.
+        appendAssistantContent(sanitizeOutputBranding(`\n\n**${event.phase.toUpperCase()} · ${event.agentLabel}**\n${event.output.trim()}`));
+      }
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system',
         ...(event.type === 'phase_fail' ? {tone: 'error' as const} : {}),
-        content: `${prefix} ${event.phase.toUpperCase()} · ${event.agentLabel} · ${event.message}`,
+        content: phaseLine,
         createdAt: new Date(),
       }]);
     };
@@ -703,12 +708,13 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       setRuntimeSession(result.session);
       const flushed = streamingSanitizerRef.current?.flush() ?? '';
       appendAssistantContent(flushed);
-      const phaseSummary = formatPhaseSummary(result.session.steps.map((step) => ({
-        phase: step.phase,
-        agent: step.agentLabel,
-        output: step.output ?? '',
-      })));
-      appendAssistantContent(sanitizeOutputBranding(`${result.content}${phaseSummary.length === 0 ? '' : `\n\n${phaseSummary}`}`));
+      const streamed = streamedContentRef.current;
+      // Output phase cuối đã được stream qua text_delta (custom) hoặc đã hiện qua
+      // phase_pass (free); chỉ append lại khi chưa xuất hiện.
+      const lastOutput = result.content.trim();
+      if (lastOutput.length > 0 && !streamed.includes(lastOutput)) {
+        appendAssistantContent(sanitizeOutputBranding(`\n\n${lastOutput}`));
+      }
       const diffSummary = getGitDiffSummary(workingDirectory);
       if (!diffSummary.startsWith('Thư mục') && !diffSummary.startsWith('Không đọc được')) {
         appendAssistantContent(sanitizeOutputBranding(`\n\n${diffSummary}`));
@@ -816,7 +822,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
   return (
     <Box flexDirection="column" height={stdout.rows}>
-      <Banner />
+      <Banner compact={isBusy} />
       <Header
         workingDirectory={workingDirectory}
         providerName={currentProvider.name}

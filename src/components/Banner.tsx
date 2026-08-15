@@ -9,16 +9,29 @@ const logo = String.raw`██████╗ ██╗  ██╗██╗  █
 ██║     ██╔╝ ██╗██║  ██║ ╚████╔╝ ██║██████╔╝███████╗
 ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚═════╝ ╚══════╝`;
 
-export function Banner(): React.JSX.Element {
+interface BannerProps {
+  compact?: boolean;
+}
+
+export function Banner({compact = false}: BannerProps): React.JSX.Element {
   const {stdout} = useStdout();
-  const showLargeLogo = (stdout.columns ?? 80) >= 62;
-  const [bootStep, setBootStep] = useState(0);
+  const [bootFinished, setBootFinished] = useState(false);
+  const showLargeLogo = !compact && !bootFinished && (stdout.columns ?? 80) >= 62;
 
   useEffect(() => {
-    if (bootStep >= bootMessages.length - 1) return;
-    const timer = setTimeout(() => setBootStep((current) => current + 1), 260);
+    if (compact || bootFinished) return;
+    const timer = setTimeout(() => setBootFinished(true), 1_100);
     return () => clearTimeout(timer);
-  }, [bootStep]);
+  }, [compact, bootFinished]);
+
+  if (compact || bootFinished) {
+    return (
+      <Box justifyContent="center">
+        <Text bold color="green">[ PXHVibe v{appVersion} ]</Text>
+        <Text dimColor> · Error404-Labs.Info.VN</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" alignItems="center">
@@ -28,8 +41,8 @@ export function Banner(): React.JSX.Element {
         <Text bold color="green">[ PXHVibe ]</Text>
       )}
       <Text bold color="green">Error404-Labs.Info.VN - Phạm Xuân Hoài</Text>
-      <Text color={bootStep === bootMessages.length - 1 ? 'green' : 'cyan'} dimColor>
-        {spinnerFrames[bootStep % spinnerFrames.length]} PXHVibe v{appVersion} · {bootMessages[bootStep]}
+      <Text color="cyan" dimColor>
+        {spinnerFrames[0]} PXHVibe v{appVersion} · {bootMessages[0]}
       </Text>
     </Box>
   );

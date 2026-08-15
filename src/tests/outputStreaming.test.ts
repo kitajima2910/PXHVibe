@@ -100,9 +100,9 @@ assert.ok(frame.includes('File đã sửa: src/login.ts.'));
 // Tool activity không còn thành system message tràn ngập history.
 assert.ok(!frame.includes('Đang chạy đọc file...'));
 assert.ok(!frame.includes('Đang phân tích yêu cầu...'));
-// Phase summary có cấu trúc xuất hiện sau khi pipeline hoàn tất.
-assert.ok(frame.includes('Tổng kết pipeline'));
-assert.ok(frame.includes('[FIX · PXH Bug Hunter]'));
+// Output từng phase hiện ngay khi phase_pass (không đợi pipeline xong).
+assert.ok(frame.includes('FIX · PXH Bug Hunter'));
+assert.ok(frame.includes('PERSIST · PXH Historian'));
 // Thư mục temp test không phải git repo nên git diff bị bỏ qua, không crash.
 assert.ok(!frame.includes('GIT DIFF'));
 assert.equal(provider.calls, 5);

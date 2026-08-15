@@ -16,6 +16,7 @@ export interface TeamRunnerEvent {
   agentLabel: string;
   attempt: number;
   message: string;
+  output?: string;
 }
 
 export interface TeamRunOptions {
@@ -94,7 +95,7 @@ export async function runTeamPipeline(options: TeamRunOptions): Promise<TeamRunR
         await store.save(session);
         options.onEvent?.({
           type: 'phase_pass', phase: step.phase, agentLabel: agent.label, attempt,
-          message: `Hoàn tất ${step.phase}`,
+          message: `Hoàn tất ${step.phase}`, output: step.output,
         });
         break;
       } catch (error: unknown) {
