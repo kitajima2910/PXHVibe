@@ -1,5 +1,27 @@
 # STATUS
 
+## Phát hành npm: `pxhvibe@0.13.0`
+
+### Đã thay đổi gì
+
+- Đăng nhập npm bằng tài khoản `pxh291095` và bật xác thực hai lớp cho thao tác ghi.
+- Publish package public `pxhvibe@0.13.0` với dist-tag `latest`.
+- Không thay đổi source code trong bước phát hành.
+
+### File đã sửa
+
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm test`: đạt toàn bộ 17 nhóm test ngay trước khi publish.
+- npm registry trả `version: 0.13.0` và `dist-tags.latest: 0.13.0`.
+- `npx --yes pxhvibe@0.13.0 --version` trả `PXHVibe v0.13.0`.
+
+### Vấn đề còn lại
+
+- Không có vấn đề phát hành còn lại.
+
 ## Cập nhật v0.13.0: Làm rõ hành vi `Esc×2`
 
 ### Nguyên nhân gốc
