@@ -1,7 +1,7 @@
 {
   "name": "pxhvibe",
-  "version": "0.16.0",
-  "description": "PXHVibe terminal coding agent with free and custom API modes.",
+  "version": "0.17.0",
+  "description": "Terminal coding team with Free and Custom API modes, native MCP, skills, agents, and workflows.",
   "license": "MIT",
   "author": "Phạm Xuân Hoài",
   "repository": {
@@ -19,7 +19,10 @@
     "tui",
     "coding-agent",
     "ai",
-    "cli"
+    "cli",
+    "mcp",
+    "openai",
+    "developer-tools"
   ],
   "files": [
     "dist",

@@ -1,5 +1,37 @@
 # STATUS
 
+## Chuẩn bị phát hành npm: `pxhvibe@0.17.0` (`v0.17.0`)
+
+### Nguyên nhân gốc
+
+- README cũ đầy đủ nhưng phần cài đặt/quick start bị chìm trong mô tả TUI dài và có nội dung lặp.
+- MCP native là thay đổi tính năng mới sau bản npm `0.16.0`, nên không thể publish lại cùng version.
+
+### Đã thay đổi gì
+
+- Tổ chức lại README theo hành trình người dùng npm: giá trị chính, cài đặt, quick start, provider, MCP, lệnh/phím, runtime, mở rộng project, development và license.
+- Thêm badge npm/Node/license, bảng so sánh provider, bảng slash command/keymap và ví dụ MCP rõ ràng.
+- Giữ cảnh báo chỉnh sửa source, thực thi local MCP, giới hạn OAuth và attribution giấy phép.
+- Bump minor version từ `0.16.0` lên `0.17.0`; tối ưu description/keywords npm cho MCP và developer tools.
+
+### File đã sửa
+
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- npm registry trước release: `latest = 0.16.0`.
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 19 nhóm test, gồm MCP integration server thật.
+
+### Vấn đề còn lại
+
+- Release gate và tarball dry-run đã đạt: 325 file, 226,0 kB, integrity `sha512-a8MVGNRHHp7PJ/MRTvfCBJzm0OU598wl/FA156oeTDnW4crYWDoNPV+NbkqifRExmfAjkQ5i75fYx4e9tvDKtA==`.
+- `npm publish --access public` đã tới registry nhưng bị chặn `EOTP`; cần OTP mới từ authenticator để hoàn tất publish và xác minh package công khai `0.17.0`.
+
 ## Triển khai MCP native cho PXHVibe
 
 ### Nguyên nhân gốc

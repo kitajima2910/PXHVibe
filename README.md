@@ -1,177 +1,94 @@
-# PXHVibe
+# PXHVibe CLI
 
-Terminal coding agent bằng TypeScript, React và Ink.
+**Terminal coding team chạy ngay trong project của bạn.**
 
-## Cài đặt
+[![npm version](https://img.shields.io/npm/v/pxhvibe.svg)](https://www.npmjs.com/package/pxhvibe)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Yêu cầu Node.js 22 trở lên và npm.
+PXHVibe là coding agent viết bằng TypeScript, React và Ink. Một TARGET được router thành
+pipeline nhiều phase, giao cho các specialist phù hợp, lưu checkpoint và hiển thị tiến độ trực
+tiếp trong terminal. Bạn có thể dùng Free mode đi kèm hoặc kết nối API tương thích OpenAI
+Responses, đồng thời mở rộng khả năng bằng MCP, skills, agents và workflows của project.
 
-```bat
+Bản phát hành hiện tại: **v0.17.0**.
+
+## Điểm nổi bật
+
+- **Cài một lệnh:** chạy bằng binary `pxh` trong working directory hiện tại.
+- **Hai provider:** Free mode tích hợp sẵn và Custom API tương thích OpenAI Responses.
+- **Team runtime thật:** 10 specialist, 8 workflow, 50 skill và pipeline có retry/checkpoint.
+- **MCP native:** local stdio và remote Streamable HTTP; hoạt động với cả Free và Custom API.
+- **Project-aware:** tự đọc `AGENTS.md`, skill, agent và workflow riêng của repository.
+- **TUI thực dụng:** streaming, activity log, task rail, context meter, ảnh clipboard và mouse scroll.
+
+## Cài đặt nhanh
+
+Yêu cầu Node.js 22 trở lên.
+
+```bash
 npm install --global pxhvibe
+cd path/to/your-project
 pxh
 ```
 
-PXHVibe chạy trong working directory hiện tại. Nên commit source trước khi giao
-tác vụ lớn vì Free mode có thể đọc, tạo và chỉnh sửa file.
+Hoặc chạy không cần cài global:
 
-## Chọn mode
-
-Trong TUI, gõ:
-
-```text
-/models
+```bash
+npx pxhvibe
 ```
 
-Dùng `↑`/`↓`, Enter để chọn và Esc để đóng. Các mode gồm:
+PXHVibe có thể tạo và chỉnh sửa file. Nên commit hoặc backup source trước khi giao một TARGET lớn.
 
-- Big Pickle Free và các cloud coding model miễn phí khác.
-- Custom API tương thích OpenAI Responses API.
+## Bắt đầu trong 60 giây
 
-Tên model/runtime nội bộ không được hiển thị trong Header hoặc menu; giao diện chỉ
-hiển thị tên mode PXHVibe thân thiện.
+1. Chạy `pxh` tại thư mục project.
+2. Gõ `/models` để chọn Free mode hoặc Custom API.
+3. Mô tả kết quả mong muốn, ví dụ: `sửa lỗi đăng nhập và thêm regression test`.
+4. Theo dõi agent, phase, tool call và checkpoint trong TUI.
+5. Dùng `/diff`, `/pipeline` hoặc `/history` để kiểm tra kết quả.
 
-## Custom API
+Các tùy chọn CLI không mở TUI:
 
-Chọn `Custom API` trong `/models`, sau đó nhập:
+```bash
+pxh --version
+pxh --help
+```
 
-1. Base URL, ví dụ `https://example.com/v1`.
-2. Model ID của endpoint.
-3. API key.
+## Provider
 
-API key được che khi nhập, chỉ giữ trong bộ nhớ của process và không được ghi vào
-message, log hoặc file. Endpoint phải hỗ trợ OpenAI Responses API và function
-calling để coding tools hoạt động.
+| Mode | Thiết lập | Phù hợp khi |
+| --- | --- | --- |
+| Free | Chọn model trong `/models` | Muốn bắt đầu nhanh với runtime được bundle sẵn |
+| Custom API | Base URL, model ID và API key | Có endpoint tương thích OpenAI Responses API |
 
-Có thể cấu hình trước bằng biến môi trường:
+### Custom API
 
-```bat
-set PXH_CUSTOM_BASE_URL=https://example.com/v1
-set PXH_CUSTOM_MODEL=your-model
-set PXH_CUSTOM_API_KEY=your-secret-key
+Chọn `Custom API` trong `/models` rồi nhập Base URL, model ID và API key. Key được che khi
+nhập, chỉ giữ trong memory của process và không được ghi vào message, log hoặc file. Endpoint cần
+hỗ trợ Responses API và function calling để workspace/MCP tools hoạt động.
+
+Có thể cấu hình trước bằng environment:
+
+```bash
+PXH_CUSTOM_BASE_URL=https://example.com/v1 \
+PXH_CUSTOM_MODEL=your-model \
+PXH_CUSTOM_API_KEY=your-secret-key \
 pxh --provider=custom
 ```
 
-## Phím điều khiển
+PowerShell:
 
-- `Enter`: gửi prompt.
-- `Backspace` hoặc `Delete`: xóa ký tự.
-- `Alt+V` hoặc `/paste`: đính kèm ảnh đang có trong clipboard Windows và hiện thumbnail màu trong TUI.
-- Lăn con lăn chuột hoặc kéo thanh cuộn bên phải: xem lịch sử theo trục dọc.
-- `PageUp` / `PageDown`: xem lịch sử cũ hoặc trở về hội thoại mới nhất bằng bàn phím.
-- `←` / `→` / `Home` / `End`: di chuyển con trỏ soạn thảo; `↑` / `↓` di chuyển theo dòng wrap.
-- Click vào text trong `NEW TARGET`: đặt con trỏ tại vị trí muốn sửa.
-- `Shift+Enter`: chèn dòng mới; `Enter`: gửi TARGET.
-- Clipboard dài hiện thành `~X dòng` theo cả newline và dòng wrap của composer; định dạng đầy đủ vẫn được giữ nguyên khi chuyển cho model.
-- `Alt+C` hoặc `/copy`: copy response gần nhất vào Windows Clipboard.
-- Giữ `Shift`, bôi chọn nội dung trong terminal rồi nhấn `Ctrl+C` để copy đoạn tùy chọn.
-- Input text chỉ hiển thị tối đa 5 dòng; dùng `↑`/`↓` hoặc mouse wheel trong input để cuộn.
-- Khi ô nhập trống, `Backspace` hoặc `Delete`: bỏ ảnh đính kèm cuối cùng (tối đa 4 ảnh mỗi TARGET).
-- `/models`: tự kiểm tra model free, hiển thị online/offline và đề xuất model phản hồi nhanh nhất.
-- `/agents`: chọn specialist hoặc Economy Router tự động.
-- `/skills`: xem skill đang được PXHVibe khám phá và tự kích hoạt theo TARGET.
-- `/workflows`: xem workflow có thể được router tự chọn.
-- `/help`: xem slash command hỗ trợ.
-- `Ctrl+C`: thoát.
+```powershell
+$env:PXH_CUSTOM_BASE_URL = "https://example.com/v1"
+$env:PXH_CUSTOM_MODEL = "your-model"
+$env:PXH_CUSTOM_API_KEY = "your-secret-key"
+pxh --provider=custom
+```
 
-Các danh mục dài (`/models`, `/agents`, `/skills`, `/workflows`) dùng picker gọn: danh sách chỉ hiện tên,
-phần mô tả chỉ hiện cho mục đang chọn. Trong `/skills` và `/workflows`, nhấn `Enter` để mở nội dung
-Markdown đầy đủ; dùng `↑/↓` hoặc `PgUp/PgDn` để cuộn và `Enter`/`Esc` để quay lại danh sách.
-Các lệnh trạng thái (`/pipeline`, `/history`, `/session`, `/context`, `/doctor`) hiển thị từng trường trên
-một dòng; `/diff` giới hạn số dòng và báo phần còn lại để không làm vỡ bố cục TUI.
+## MCP
 
-### Keymap TUI
-
-- `Enter`: gửi TARGET.
-- `Shift+Enter`: xuống dòng.
-- `Esc` hai lần trong 1 giây: dừng lượt chạy hiện tại nhưng giữ TUI mở; những thay đổi đã ghi ra file không tự hoàn tác.
-- `←` / `→` / `↑` / `↓`, `Home`, `End`: di chuyển con trỏ.
-- `PageUp` / `PageDown` hoặc con lăn chuột: xem lịch sử.
-- `Alt+V`: dán ảnh; `Ctrl+C`: dừng và thoát.
-- Các chức năng khác dùng slash command: `/models`, `/agents`, `/skills`, `/workflows`, `/copy`, `/help`.
-
-Ảnh clipboard được sao chép vào file tạm, gửi cùng TARGET rồi tự động xóa. Model đang chọn
-phải hỗ trợ vision; nếu model không nhận ảnh, hãy đổi model bằng `/models`.
-VS Code giữ `Ctrl+V` ở lớp terminal nên PXHVibe không nhận được phím này khi clipboard là ảnh;
-hãy dùng `Alt+V` hoặc `/paste` trong VS Code. `Ctrl+V` vẫn được nhận ở terminal nào chuyển tiếp phím đó.
-
-Free request chỉ tự dừng khi không có text hoặc activity mới trong 300 giây; activity mới sẽ gia hạn timer. Có thể thay đổi
-bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
-
-## Skills, agents và workflows
-
-PXHVibe v0.16.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
-
-- Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
-- Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
-- Workflows: các file `*.workflow.md` trong những thư mục `workflows` tương ứng.
-
-`SKILL.md` dùng YAML frontmatter tối thiểu với `name`, `description` và tùy chọn `triggers`.
-Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự chọn một workflow, tối đa ba
-skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
-capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
-
-### Capability pack v0.16.0
-
-- 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
-- Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
-- 8 workflows: AI, Company, Debug, Game, Meeting, Release, Tool và Web.
-- 50 skills thuộc AI, game, process, tool, UI/UX và web.
-- 6 runtime contracts: Request, Task, Result, Response, Event và State.
-- Mỗi TARGET tạo pipeline phase có agent phụ trách; ví dụ lỗi dùng `analyze → fix → test → review → persist`.
-- Auto-router ưu tiên tín hiệu miền mạnh: gameplay/player/enemy chọn Game dù spec có HTML5, web UI hoặc frontend.
-- Prompt trước chỉ ảnh hưởng routing khi TARGET mới bắt đầu bằng `tiếp tục`, `làm tiếp` hoặc từ tương đương.
-
-Các lệnh kiểm tra:
-
-- `/status`: xem số lượng capability đang tích hợp.
-- `/pipeline`: xem phase/agent của TARGET gần nhất.
-- `/validate`: kiểm tra tính toàn vẹn của capability pack.
-
-### Full capability assets
-
-PXHVibe bundle trực tiếp bộ Markdown và template MIT trong npm package:
-
-- `resources/agents/*.md`: 10 agent role đầy đủ.
-- `resources/skills/*/SKILL.md`: 50 skill đầy đủ cùng templates/helper của từng skill.
-- `resources/workflows/*.workflow.md`: 8 workflow đầy đủ.
-- `resources/_shared/`: core rules, design system, phase config và shared scripts/templates.
-
-Discovery load bộ bundled trước, sau đó project có thể bổ sung hoặc override bằng `.pxhvibe/`,
-`.agents/`, `.opencode/` hoặc thư mục gốc. Router chỉ nạp workflow, tối đa ba skill và các agent
-handoff liên quan tới TARGET; referenced template được lazy-load để tránh tràn context. Source path
-tuyệt đối của từng asset được đưa vào prompt để worker có thể truy xuất file thật.
-
-### Native team execution runtime
-
-Mỗi TARGET được chạy thành nhiều phase thật thay vì chỉ mô phỏng pipeline trong giao diện. Ví dụ workflow Debug chạy lần lượt PM phân tích, Bug Hunter sửa lỗi, QA kiểm tra, Reviewer review và Historian lưu kết quả. Mỗi phase là một request riêng, nhận đầy đủ Markdown của agent, skill/workflow phù hợp và handoff từ phase trước.
-
-- Enforcement gate kiểm tra thứ tự phase và evidence đầu ra.
-- Sáu contract Event, Result, Response, Config, Tools và Agent được validate trong runtime.
-- Lỗi tạm thời được retry tối đa hai lần; quota, image capability và thao tác hủy không bị retry mù.
-- Checkpoint được ghi atomically tại `.pxhvibe/runtime-state.json`; dùng `/resume` để tiếp tục từ phase lỗi hoặc `/retry` để chạy lại TARGET gần nhất.
-- Có 24 lệnh native: `/help`, `/models`, `/agents`, `/skills`, `/workflows`, `/status`, `/mcp`, `/pipeline`, `/validate`, `/paste`, `/copy`, `/cancel`, `/retry`, `/new`, `/resume`, `/session`, `/context`, `/detect`, `/doctor`, `/diff`, `/history`, `/version`, `/about`, `/clear`.
-- `/help` chia lệnh theo nhóm AI, phiên, project và tiện ích. `/agents` dùng danh sách compact, chỉ hiển thị mô tả của specialist đang chọn để giảm nhiễu trong terminal hẹp.
-- CLI hỗ trợ `pxh --version` và `pxh --help` mà không khởi động TUI.
-
-Nên thêm `.pxhvibe/` vào `.gitignore` nếu không muốn commit checkpoint phiên làm việc.
-
-### Context tự quản lý
-
-Header hiển thị `CTX n%` theo cửa sổ hội thoại 24.000 ký tự của PXHVibe (token chỉ là ước lượng vì provider miễn phí không trả usage chuẩn). Khi đầy, PXHVibe tự giữ TARGET gốc cùng các lượt gần nhất và hiện `CTX 100% ↻`; prompt phase cũng được chặn ở ngân sách an toàn để tránh lỗi context quá dài.
-
-Lỗi tạm thời được tự tiếp tục tối đa ba lượt. Nếu TUI hoặc terminal đóng giữa pipeline, lần chạy `pxh` tiếp theo tự đọc checkpoint và tiếp tục session `fail/running` mà không cần gõ `/resume`. Session do người dùng chủ động hủy không tự chạy lại; `/resume` vẫn được giữ làm phương án thủ công.
-
-### Live activity monitor
-
-Khi agent chạy, compose box hiển thị thời gian đã chạy, phase hiện tại (`CODE 3/8`) và hoạt động thật gần nhất nhận từ runtime (đọc file, terminal, chỉnh sửa, checkpoint...). Sau 60 giây không có event mới, TUI hiện thời gian chờ; sau 180 giây cảnh báo chuyển đỏ và vẫn cho phép `Esc×2` dừng lượt chạy. Đây là thao tác ngắt tiến trình, không hoàn tác những thay đổi đã ghi ra file. Provider có inactivity watchdog riêng nên request im lặng quá giới hạn sẽ kết thúc bằng lỗi thay vì treo vô hạn.
-
-### Sticky task rail
-
-Body dùng bố cục hai cột: khoảng 80% bên trái dành cho history và 20% bên phải là sidebar cố định. Task được đặt tên theo công việc thực tế như `Phân tích yêu cầu`, `Xây dựng gameplay`, `Chạy kiểm thử` thay vì chỉ hiện mã phase. Mỗi task chờ hiển thị specialist dự kiến; task đang chạy bung thêm specialist, số lần thử và activity thật gần nhất từ runtime. Task dùng `○` đang chờ, `●` đang thực hiện, `✓` đã hoàn tất, `✖` lỗi và `■` đã hủy. Phase hoàn tất được thu gọn, làm mờ/gạch ngang; bộ đếm hiển thị số task đã xong trên tổng số task. Sidebar có chiều rộng tối thiểu 20 cột và giữ nguyên sau khi pipeline hoàn tất.
-
-Phần `MCP` dưới task list hiển thị từng server, trạng thái kết nối và số tool đã discover.
-PXHVibe đọc `.pxhvibe/mcp.json`; Custom API dùng MCP client native và chuyển tool sang function
-tool của Responses API, còn Free mode bridge cùng cấu hình sang OpenCode. Ví dụ:
+Tạo `.pxhvibe/mcp.json` trong project:
 
 ```json
 {
@@ -183,69 +100,138 @@ tool của Responses API, còn Free mode bridge cùng cấu hình sang OpenCode.
     "remote-api": {
       "type": "remote",
       "url": "https://example.com/mcp",
-      "headers": {"Authorization": "Bearer {env:MCP_TOKEN}"},
+      "headers": {
+        "Authorization": "Bearer {env:MCP_TOKEN}"
+      },
       "timeout": 30000
     }
   }
 }
 ```
 
-Local server hỗ trợ thêm `environment`, `cwd`, `timeout`; mọi server có thể đặt
-`disabled: true`. Dùng `{env:TEN_BIEN}` để lấy secret từ environment thay vì ghi token vào file.
-`/mcp` xem trạng thái, `/mcp refresh` nạp lại cấu hình và `/mcp doctor` thực hiện handshake
-kiểm tra tất cả server. Remote MCP hiện hỗ trợ header/token; OAuth tương tác chưa được PXHVibe
-tự mở trình duyệt, nhưng Free mode vẫn có thể dùng luồng auth do OpenCode quản lý.
+Local server hỗ trợ `command`, `environment`, `cwd`, `timeout`; remote server hỗ trợ `url`,
+`headers`, `timeout`. Mọi server có thể đặt `disabled: true`. Dùng `{env:TEN_BIEN}` để lấy secret
+từ environment thay vì lưu token trong repository.
 
-Chỉ chạy MCP config từ project bạn tin cậy: local server là process thật được khởi động với quyền
-của tài khoản hiện tại. Nếu không muốn commit cấu hình hoặc checkpoint, thêm `.pxhvibe/` vào
+- `/mcp`: xem trạng thái và số tool đã discover.
+- `/mcp refresh`: nạp lại cấu hình.
+- `/mcp doctor`: handshake và kiểm tra tất cả server.
+
+Custom API chuyển MCP tools thành function tools trong native agent runtime. Free mode bridge cùng
+cấu hình sang OpenCode. Remote header/token đã được hỗ trợ; PXHVibe chưa tự mở browser/callback cho
+OAuth tương tác.
+
+> Chỉ chạy MCP config từ project bạn tin cậy. Local MCP server là process thật chạy với quyền của
+> tài khoản hiện tại.
+
+## Lệnh trong TUI
+
+PXHVibe có 24 slash command, chia thành bốn nhóm:
+
+| Nhóm | Lệnh |
+| --- | --- |
+| AI | `/models`, `/agents`, `/skills`, `/workflows` |
+| Phiên | `/new`, `/resume`, `/retry`, `/session`, `/history`, `/clear` |
+| Project | `/status`, `/mcp`, `/pipeline`, `/validate`, `/context`, `/detect`, `/doctor`, `/diff` |
+| Tiện ích | `/paste`, `/copy`, `/cancel`, `/version`, `/about`, `/help` |
+
+Các biến thể MCP nâng cao là `/mcp refresh` và `/mcp doctor`.
+
+## Phím điều khiển
+
+| Phím | Tác vụ |
+| --- | --- |
+| `Enter` | Gửi TARGET |
+| `Shift+Enter` | Xuống dòng |
+| `Esc` hai lần trong 1 giây | Dừng lượt hiện tại, giữ các thay đổi đã ghi |
+| `←` `→` `↑` `↓`, `Home`, `End` | Di chuyển con trỏ |
+| `PageUp` / `PageDown`, mouse wheel | Cuộn history |
+| `Alt+V` hoặc `/paste` | Đính kèm ảnh clipboard, tối đa 4 ảnh |
+| `Alt+C` hoặc `/copy` | Copy response gần nhất trên Windows |
+| `Ctrl+C` | Thoát |
+
+Input hiển thị tối đa 5 dòng nhưng vẫn giữ nguyên nội dung đầy đủ. Pasted block dài được thu gọn
+thành `~X dòng` trong composer. Ảnh clipboard được sao chép vào file tạm, gửi cùng TARGET rồi tự
+xóa; model đang chọn phải hỗ trợ vision.
+
+Free request có inactivity timeout mặc định 300 giây và được gia hạn khi có text/activity mới.
+Đổi timeout bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
+
+## Team runtime
+
+Economy Router chọn workflow, tối đa ba skill và specialist phù hợp cho TARGET. Mỗi phase là một
+request riêng, nhận rules, role, skill/workflow và handoff từ phase trước.
+
+Ví dụ Debug pipeline:
+
+```text
+analyze → fix → test → review → persist
+```
+
+Capability pack được bundle trong npm package:
+
+- 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide, Historian.
+- 8 workflows: AI, Company, Debug, Game, Meeting, Release, Tool, Web.
+- 50 skills cho AI, game, process, tooling, UI/UX và web.
+- 6 runtime contracts và kiến trúc 4 tầng: Interface → Orchestration → Workers → Infrastructure.
+
+Checkpoint được ghi atomically tại `.pxhvibe/runtime-state.json`. Session `fail/running` tự resume
+khi mở lại PXHVibe; session bị người dùng chủ động hủy chỉ tiếp tục khi dùng `/resume`.
+
+## Mở rộng theo project
+
+PXHVibe đọc `AGENTS.md` theo phạm vi và khám phá asset tại:
+
+| Loại | Vị trí hỗ trợ |
+| --- | --- |
+| Skills | `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md`, `skills/*/SKILL.md` |
+| Agents | `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md`, `agents/*.md` |
+| Workflows | `*.workflow.md` trong các thư mục `workflows` tương ứng |
+
+`SKILL.md` dùng YAML frontmatter với `name`, `description` và tùy chọn `triggers`. Workflow có thể
+khai báo `agent`, `skills` và `triggers`. Asset project được merge sau bundled catalog nên có thể bổ
+sung hoặc override capability mặc định.
+
+Nếu không muốn commit checkpoint, MCP config hoặc capability riêng, thêm `.pxhvibe/` vào
 `.gitignore`.
 
-### Long prompt transport trên Windows
+## Context và độ bền phiên
 
-Prompt không còn được đặt trong command-line arguments. PXHVibe chỉ truyền flags/model/file paths qua argv và pipe toàn bộ prompt UTF-8 qua stdin của free runtime. Vì vậy prompt dài được paste từ ChatGPT không chạm giới hạn command line Windows và không còn làm phase cuối lỗi `spawn ENAMETOOLONG`.
+Header hiển thị `CTX n%` theo cửa sổ hội thoại 24.000 ký tự. Khi đầy, PXHVibe giữ TARGET gốc cùng
+các lượt gần nhất và đánh dấu `CTX 100% ↻`. Prompt phase có budget riêng để bảo vệ model khỏi
+context quá dài; prompt Free mode được pipe qua stdin nên không chạm giới hạn command line Windows.
 
-Phase prompt vẫn có context budget 64.000 ký tự để bảo vệ giới hạn model; khi vượt budget, PXHVibe giữ rules/identity ở đầu và TARGET/handoff mới nhất ở cuối. Nếu một runtime khác vẫn trả `ENAMETOOLONG`, lỗi được checkpoint ngay và không retry nguyên payload ba lần.
-
-### Slash command không làm mất draft
-
-Slash command được tách khỏi pasted blocks trong compose. Ví dụ sau khi paste một prompt dài, gõ `/models` chỉ mở model picker; prompt không bị gửi nhầm thành TARGET và vẫn còn nguyên khi đóng/chọn model. Cơ chế này cũng áp dụng cho các command khác; `/new` và `/clear` chủ động xóa draft theo đúng ngữ nghĩa tạo phiên sạch.
+Task rail giữ trạng thái phase sau khi pipeline hoàn tất. Activity monitor cảnh báo khi worker im
+lặng lâu và provider watchdog kết thúc request bị treo thay vì chờ vô hạn.
 
 ## Development
 
-```bat
+```bash
+git clone https://github.com/kitajima2910/PXHVibe.git
+cd PXHVibe
 npm install
 npm run typecheck
 npm test
 npm run dev
 ```
 
-### Tên tab trong VS Code
+Kiểm tra package trước khi phát hành:
 
-PXHVibe gửi terminal title `PXHVibe` qua ANSI OSC. VS Code mặc định lại hiển thị tên
-foreground process (`node`). Để tab dùng title do PXHVibe gửi, thêm vào VS Code
-User Settings JSON:
-
-```json
-"terminal.integrated.tabs.title": "${sequence}"
-```
-
-## Phát hành
-
-```bat
+```bash
 npm run release:check
-npm publish
 ```
 
-## Attribution
+## License và attribution
 
-PXHVibe bundles the MIT-licensed `opencode-ai` runtime for its Free mode. This
-attribution is retained for license transparency; runtime branding is not exposed
-as part of the end-user TUI.
+PXHVibe được phát hành theo [MIT License](LICENSE).
 
-PXHVibe's local Economy Router and specialist-role design are inspired by the
-MIT-licensed [pxhopencode](https://github.com/kitajima2910/pxhopencode) project;
-the implementation in this package is native to PXHVibe.
+Free mode bundle runtime `opencode-ai`. Economy Router, specialist-role design và capability assets
+được lấy cảm hứng hoặc vendored từ dự án MIT
+[pxhopencode](https://github.com/kitajima2910/pxhopencode). License và attribution chi tiết được giữ
+tại [`resources/LICENSE.pxhopencode`](resources/LICENSE.pxhopencode) và
+[`resources/ATTRIBUTION.md`](resources/ATTRIBUTION.md).
 
-The bundled capability Markdown/templates are vendored from pxhopencode commit
-`0d712cf1b2dd59eaf40d225b6254f251762e2941`. The original MIT license and detailed
-attribution are retained in `resources/LICENSE.pxhopencode` and `resources/ATTRIBUTION.md`.
+---
+
+Repository: [github.com/kitajima2910/PXHVibe](https://github.com/kitajima2910/PXHVibe) ·
+npm: [npmjs.com/package/pxhvibe](https://www.npmjs.com/package/pxhvibe)
