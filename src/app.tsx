@@ -186,6 +186,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const responseMessageIdRef = useRef<string | undefined>(undefined);
   const streamedContentRef = useRef('');
   const streamingSanitizerRef = useRef<StreamingBrandSanitizer | undefined>(undefined);
+  const lastToolKeyRef = useRef<string | undefined>(undefined);
   const contextUsage = getContextUsage(messages);
 
   const configureMCP = async (targetProvider: AIProvider, forceConnect = false): Promise<readonly MCPServerStatus[]> => {
@@ -643,14 +644,26 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         return;
       }
 
-      const activity = event.type === 'tool_start'
-        ? `Đang chạy ${event.toolName}...`
-        : `${event.toolName}: ${event.summary}`;
-      const visibleActivity = sanitizeOutputBranding(activity);
-      setActivityLabel(visibleActivity);
-      setStickyTasks((current) => current.map((task) => task.status === 'running'
-        ? {...task, detail: visibleActivity}
-        : task));
+      if (event.type === 'tool_start') {
+        // Hiển thị tool call như block thu gọn trong transcript, không giấu.
+        lastToolKeyRef.current = event.toolName;
+        appendAssistantContent(sanitizeOutputBranding(`\n\`\`\`\n[${event.toolName}]\n`));
+        return;
+      }
+
+      // tool_complete: cập nhật summary vào block tool vừa mở.
+      const toolBlock = `\n\`\`\`\n[${event.toolName}]\n${event.summary}\n\`\`\``;
+      const lastToolKey = lastToolKeyRef.current;
+      if (lastToolKey === event.toolName) {
+        // Gộp summary vào block tool_start liền trước.
+        setMessages((currentMessages) => currentMessages.map((item) => {
+          if (item.id !== responseMessageId || !item.content.endsWith(`[${lastToolKey}]\n`)) return item;
+          return {...item, content: item.content + `${event.summary}\n\`\`\``};
+        }));
+        lastToolKeyRef.current = undefined;
+        return;
+      }
+      appendAssistantContent(sanitizeOutputBranding(toolBlock));
     };
 
     const handleTeamEvent = (event: TeamRunnerEvent): void => {
@@ -673,21 +686,18 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           detail: event.message,
         };
       }));
-      const prefix = event.type === 'phase_pass' ? '✓'
-        : event.type === 'phase_fail' ? '✖'
-          : event.type === 'phase_retry' ? '↻'
-            : event.type === 'checkpoint' ? '◇' : '▶';
-      const phaseLine = `${prefix} ${event.phase.toUpperCase()} · ${event.agentLabel} · ${event.message}`;
       if (event.type === 'phase_pass' && event.output !== undefined && event.output.trim().length > 0) {
-        // Hiển thị output của phase ngay khi hoàn tất, giống tiến trình từng bước.
+        // Output phase hiện ngay trong luồng assistant, không tạo system message.
         appendAssistantContent(sanitizeOutputBranding(`\n\n**${event.phase.toUpperCase()} · ${event.agentLabel}**\n${event.output.trim()}`));
+        return;
       }
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(), role: 'system',
-        ...(event.type === 'phase_fail' ? {tone: 'error' as const} : {}),
-        content: phaseLine,
-        createdAt: new Date(),
-      }]);
+      if (event.type === 'phase_fail') {
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(), role: 'system', tone: 'error',
+          content: `✖ ${event.phase.toUpperCase()} · ${event.agentLabel} · ${event.message}`,
+          createdAt: new Date(),
+        }]);
+      }
     };
 
     try {

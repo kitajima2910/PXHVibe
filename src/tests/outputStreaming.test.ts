@@ -97,9 +97,13 @@ const frame = stripAnsi(rendered);
 // Text streamed live qua text_delta xuất hiện trong assistant message.
 assert.ok(frame.includes('Đã sửa lỗi đăng nhập.'));
 assert.ok(frame.includes('File đã sửa: src/login.ts.'));
-// Tool activity không còn thành system message tràn ngập history.
+// Tool call hiển thị thành block thu gọn trong transcript, không giấu.
+assert.ok(frame.includes('[đọc file]'));
+assert.ok(frame.includes('12 dòng'));
+// Không còn system message tràn ngập history (activity chỉ ở status line).
 assert.ok(!frame.includes('Đang chạy đọc file...'));
-assert.ok(!frame.includes('Đang phân tích yêu cầu...'));
+assert.ok(!frame.includes('✓ ANALYZE'));
+assert.ok(!frame.includes('Hoàn tất FIX'));
 // Output từng phase hiện ngay khi phase_pass (không đợi pipeline xong).
 assert.ok(frame.includes('FIX · PXH Bug Hunter'));
 assert.ok(frame.includes('PERSIST · PXH Historian'));
