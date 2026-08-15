@@ -1,5 +1,48 @@
 # STATUS
 
+## Cập nhật v0.14.0: Làm gọn `/help` và specialist picker
+
+### Nguyên nhân gốc
+
+- `/help` ghép cả 23 slash command vào một dòng dài, không có phân nhóm nên khó quét bằng mắt và dễ wrap lộn xộn.
+- `/agents` render mô tả đầy đủ của mọi specialist cùng lúc; mô tả từ capability pack dài làm picker chiếm gần hết chiều cao terminal.
+- Khung double-border và nội dung lặp khiến mục đang chọn không còn là tiêu điểm chính.
+
+### Đã thay đổi gì
+
+- Chia 23 lệnh thành bốn nhóm cố định: AI, Phiên, Project và Tiện ích.
+- Đổi specialist picker sang single-border nhẹ hơn, danh sách chỉ hiển thị tên agent và bộ đếm vị trí.
+- Chỉ specialist đang chọn có khung mô tả riêng; mô tả được chuẩn hóa khoảng trắng và giới hạn độ dài để không tràn màn hình.
+- Giữ nguyên keymap `↑/↓`, `Enter`, `Esc` và toàn bộ hành vi chọn agent hiện có.
+- Nâng version local lên `v0.14.0`.
+
+### File đã sửa
+
+- `src/runtime/commands.ts`
+- `src/app.tsx`
+- `src/components/AgentPicker.tsx`
+- `src/tests/runtimeCommands.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `src/tests/agentPicker.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 18 nhóm test.
+- Regression xác nhận `/help` đủ bốn nhóm và vẫn chứa toàn bộ 23 command.
+- Agent picker regression xác nhận chỉ mô tả của mục đang chọn được render.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.14.0`.
+- Global install local: `pxhvibe@0.14.0`; `pxh.cmd --version` trả `PXHVibe v0.14.0`.
+- React best-practices review: state dẫn xuất trực tiếp, cập nhật index dùng functional state và không thêm effect/render thừa.
+
+### Vấn đề còn lại
+
+- `v0.14.0` hiện là bản local; chưa publish lên npm trong TARGET này.
+
 ## Phát hành npm: `pxhvibe@0.13.0`
 
 ### Đã thay đổi gì

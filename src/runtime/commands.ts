@@ -14,7 +14,12 @@ export const commandDefinitions = [
 ] as const;
 
 export function formatCommandList(): string {
-  return commandDefinitions.map(([command]) => command).join(' · ');
+  return [
+    'AI       /models  /agents  /skills  /workflows',
+    'Phiên    /new  /resume  /retry  /session  /history  /clear',
+    'Project  /status  /pipeline  /validate  /context  /detect  /doctor  /diff',
+    'Tiện ích /paste  /copy  /cancel  /version  /about  /help',
+  ].join('\n');
 }
 
 export function detectProject(cwd: string): string {

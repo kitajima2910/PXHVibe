@@ -196,7 +196,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setMessages((currentMessages) => [...currentMessages, {
       id: createMessageId(),
       role: 'system',
-      content: `Lệnh (${commandDefinitions.length}): ${formatCommandList()}`,
+      content: `LỆNH NHANH · ${commandDefinitions.length}\n${formatCommandList()}`,
       createdAt: new Date(),
     }]);
   };

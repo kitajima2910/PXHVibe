@@ -9,6 +9,10 @@ assert.equal(new Set(commandDefinitions.map(([command]) => command)).size, 23);
 for (const command of ['/paste', '/cancel', '/retry', '/new', '/resume', '/session', '/context', '/detect', '/doctor', '/diff', '/history', '/version', '/about', '/clear']) {
   assert.ok(formatCommandList().includes(command));
 }
+assert.match(formatCommandList(), /^AI\s+\/models/m);
+assert.match(formatCommandList(), /^Phiên\s+\/new/m);
+assert.match(formatCommandList(), /^Project\s+\/status/m);
+assert.match(formatCommandList(), /^Tiện ích\s+\/paste/m);
 
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-detect-'));
 try {
