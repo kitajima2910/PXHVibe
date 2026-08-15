@@ -44,7 +44,7 @@ assert.equal(validateContract('response', {version: contractVersion, status: 'ok
 assert.ok(validateContract('request', {version: '0', target: ''}).length >= 2);
 
 const prompt = buildAgentPrompt('sửa lỗi đăng nhập bị crash', worker, route, emptyCatalog, pipeline);
-assert.match(prompt, /4-TIER PIPELINE \(contract v1\.0\):/);
+assert.match(prompt, /PIPELINE: 1\. \[ANALYZE\]/);
 assert.match(prompt, /\[ANALYZE\] PXH PM \(Auto\)/);
 assert.match(prompt, /\[FIX\] PXH Bug Hunter/);
 assert.match(prompt, /\[TEST\] PXH QA/);

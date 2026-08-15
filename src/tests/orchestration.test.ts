@@ -76,9 +76,8 @@ Không chỉnh migration đã chạy production.
   const fullGamePrompt = buildAgentPrompt(gameTarget, gameAgent, gameRoute, catalog, gamePipeline);
   assert.match(fullGamePrompt, /AGENT ROLE: PXH Expert/);
   assert.match(fullGamePrompt, /Bạn là cỗ máy vibe coding/);
-  assert.match(fullGamePrompt, /ACTIVE SKILLS:[\s\S]+# game-development/);
-  assert.match(fullGamePrompt, /AGENT TEAM HANDOFFS:/);
-  assert.match(fullGamePrompt, /pxh-qa — Kỹ sư kiểm thử/);
+  assert.match(fullGamePrompt, /ACTIVE SKILLS: [\s\S]*?Game Development: /);
+  assert.match(fullGamePrompt, /TEAM: /);
   assert.match(fullGamePrompt, /Không chạy command \.opencode\/runtime/);
   assert.ok(fullGamePrompt.length < 100_000);
 
@@ -95,7 +94,7 @@ Không chỉnh migration đã chạy production.
   assert.match(prompt, /Preserve database migrations/);
   assert.match(prompt, /WORKFLOW: Database Recovery/);
   assert.match(prompt, /ACTIVE SKILLS:/);
-  assert.match(prompt, /Đọc schema và migration trước khi sửa/);
+  assert.match(prompt, /database-debug: /);
   assert.match(prompt, /AGENT ROLE: PXH Database/);
 } finally {
   await rm(root, {recursive: true, force: true});
