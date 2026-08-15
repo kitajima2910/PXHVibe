@@ -1,5 +1,27 @@
 # STATUS
 
+## Phát hành npm: `pxhvibe@0.16.0`
+
+### Đã thay đổi gì
+
+- Publish public `pxhvibe@0.16.0` với dist-tag `latest` bằng tài khoản `pxh291095`.
+- Release hook tự chạy typecheck, toàn bộ test, integrity check và build ngay trước khi upload.
+- Không thay đổi source code trong bước publish.
+
+### File đã sửa
+
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- npm registry trả `version: 0.16.0` và `dist-tags.latest: 0.16.0`.
+- Integrity công khai khớp tarball đã kiểm tra: `sha512-9ik+VH8fIEGIloDie4nIF8Q9J0x8p9/due8pn3Bv7wmLGYaK+pAPWUy8IvlOWdsnPbC52vUIAQvBLfYVlffkwg==`.
+- `npx --yes pxhvibe@0.16.0 --version` trả `PXHVibe v0.16.0`.
+
+### Vấn đề còn lại
+
+- Chưa tạo Git tag `v0.16.0` trong TARGET publish npm này.
+
 ## Hoàn thiện release gate cho v0.16.0
 
 ### Nguyên nhân gốc
