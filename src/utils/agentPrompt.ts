@@ -35,6 +35,16 @@ const resourceCompatibility = `PXHVIBE RESOURCE COMPATIBILITY:
 - Không chạy command .opencode/runtime hoặc executable của hệ thống tham khảo; PXHVibe native đã xử lý route, contract và pipeline.
 - Dùng tools hiện có của PXHVibe trong working directory để đọc/sửa/chạy kiểm tra TARGET.`;
 
+const outputFormatRules = `OUTPUT FORMAT:
+
+- Trả kết quả bằng Markdown có cấu trúc, dễ quét trong terminal.
+- Bắt đầu bằng một câu tóm tắt 1-2 dòng về điều đã làm.
+- Dùng danh sách gạch đầu dòng, heading ngắn và code fence cho lệnh, đường dẫn, diff hoặc đoạn code.
+- Luôn có mục "File đã sửa" liệt kê từng đường dẫn thay đổi (đường dẫn tương đối từ working directory).
+- Có mục "Kết quả kiểm tra" nêu lệnh đã chạy và kết quả (pass/fail).
+- Có mục "Vấn đề còn lại" nếu có giới hạn hoặc việc chưa hoàn thành.
+- Không dùng bảng rộng, emoji hay markdown dạng HTML. Giữ mỗi dòng dưới 100 ký tự.`;
+
 export function buildAgentPrompt(
   target: string,
   agent: PXHAgent,
@@ -54,5 +64,5 @@ export function buildAgentPrompt(
     .filter((id) => id !== agent.id)
     .flatMap((id) => catalog.agents.filter((candidate) => candidate.id === id));
   const handoffs = teamAgents.length === 0 ? '' : `\n\nAGENT TEAM HANDOFFS:\n${teamAgents.map((member) => `\n### ${member.label}\n${member.instruction}`).join('\n')}`;
-  return `${codingRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${workflow}${skills}${phases}${handoffs}\n\nAGENT MODE: BUILD\nThực hiện workflow theo thứ tự, áp dụng các skill đang hoạt động, triển khai TARGET và kiểm tra kết quả.\n\nTARGET:\n\n${target}`;
+  return `${codingRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${workflow}${skills}${phases}${handoffs}\n\nAGENT MODE: BUILD\nThực hiện workflow theo thứ tự, áp dụng các skill đang hoạt động, triển khai TARGET và kiểm tra kết quả.\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
 }

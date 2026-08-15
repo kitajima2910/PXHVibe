@@ -11,3 +11,5 @@
 - Wants user-facing labels to be accurate and non-misleading (e.g., "dừng lượt" instead of "hủy an toàn"; correct "~X dòng" line counts for pasted text). Confidence: 0.8
 - Wants the product's own branding (PXHVibe) visible and underlying tooling (opencode) hidden from end-user output. Confidence: 0.85
 - Wants the terminal window title set to the product name (PXHVibe). Confidence: 0.7
+- Wants CLI output styled like "Command Code": text that streams live as it is generated (not shown only after the whole pipeline finishes), tool activity shown compactly as status lines instead of spamming conversation history, and structured markdown responses (short summary up top, bullets, code fences, a "files changed" section with paths). Confidence: 0.9 (explicitly approved the implementation plan for this with "ok, triển thôi")
+- Wants to review changes and commit them himself; the assistant should not auto-commit after completing work. Confidence: 0.65

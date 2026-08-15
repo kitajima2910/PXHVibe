@@ -18,7 +18,7 @@ import {Banner} from './components/Banner.js';
 import {agents, getAgent, mergeAgentCatalog, routeAgent, type PXHAgent} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 import {CatalogPicker, type CatalogPickerItem} from './components/CatalogPicker.js';
-import {sanitizeOutputBranding} from './utils/outputBranding.js';
+import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
 import type {ImageAttachment} from './types/attachment.js';
 import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
 import {copyTextToClipboard} from './utils/clipboard.js';
@@ -126,6 +126,28 @@ export function buildRoutingTarget(messages: readonly Message[], currentTarget: 
   return previousTarget === undefined ? currentTarget : `${previousTarget}\n${currentTarget}`;
 }
 
+export interface PhaseSummaryEntry {
+  phase: string;
+  agent: string;
+  output: string;
+}
+
+export function formatPhaseSummary(entries: readonly PhaseSummaryEntry[], budget = 2_400): string {
+  const visible = entries.filter((entry) => entry.output.trim().length > 0);
+  if (visible.length === 0) return '';
+  const lines = ['---', '**Tổng kết pipeline**'];
+  let remaining = budget;
+  for (const entry of visible) {
+    const body = entry.output.trim().replace(/\r\n/g, '\n');
+    const block = `\n**[${entry.phase.toUpperCase()} · ${entry.agent}]**\n${body}`;
+    const selected = block.length <= remaining ? block : `${block.slice(0, Math.max(1, remaining - 3))}...`;
+    lines.push(selected);
+    remaining -= selected.length;
+    if (remaining <= 0) break;
+  }
+  return lines.join('\n');
+}
+
 export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog, workingDirectory = process.cwd()}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
   const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(workingDirectory));
@@ -161,6 +183,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
   const autoResumeStartedRef = useRef(false);
   const promptDraftRef = useRef<PromptDraft | undefined>(undefined);
+  const responseMessageIdRef = useRef<string | undefined>(undefined);
+  const streamedContentRef = useRef('');
+  const streamingSanitizerRef = useRef<StreamingBrandSanitizer | undefined>(undefined);
   const contextUsage = getContextUsage(messages);
 
   const configureMCP = async (targetProvider: AIProvider, forceConnect = false): Promise<readonly MCPServerStatus[]> => {
@@ -573,12 +598,16 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setActivityLabel('Đang chuẩn bị context và pipeline...');
     setPhaseLabel(`phase 1/${pipeline.tasks.length}`);
     const responseMessageId = createMessageId();
+    responseMessageIdRef.current = responseMessageId;
+    streamedContentRef.current = '';
+    streamingSanitizerRef.current = new StreamingBrandSanitizer();
 
     const appendAssistantContent = (nextContent: string): void => {
       if (nextContent.length === 0) {
         return;
       }
 
+      streamedContentRef.current += nextContent;
       setMessages((currentMessages) => {
         const existing = currentMessages.find((item) => item.id === responseMessageId);
         if (existing === undefined) {
@@ -600,6 +629,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     const handleAgentEvent = (event: AgentEvent): void => {
       setLastActivityAt(Date.now());
       if (event.type === 'text_delta') {
+        const visibleDelta = streamingSanitizerRef.current?.push(event.content) ?? '';
+        appendAssistantContent(visibleDelta);
         return;
       }
 
@@ -609,12 +640,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         setStickyTasks((current) => current.map((task) => task.status === 'running'
           ? {...task, detail: visibleActivity}
           : task));
-        setMessages((currentMessages) => [...currentMessages, {
-          id: createMessageId(),
-          role: 'system',
-          content: visibleActivity,
-          createdAt: new Date(),
-        }]);
         return;
       }
 
@@ -626,12 +651,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       setStickyTasks((current) => current.map((task) => task.status === 'running'
         ? {...task, detail: visibleActivity}
         : task));
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(),
-        role: 'system',
-        content: visibleActivity,
-        createdAt: new Date(),
-      }]);
     };
 
     const handleTeamEvent = (event: TeamRunnerEvent): void => {
@@ -682,7 +701,18 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         ...(resumeSession === undefined ? {} : {resumeSession}),
       });
       setRuntimeSession(result.session);
-      appendAssistantContent(sanitizeOutputBranding(result.content));
+      const flushed = streamingSanitizerRef.current?.flush() ?? '';
+      appendAssistantContent(flushed);
+      const phaseSummary = formatPhaseSummary(result.session.steps.map((step) => ({
+        phase: step.phase,
+        agent: step.agentLabel,
+        output: step.output ?? '',
+      })));
+      appendAssistantContent(sanitizeOutputBranding(`${result.content}${phaseSummary.length === 0 ? '' : `\n\n${phaseSummary}`}`));
+      const diffSummary = getGitDiffSummary(workingDirectory);
+      if (!diffSummary.startsWith('Thư mục') && !diffSummary.startsWith('Không đọc được')) {
+        appendAssistantContent(sanitizeOutputBranding(`\n\n${diffSummary}`));
+      }
       setStatus('Ready');
     } catch (error: unknown) {
       const storedSession = await new SessionStore(workingDirectory).load();
