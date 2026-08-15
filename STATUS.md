@@ -1,5 +1,46 @@
 # STATUS
 
+## Hoàn thiện release gate cho v0.16.0
+
+### Nguyên nhân gốc
+
+- Package khai báo giấy phép MIT nhưng chưa có `LICENSE` cấp project trong tarball.
+- `release-check.mjs` còn giả định cấu trúc của project nguồn cũ nên resolve nhầm `resources/package.json` và kiểm tra các artifact không thuộc PXHVibe.
+- `build-scripts.ps1` biến lỗi lint/typecheck thành warning; emoji UTF-8 và biểu thức `Test-Path ... -or` cũng làm Windows PowerShell 5.1 parse lỗi.
+- `dist/tests` bị đưa vào package vì toàn bộ thư mục `dist` được include.
+- Chưa có gate tự động trước `npm publish` hoặc CI Node 22 đa nền tảng.
+
+### Đã thay đổi gì
+
+- Thêm MIT `LICENSE` của PXHVibe và metadata npm gồm author, repository, homepage và bug tracker.
+- Sửa release integrity check dùng working directory, SemVer ba thành phần, README/STATUS, LICENSE và entrypoint thật.
+- Sửa PowerShell quality gate để skip rõ bước chưa cấu hình và trả exit code lỗi khi lint/typecheck thất bại; dùng output ASCII tương thích Windows PowerShell 5.1.
+- Loại `dist/tests` khỏi tarball nhưng giữ nguyên test local.
+- Thêm `prepublishOnly`, `release:check` và GitHub Actions chạy Node 22 trên Windows, Linux, macOS.
+- Cập nhật README dùng `npm run release:check` trước publish.
+
+### File đã sửa
+
+- `LICENSE`
+- `package.json`
+- `README.md`
+- `.github/workflows/ci.yml`
+- `resources/_shared/scripts/release-check.mjs`
+- `resources/_shared/build-scripts.ps1`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `powershell.exe -File resources/_shared/build-scripts.ps1 -Step lint`: đạt; skip lint chưa cấu hình và typecheck pass trên Windows PowerShell 5.1.
+- `npm run release:check`: đạt toàn bộ typecheck, 19 nhóm test, release integrity và pack dry-run.
+- Tarball có `LICENSE`, không còn `dist/tests`; giảm từ 341 xuống 324 entry, từ 237,6 kB xuống 224,1 kB.
+- CLI build giữ đúng version `PXHVibe v0.16.0`.
+
+### Vấn đề còn lại
+
+- GitHub Actions chỉ chạy sau khi commit/push workflow.
+- `v0.16.0` chưa được publish hoặc tạo Git tag trong TARGET này.
+
 ## Cập nhật v0.16.0: Xem Markdown trong catalog
 
 ### Nguyên nhân gốc

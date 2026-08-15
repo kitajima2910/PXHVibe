@@ -203,7 +203,7 @@ User Settings JSON:
 ## Phát hành
 
 ```bat
-npm pack --dry-run
+npm run release:check
 npm publish
 ```
 
