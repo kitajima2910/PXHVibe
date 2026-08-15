@@ -1,0 +1,13 @@
+# Taste
+- Communicates in Vietnamese and expects Vietnamese-language UI copy, docs, and agent replies. Confidence: 0.95
+- Wants STATUS.md read first and root-cause analysis performed before any edit. Confidence: 0.9
+- Prefers minimal patches that only touch files/features in the TARGET: no whole-project rewrites, no unrequested refactors or dependency upgrades, no breaking changes. Confidence: 0.9
+- Wants STATUS.md updated after each task with what changed, files modified, test results, and remaining issues. Confidence: 0.9
+- Wants appropriate tests run after changes; when verification is not possible, expects the reason stated explicitly. Confidence: 0.85
+- Wants every release vetted before publishing: typecheck, full test suite, pack/tarball dry-run, LICENSE and package metadata, registry version/auth check. Confidence: 0.9
+- Wants npm publish after each completed update and verification of the published artifact (e.g., `npx pxhvibe@<ver> --version` against the registry). Confidence: 0.9
+- Wants version bumped in v0.0.0 style on each TUI/feature update rather than reusing the previous release number. Confidence: 0.85
+- Dislikes cluttered, information-dense screens; wants data grouped and compact (grouped command lists, pickers showing only the selected item's details, truncated diff/status output). Confidence: 0.85
+- Wants user-facing labels to be accurate and non-misleading (e.g., "dừng lượt" instead of "hủy an toàn"; correct "~X dòng" line counts for pasted text). Confidence: 0.8
+- Wants the product's own branding (PXHVibe) visible and underlying tooling (opencode) hidden from end-user output. Confidence: 0.85
+- Wants the terminal window title set to the product name (PXHVibe). Confidence: 0.7
