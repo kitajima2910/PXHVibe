@@ -832,7 +832,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
   return (
     <Box flexDirection="column" height={stdout.rows}>
-      <Banner compact={isBusy} />
+      <Banner />
       <Header
         workingDirectory={workingDirectory}
         providerName={currentProvider.name}

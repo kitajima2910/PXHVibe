@@ -1,5 +1,28 @@
 # STATUS
 
+## v0.19.0 — TUI redesign + che branding runtime
+
+### Đã thay đổi
+- Làm lại giao diện TUI: Header border round 3 phân đoạn (status · agent · context/dir), Banner 1 dòng `PXHVibe v0.19.0 · Terminal Coding Agent` (bỏ logo Matrix 6 dòng + boot animation), PromptInput border round + `⠿ WORKING` + placeholder mới, TodoStrip border round.
+- Che branding opencode khỏi end-user: prompt không còn nhắc `.opencode/runtime` (đổi thành "runtime hệ thống tham khảo"); provider name hiển thị `Free · Big Pickle` (không lộ `opencode/...`); `outputBranding` đã lọc sẵn.
+- Bump version `0.18.0 → 0.19.0` ở `package.json`, `package-lock.json`, `README.md`, `STATUS.md`.
+
+### File đã sửa
+- `src/components/Header.tsx`, `Banner.tsx`, `PromptInput.tsx`, `TodoStrip.tsx`
+- `src/utils/agentPrompt.ts`
+- `src/tests/slashCommands.test.ts`, `imageClipboard.test.ts`, `orchestration.test.ts`
+- `package.json`, `package-lock.json`, `README.md`, `STATUS.md`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 (pxhvibe@0.19.0)
+- `npm test` → 21/21 test groups pass
+- `node resources/_shared/scripts/release-check.mjs` → đạt sau khi cập nhật STATUS.
+
+### Vấn đề còn lại
+- Chưa commit, chưa tạo tag `v0.19.0`, chưa publish npm (cần OTP 2FA).
+- CRITICAL/HIGH Anthropic/Gemini từ v0.18.0 vẫn chưa fix (chưa thuộc phạm vi TUI redesign).
+
+
 ## PERSIST — Checkpoint: BUILD blocked (v0.18.0 release gated)
 
 ### Event

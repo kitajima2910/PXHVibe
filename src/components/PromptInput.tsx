@@ -238,12 +238,12 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   const isVeryStalled = idleSeconds >= 180;
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
       <Box justifyContent="space-between">
         <Text bold color={isBusy ? 'yellow' : 'green'}>
-          {isBusy ? `AGENT WORKING · ${formatElapsed(elapsedSeconds)}` : 'NEW TARGET'}
+          {isBusy ? `⠿ WORKING · ${formatElapsed(elapsedSeconds)}` : '❯ NEW TARGET'}
         </Text>
-        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa để dừng' : `${phaseLabel ?? 'khởi động'} · Esc×2 dừng lượt`) : 'build mode'}</Text>
+        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa để dừng' : `${phaseLabel ?? 'khởi động'} · Esc×2 dừng lượt`) : 'Enter gửi · Shift+Enter xuống dòng'}</Text>
       </Box>
       {attachments.length > 0 && (
         <Box marginBottom={1}>
@@ -268,7 +268,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (
-              <Box ref={editorRef}><Text><Text inverse color="green"> </Text><Text color="gray"> Nhập TARGET hoặc /help</Text></Text></Box>
+              <Box ref={editorRef}><Text><Text inverse color="green"> </Text><Text color="gray"> Nhập TARGET · /help · /models</Text></Text></Box>
             ) : (
               <>
                 {inputViewport.hiddenAbove > 0 && <Text color="cyan">↑ {inputViewport.hiddenAbove} lines</Text>}

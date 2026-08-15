@@ -6,6 +6,7 @@ import type {AIProvider} from './AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import type {AgentEvent} from '../agent/types.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
+import {sanitizeOutputBranding} from '../utils/outputBranding.js';
 import {loadMCPConfig, toOpenCodeMCPConfig} from '../mcp/MCPManager.js';
 
 const missingCliMessage =
@@ -160,7 +161,7 @@ export class OpenCodeProvider implements AIProvider {
           for (const event of parsed.events) options.onEvent?.(event);
         }
         const cleanStdout = (responseText || fallbackText).trim();
-        const cleanStderr = stripAnsi(stderr).trim();
+        const cleanStderr = sanitizeOutputBranding(stripAnsi(stderr).trim());
         cleanup();
 
         if (code !== 0) {

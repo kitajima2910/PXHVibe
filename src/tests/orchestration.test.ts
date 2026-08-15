@@ -78,7 +78,7 @@ Không chỉnh migration đã chạy production.
   assert.match(fullGamePrompt, /Bạn là cỗ máy vibe coding/);
   assert.match(fullGamePrompt, /ACTIVE SKILLS: [\s\S]*?Game Development: /);
   assert.match(fullGamePrompt, /TEAM: /);
-  assert.match(fullGamePrompt, /Không chạy command \.opencode\/runtime/);
+  assert.match(fullGamePrompt, /Không chạy command runtime hệ thống tham khảo/);
   assert.ok(fullGamePrompt.length < 100_000);
 
   const route = routeOrchestration('sửa lỗi postgresql migration', catalog);

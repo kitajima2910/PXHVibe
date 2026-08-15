@@ -17,7 +17,7 @@ export interface TodoItem {
 export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[]; mcpServers?: readonly MCPServerStatus[]}): React.JSX.Element {
   const completed = tasks.filter((task) => task.status === 'pass').length;
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
+    <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
       <Box justifyContent="space-between">
         <Text bold color="cyan">TASKS</Text>
         <Text color="gray">{completed}/{tasks.length} hoàn tất</Text>

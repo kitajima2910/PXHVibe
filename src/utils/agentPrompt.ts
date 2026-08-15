@@ -17,7 +17,7 @@ const identityRules = `IDENTITY:
 
 const resourceCompatibility = `COMPATIBILITY:
 
-- Không chạy command .opencode/runtime hay executable hệ thống tham khảo; dùng tools PXHVibe trong working directory.
+- Không chạy command runtime hệ thống tham khảo hay executable ngoài; dùng tools PXHVibe trong working directory.
 - Resolve đường dẫn tương đối của skill/workflow từ resource root trong prompt.`;
 
 const outputFormatRules = `OUTPUT FORMAT:
