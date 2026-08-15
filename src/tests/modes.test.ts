@@ -18,6 +18,24 @@ const custom = new CustomAgentProvider({
 assert.equal(custom.name, 'Custom API · local-model');
 assert.ok(!custom.name.includes('secret-value'));
 
+const customAnthropic = new CustomAgentProvider({
+  baseURL: 'https://api.anthropic.com',
+  model: 'claude-3-5-sonnet-20241022',
+  apiKey: 'secret-value',
+  provider: 'anthropic',
+});
+assert.equal(customAnthropic.name, 'Custom API · anthropic · claude-3-5-sonnet-20241022');
+assert.ok(!customAnthropic.name.includes('secret-value'));
+
+const customGemini = new CustomAgentProvider({
+  baseURL: 'https://generativelanguage.googleapis.com',
+  model: 'gemini-2.0-flash',
+  apiKey: 'secret-value',
+  provider: 'gemini',
+});
+assert.equal(customGemini.name, 'Custom API · gemini · gemini-2.0-flash');
+assert.ok(!customGemini.name.includes('secret-value'));
+
 const latencies: Record<string, number> = {
   'opencode/big-pickle': 40,
   'opencode/mimo-v2.5-free': 1,

@@ -1,5 +1,5 @@
 import type {AIProvider} from './AIProvider.js';
-import {CustomAgentProvider, type CustomApiConfig} from './CustomAgentProvider.js';
+import {CustomAgentProvider, type CustomApiConfig, type CustomProviderType} from './CustomAgentProvider.js';
 import {OpenCodeProvider} from './OpenCodeProvider.js';
 import {defaultOpenCodeModel} from './OpenCodeProvider.js';
 import type {ProviderName} from '../types/provider.js';
@@ -43,9 +43,13 @@ function createCustomProviderFromEnvironment(): AIProvider {
   if (baseURL === undefined || model === undefined) {
     throw new Error('Custom API cần PXH_CUSTOM_BASE_URL và PXH_CUSTOM_MODEL.');
   }
+  const providerEnv = process.env.PXH_CUSTOM_PROVIDER?.toLowerCase();
+  const provider: CustomProviderType =
+    providerEnv === 'anthropic' || providerEnv === 'gemini' ? providerEnv : 'openai';
   return new CustomAgentProvider({
     baseURL,
     model,
     apiKey: process.env.PXH_CUSTOM_API_KEY ?? '',
+    provider,
   });
 }

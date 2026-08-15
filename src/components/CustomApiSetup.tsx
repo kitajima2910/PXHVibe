@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Box, Text, useInput} from 'ink';
-import type {CustomApiConfig} from '../providers/CustomAgentProvider.js';
+import type {CustomApiConfig, CustomProviderType} from '../providers/CustomAgentProvider.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
 
 interface CustomApiSetupProps {
@@ -8,23 +8,33 @@ interface CustomApiSetupProps {
   onCancel: () => void;
 }
 
-const fields = ['baseURL', 'model', 'apiKey'] as const;
+const providerOptions: readonly CustomProviderType[] = ['openai', 'anthropic', 'gemini'];
+const fields: readonly (keyof CustomApiConfig)[] = ['provider', 'baseURL', 'model', 'apiKey'];
 type Field = (typeof fields)[number];
 
 const fieldLabels: Record<Field, string> = {
+  provider: 'Provider',
   baseURL: 'Base URL',
   model: 'Model',
   apiKey: 'API key',
 };
 
+const providerLabels: Record<CustomProviderType, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic (Claude)',
+  gemini: 'Google Gemini',
+};
+
 export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): React.JSX.Element {
   const [fieldIndex, setFieldIndex] = useState(0);
+  const [providerIndex, setProviderIndex] = useState(0);
   const [values, setValues] = useState<Record<Field, string>>({
+    provider: '',
     baseURL: '',
     model: '',
     apiKey: '',
   });
-  const field = fields[fieldIndex] ?? 'baseURL';
+  const field = fields[fieldIndex] ?? 'provider';
 
   useInput((input, key) => {
     if (parseTerminalMouse(input) !== undefined) return;
@@ -36,8 +46,21 @@ export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): Rea
       setValues((current) => ({...current, [field]: current[field].slice(0, -1)}));
       return;
     }
+    if (key.tab && !key.shift) {
+      setProviderIndex((current) => (current + 1) % providerOptions.length);
+      return;
+    }
+    if (key.tab && key.shift) {
+      setProviderIndex((current) => (current === 0 ? providerOptions.length - 1 : current - 1));
+      return;
+    }
     if (key.return) {
-      if (field !== 'apiKey' && values[field].trim().length === 0) return;
+      if (field === 'provider') {
+        setFieldIndex((current) => current + 1);
+        setValues((current) => ({...current, provider: providerOptions[providerIndex] ?? 'openai'}));
+        return;
+      }
+      if (values[field].trim().length === 0) return;
       if (fieldIndex < fields.length - 1) {
         setFieldIndex((current) => current + 1);
       } else {
@@ -45,23 +68,37 @@ export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): Rea
           baseURL: values.baseURL.trim().replace(/\/$/, ''),
           model: values.model.trim(),
           apiKey: values.apiKey,
+          provider: providerOptions[providerIndex] ?? 'openai',
         });
       }
       return;
     }
-    if (!key.ctrl && !key.meta && input.length > 0) {
+    if (field !== 'provider' && !key.ctrl && !key.meta && input.length > 0) {
       setValues((current) => ({...current, [field]: current[field] + input}));
     }
   });
 
-  const visibleValue = field === 'apiKey' ? '•'.repeat(values.apiKey.length) : values[field];
+  const selectedProvider = providerOptions[providerIndex] ?? 'openai';
+  const visibleValue = field === 'apiKey'
+    ? '•'.repeat(values.apiKey.length)
+    : field === 'provider'
+      ? providerLabels[selectedProvider]
+      : values[field];
+
   return (
     <Box flexDirection="column" borderStyle="double" borderColor="green" paddingX={1}>
       <Text bold color="green">[ CUSTOM API UPLINK ]</Text>
       <Text>{fieldLabels[field]}: {visibleValue}<Text inverse> </Text></Text>
-      <Text dimColor>
-        Endpoint phải tương thích OpenAI Responses API. API key chỉ giữ trong bộ nhớ.
-      </Text>
+      {field === 'provider' && (
+        <Text dimColor>
+          Tab chuyển OpenAI/Anthropic/Gemini · Enter: Tiếp tục · Esc: Hủy
+        </Text>
+      )}
+      {field !== 'provider' && (
+        <Text dimColor>
+          Endpoint tương thích OpenAI Responses/Anthropic Messages/Gemini API. API key chỉ giữ trong bộ nhớ.
+        </Text>
+      )}
       <Text dimColor>Enter: Tiếp tục  Esc: Hủy</Text>
     </Box>
   );

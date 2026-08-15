@@ -8,15 +8,15 @@
 
 PXHVibe là coding agent viết bằng TypeScript, React và Ink. Một TARGET được router thành
 pipeline nhiều phase, giao cho các specialist phù hợp, lưu checkpoint và hiển thị tiến độ trực
-tiếp trong terminal. Bạn có thể dùng Free mode đi kèm hoặc kết nối API tương thích OpenAI
-Responses, đồng thời mở rộng khả năng bằng MCP, skills, agents và workflows của project.
+tiếp trong terminal. Bạn có thể dùng Free mode đi kèm hoặc kết nối Custom API hỗ trợ OpenAI,
+Anthropic và Google Gemini, đồng thời mở rộng khả năng bằng MCP, skills, agents và workflows của project.
 
-Bản phát hành hiện tại: **v0.17.0**.
+Bản phát hành hiện tại: **v0.18.0**.
 
 ## Điểm nổi bật
 
 - **Cài một lệnh:** chạy bằng binary `pxh` trong working directory hiện tại.
-- **Hai provider:** Free mode tích hợp sẵn và Custom API tương thích OpenAI Responses.
+- **Hai provider:** Free mode tích hợp sẵn và Custom API hỗ trợ OpenAI, Anthropic (Claude) và Google Gemini.
 - **Team runtime thật:** 10 specialist, 8 workflow, 50 skill và pipeline có retry/checkpoint.
 - **MCP native:** local stdio và remote Streamable HTTP; hoạt động với cả Free và Custom API.
 - **Project-aware:** tự đọc `AGENTS.md`, skill, agent và workflow riêng của repository.
@@ -60,13 +60,14 @@ pxh --help
 | Mode | Thiết lập | Phù hợp khi |
 | --- | --- | --- |
 | Free | Chọn model trong `/models` | Muốn bắt đầu nhanh với runtime được bundle sẵn |
-| Custom API | Base URL, model ID và API key | Có endpoint tương thích OpenAI Responses API |
+| Custom API | Base URL, model ID, API key và provider | OpenAI Responses, Anthropic Messages, Google Gemini |
 
 ### Custom API
 
-Chọn `Custom API` trong `/models` rồi nhập Base URL, model ID và API key. Key được che khi
-nhập, chỉ giữ trong memory của process và không được ghi vào message, log hoặc file. Endpoint cần
-hỗ trợ Responses API và function calling để workspace/MCP tools hoạt động.
+Chọn `Custom API` trong `/models`, chọn provider (OpenAI/Anthropic/Gemini) rồi nhập Base URL,
+model ID và API key. Key được che khi nhập, chỉ giữ trong memory của process và không được ghi
+vào message, log hoặc file. Endpoint cần hỗ trợ Responses API (OpenAI), Messages API (Anthropic)
+hoặc Generative Language API (Gemini) để workspace/MCP tools hoạt động.
 
 Có thể cấu hình trước bằng environment:
 
@@ -74,6 +75,7 @@ Có thể cấu hình trước bằng environment:
 PXH_CUSTOM_BASE_URL=https://example.com/v1 \
 PXH_CUSTOM_MODEL=your-model \
 PXH_CUSTOM_API_KEY=your-secret-key \
+PXH_CUSTOM_PROVIDER=openai \
 pxh --provider=custom
 ```
 
@@ -83,6 +85,7 @@ PowerShell:
 $env:PXH_CUSTOM_BASE_URL = "https://example.com/v1"
 $env:PXH_CUSTOM_MODEL = "your-model"
 $env:PXH_CUSTOM_API_KEY = "your-secret-key"
+$env:PXH_CUSTOM_PROVIDER = "openai"
 pxh --provider=custom
 ```
 
