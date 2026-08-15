@@ -1,5 +1,5 @@
 import {AgentRuntime} from '../agent/AgentRuntime.js';
-import {OpenAIModelProvider} from '../agent/OpenAIModelProvider.js';
+import {ChatCompletionsModelProvider} from '../agent/ChatCompletionsModelProvider.js';
 import {AnthropicModelProvider} from '../agent/AnthropicModelProvider.js';
 import {GeminiModelProvider} from '../agent/GeminiModelProvider.js';
 import type {ModelProvider} from '../agent/ModelProvider.js';
@@ -39,7 +39,9 @@ export class CustomAgentProvider implements AIProvider {
         return new GeminiModelProvider(config.model, config.apiKey || 'local', config.baseURL);
       case 'openai':
       default:
-        return new OpenAIModelProvider(config.model, config.apiKey || 'local', config.baseURL);
+        // Dùng Chat Completions: tương thích với mọi endpoint OpenAI-compatible
+        // (DeepSeek, OpenRouter, one-api...). Responses API chỉ có trên OpenAI chính chủ.
+        return new ChatCompletionsModelProvider(config.model, config.apiKey || 'local', config.baseURL);
     }
   }
 

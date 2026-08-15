@@ -21,25 +21,30 @@ export class OpenAIModelProvider implements ModelProvider {
       detail: 'auto' as const,
       image_url: `data:${image.mimeType};base64,${(await readFile(image.path)).toString('base64')}`,
     })));
-    const input: ResponseInput = request.input.map((item) => {
+    const input: ResponseInput = [];
+    for (const item of request.input) {
       if ('type' in item) {
-        return {type: 'function_call_output', call_id: item.callId, output: item.output};
+        input.push({type: 'function_call_output', call_id: item.callId, output: item.output});
+      } else if (item.role === 'assistant') {
+        // Mỗi tool call thành một function_call riêng; nếu thiếu một cái,
+        // function_call_output tương ứng sẽ bị API từ chối (400).
+        for (const call of item.toolCalls) {
+          input.push({
+            type: 'function_call',
+            call_id: call.callId,
+            name: call.name,
+            arguments: call.arguments,
+          });
+        }
+      } else {
+        input.push({
+          role: item.role,
+          content: imageContent.length === 0
+            ? item.content
+            : [{type: 'input_text', text: item.content}, ...imageContent],
+        });
       }
-      if (item.role === 'assistant') {
-        return {
-          type: 'function_call',
-          call_id: item.toolCalls[0]?.callId ?? '',
-          name: item.toolCalls[0]?.name ?? '',
-          arguments: item.toolCalls[0]?.arguments ?? '{}',
-        };
-      }
-      return {
-        role: item.role,
-        content: imageContent.length === 0
-          ? item.content
-          : [{type: 'input_text', text: item.content}, ...imageContent],
-      };
-    });
+    }
     const tools: FunctionTool[] = request.tools.map((tool) => ({
       type: 'function',
       name: tool.name,

@@ -43,6 +43,26 @@
 ### Vấn đề còn lại
 - Chưa test với Custom API thật (OpenAI/Anthropic/Gemini live); cần user verify lại sau khi build.
 
+## FIX — Custom API DeepSeek 400 (Responses API → Chat Completions)
+
+### Nguyên nhân gốc
+- Custom API provider `openai` dùng OpenAI SDK `responses.stream` → gửi `POST {baseURL}/responses`.
+- DeepSeek (`api.deepseek.com`) chỉ hỗ trợ **Chat Completions** (`/chat/completions`), không có Responses API → HTTP 400 `No tool call found...` (endpoint không hiểu input Responses).
+- Trước đó cũng đã fix: `OpenAIModelProvider` chỉ map tool call đầu tiên của assistant turn → mất function_call cho các tool call sau (thêm bug multi-call).
+
+### Đã thay đổi
+- Thêm `src/agent/ChatCompletionsModelProvider.ts`: dùng Chat Completions + streaming, map history → system/user/assistant(tool_calls)/tool, gộp tool result theo `tool_call_id`, tích lũy tool_calls delta theo index.
+- `CustomAgentProvider`: provider `openai` giờ dùng `ChatCompletionsModelProvider` (tương thích DeepSeek/OpenRouter/one-api/LiteLLM...). Giữ `OpenAIModelProvider` (Responses) như provider riêng cho OpenAI chính chủ nếu cần.
+- `OpenAIModelProvider`: fix multi tool call — mỗi call thành 1 `function_call` (trước đây chỉ `[0]`).
+- Test mới `chatCompletionsProvider.test.ts` dùng mock HTTP server SSE: verify 2 tool calls cùng lượt, payload system/user/assistant/tool, streaming text.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 22/22 test groups pass (thêm test:chat-completions).
+
+### Vấn đề còn lại
+- Cần user test lại Custom API với DeepSeek; nếu vẫn lỗi, kiểm tra model có hỗ trợ tool calling không (deepseek-chat thì có, deepseek-reasoner thì không).
+
 
 ## PERSIST — Checkpoint: BUILD blocked (v0.18.0 release gated)
 
