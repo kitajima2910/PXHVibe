@@ -77,7 +77,7 @@ pxh --provider=custom
 
 - `Enter`: gửi TARGET.
 - `Shift+Enter`: xuống dòng.
-- `Esc` hai lần trong 1 giây: hủy task đang chạy nhưng giữ TUI mở.
+- `Esc` hai lần trong 1 giây: dừng lượt chạy hiện tại nhưng giữ TUI mở; những thay đổi đã ghi ra file không tự hoàn tác.
 - `←` / `→` / `↑` / `↓`, `Home`, `End`: di chuyển con trỏ.
 - `PageUp` / `PageDown` hoặc con lăn chuột: xem lịch sử.
 - `Alt+V`: dán ảnh; `Ctrl+C`: dừng và thoát.
@@ -93,7 +93,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.12.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.13.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +104,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.12.0
+### Capability pack v0.13.0
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.
@@ -156,7 +156,7 @@ Lỗi tạm thời được tự tiếp tục tối đa ba lượt. Nếu TUI ho
 
 ### Live activity monitor
 
-Khi agent chạy, compose box hiển thị thời gian đã chạy, phase hiện tại (`CODE 3/8`) và hoạt động thật gần nhất nhận từ runtime (đọc file, terminal, chỉnh sửa, checkpoint...). Sau 60 giây không có event mới, TUI hiện thời gian chờ; sau 180 giây cảnh báo chuyển đỏ và vẫn cho phép `Esc×2` hủy an toàn. Provider có inactivity watchdog riêng nên request im lặng quá giới hạn sẽ kết thúc bằng lỗi thay vì treo vô hạn.
+Khi agent chạy, compose box hiển thị thời gian đã chạy, phase hiện tại (`CODE 3/8`) và hoạt động thật gần nhất nhận từ runtime (đọc file, terminal, chỉnh sửa, checkpoint...). Sau 60 giây không có event mới, TUI hiện thời gian chờ; sau 180 giây cảnh báo chuyển đỏ và vẫn cho phép `Esc×2` dừng lượt chạy. Đây là thao tác ngắt tiến trình, không hoàn tác những thay đổi đã ghi ra file. Provider có inactivity watchdog riêng nên request im lặng quá giới hạn sẽ kết thúc bằng lỗi thay vì treo vô hạn.
 
 ### Sticky task rail
 

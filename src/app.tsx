@@ -598,12 +598,12 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       if (storedSession !== undefined) setRuntimeSession(storedSession);
       if (isCancellationError(error)) {
         setStickyTasks((current) => current.map((task) => task.status === 'running'
-          ? {...task, status: 'cancelled', detail: 'Đã huỷ bởi người dùng.'}
+          ? {...task, status: 'cancelled', detail: 'Đã dừng bởi người dùng.'}
           : task));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
-          content: 'Đã hủy task hiện tại.',
+          content: 'Đã dừng lượt chạy. Các thay đổi đã ghi ra file được giữ nguyên.',
           createdAt: new Date(),
         }]);
         setStatus('Ready');

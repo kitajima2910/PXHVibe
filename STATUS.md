@@ -1,5 +1,44 @@
 # STATUS
 
+## Cập nhật v0.13.0: Làm rõ hành vi `Esc×2`
+
+### Nguyên nhân gốc
+
+- TUI dùng các nhãn `Esc×2 hủy` và `hủy an toàn`, dễ khiến người dùng hiểu rằng thao tác sẽ hoàn tác toàn bộ file đã sửa.
+- Thực tế `Esc×2` chỉ abort lượt runtime đang chạy; những thay đổi đã ghi ra workspace trước thời điểm đó vẫn tồn tại.
+- Cách gọi `hủy task` cũng dễ bị nhầm với việc xóa task hoặc reset toàn bộ pipeline.
+
+### Đã thay đổi gì
+
+- Đổi nhãn ngắn thành `Esc×2 dừng lượt` ở footer và compose status.
+- Khi đã nhấn Esc lần đầu, hiển thị rõ `Nhấn ESC lần nữa để dừng lượt chạy`.
+- Cảnh báo chờ lâu ghi rõ `không hoàn tác file`.
+- Sau khi ngắt, history xác nhận lượt chạy đã dừng và các thay đổi đã ghi ra file được giữ nguyên.
+- Đồng bộ README và nâng version lên `v0.13.0`.
+
+### File đã sửa
+
+- `src/components/Footer.tsx`
+- `src/components/PromptInput.tsx`
+- `src/app.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 17 nhóm test.
+- Regression xác nhận trạng thái Esc lần hai dùng nội dung `dừng lượt chạy`.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.13.0`.
+- Global install: `pxhvibe@0.13.0`; `pxh.cmd --version` trả `PXHVibe v0.13.0`.
+
+### Vấn đề còn lại
+
+- `Esc×2` không rollback workspace. Nếu cần hoàn tác file, người dùng vẫn phải dùng Git hoặc yêu cầu agent tạo patch đảo ngược.
+
 ## Cập nhật v0.12.0: Task rail hiển thị work plan thật
 
 ### Nguyên nhân gốc

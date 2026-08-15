@@ -207,7 +207,7 @@ assert.match(stripAnsi(busyFrame), /CODE 3\/8/);
 assert.match(stripAnsi(busyFrame), /Không có sự kiện mới 03:01/);
 busyInput.write('\x1b');
 await new Promise((resolve) => setTimeout(resolve, 40));
-assert.match(stripAnsi(busyFrame), /Nhấn ESC lần nữa để hủy task/);
+assert.match(stripAnsi(busyFrame), /Nhấn ESC lần nữa để dừng lượt chạy/);
 assert.equal(cancelled, 0);
 busyInput.write('\x1b');
 await new Promise((resolve) => setTimeout(resolve, 40));

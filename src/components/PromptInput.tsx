@@ -243,7 +243,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         <Text bold color={isBusy ? 'yellow' : 'green'}>
           {isBusy ? `AGENT WORKING · ${formatElapsed(elapsedSeconds)}` : 'NEW TARGET'}
         </Text>
-        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa' : `${phaseLabel ?? 'khởi động'} · Esc×2 hủy`) : 'build mode'}</Text>
+        <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa để dừng' : `${phaseLabel ?? 'khởi động'} · Esc×2 dừng lượt`) : 'build mode'}</Text>
       </Box>
       {attachments.length > 0 && (
         <Box marginBottom={1}>
@@ -264,7 +264,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         <Box>
         <Text bold color="cyan">❯ </Text>
         {isBusy ? (
-          <Text color={isVeryStalled ? 'red' : 'yellow'}>{cancelArmed ? 'Nhấn ESC lần nữa để hủy task.' : `${processingFrames[spinnerIndex]} ${activityLabel ?? 'Đang khởi động worker...'}`}</Text>
+          <Text color={isVeryStalled ? 'red' : 'yellow'}>{cancelArmed ? 'Nhấn ESC lần nữa để dừng lượt chạy.' : `${processingFrames[spinnerIndex]} ${activityLabel ?? 'Đang khởi động worker...'}`}</Text>
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (
@@ -289,7 +289,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         </Box>
         {isBusy && isStalled && !cancelArmed && (
           <Text color={isVeryStalled ? 'red' : 'yellow'}>
-            {isVeryStalled ? '⚠' : '·'} Không có sự kiện mới {formatElapsed(idleSeconds)} · đang chờ model/runtime; Esc×2 để hủy an toàn.
+            {isVeryStalled ? '⚠' : '·'} Không có sự kiện mới {formatElapsed(idleSeconds)} · đang chờ model/runtime; Esc×2 dừng lượt chạy (không hoàn tác file).
           </Text>
         )}
       </Box>
