@@ -21,11 +21,8 @@ export class AnthropicModelProvider implements ModelProvider {
   }
 
   async createTurn(request: ModelRequest): Promise<AgentModelTurn> {
-    if (request.previousResponseId === undefined) {
-      this.messages = [];
-      this.systemInstruction = request.instructions;
-    }
-
+    this.messages = [];
+    this.systemInstruction = request.instructions;
     const imageContent = await Promise.all((request.images ?? []).map(async (image) => ({
       type: 'image',
       source: {
@@ -37,14 +34,39 @@ export class AnthropicModelProvider implements ModelProvider {
 
     for (const item of request.input) {
       if ('type' in item) {
-        this.messages.push({
-          role: 'user',
-          content: [{
+        // Gộp toàn bộ tool_result của cùng một lượt assistant vào một message
+        // user duy nhất để tránh nhiều message user liên tiếp (Anthropic 400).
+        const last = this.messages[this.messages.length - 1];
+        if (last !== undefined && last.role === 'user' && hasToolResults(last.content)) {
+          last.content.push({
             type: 'tool_result',
             tool_use_id: item.callId,
             content: item.output,
-          }],
-        });
+          });
+        } else {
+          this.messages.push({
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: item.callId,
+              content: item.output,
+            }],
+          });
+        }
+      } else if (item.role === 'assistant') {
+        const content: unknown[] = [];
+        if (item.text !== undefined && item.text.length > 0) {
+          content.push({type: 'text', text: item.text});
+        }
+        for (const call of item.toolCalls) {
+          content.push({
+            type: 'tool_use',
+            id: call.callId,
+            name: call.name,
+            input: parseJsonObject(call.arguments),
+          });
+        }
+        this.messages.push({role: 'assistant', content});
       } else {
         this.messages.push({
           role: 'user',
@@ -160,25 +182,6 @@ export class AnthropicModelProvider implements ModelProvider {
       });
     }
 
-    const assistantMessage: AnthropicMessage = {
-      role: 'assistant',
-      content: [],
-    };
-    if (text.length > 0) {
-      assistantMessage.content.push({type: 'text', text});
-    }
-    for (const call of toolCalls) {
-      assistantMessage.content.push({
-        type: 'tool_use',
-        id: call.callId,
-        name: call.name,
-        input: JSON.parse(call.arguments || '{}'),
-      });
-    }
-    if (assistantMessage.content.length > 0) {
-      this.messages.push(assistantMessage);
-    }
-
     return {
       id: responseId || `anthropic-${Date.now()}`,
       text,
@@ -223,5 +226,18 @@ export class AnthropicModelProvider implements ModelProvider {
     } else if (payload.type === 'content_block_stop') {
       callbacks.endToolUse();
     }
+  }
+}
+
+function hasToolResults(content: unknown[]): boolean {
+  return content.some((block) => typeof block === 'object' && block !== null
+    && (block as {type?: string}).type === 'tool_result');
+}
+
+function parseJsonObject(value: string): Record<string, unknown> {
+  try {
+    return JSON.parse(value || '{}') as Record<string, unknown>;
+  } catch {
+    return {};
   }
 }

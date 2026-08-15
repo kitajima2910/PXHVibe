@@ -20,7 +20,28 @@
 
 ### Vấn đề còn lại
 - Chưa commit, chưa tạo tag `v0.19.0`, chưa publish npm (cần OTP 2FA).
-- CRITICAL/HIGH Anthropic/Gemini từ v0.18.0 vẫn chưa fix (chưa thuộc phạm vi TUI redesign).
+- Đã fix CRITICAL/HIGH Anthropic/Gemini (multi-tool_result/functionResponse gộp 1 user content) trong đợt này — cần test với API thật để xác nhận.
+
+## FIX — Custom API 400 "No tool call found" + fix CRITICAL/HIGH provider
+
+### Nguyên nhân gốc
+- `AgentRuntime` gửi `input = outputs` (chỉ tool outputs) + `previousResponseId` mỗi turn → OpenAI Responses API không tìm thấy `function_call` để nối `function_call_output` → HTTP 400 `No tool call found for tool output with call_id`.
+- Anthropic/Gemini provider tự duy trì `this.messages` state và push từng tool_result/functionResponse thành message user riêng → nhiều user liên tiếp (400) / vi phạm alternation.
+
+### Đã thay đổi
+- `AgentRuntime`: bỏ `previousResponseId`; giữ **toàn bộ history** mỗi turn — user prompt → assistant turn (tool calls) → function_call_output. AgentInput mở rộng thêm `AgentAssistantTurn {role:'assistant', toolCalls, text?}`.
+- `OpenAIModelProvider`: map assistant turn → `function_call`, bỏ `store:true`/`previous_response_id`, gửi full history mỗi turn.
+- `AnthropicModelProvider`: reset state mỗi turn, map assistant turn → `tool_use`, gộp toàn bộ `tool_result` vào **một** message user (fix CRITICAL v0.18.0).
+- `GeminiModelProvider`: reset state mỗi turn, map assistant turn → `functionCall`, gộp functionResponse vào một content user (fix HIGH v0.18.0).
+- `ModelProvider`: xóa `previousResponseId` khỏi interface.
+- Test: `nativeAgent.test.ts` assert history đầy đủ.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 21/21 test groups pass.
+
+### Vấn đề còn lại
+- Chưa test với Custom API thật (OpenAI/Anthropic/Gemini live); cần user verify lại sau khi build.
 
 
 ## PERSIST — Checkpoint: BUILD blocked (v0.18.0 release gated)

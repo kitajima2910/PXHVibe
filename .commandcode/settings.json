@@ -26,7 +26,8 @@
       "Shell(node --input-type=module -e \"import {agents, getAgent} from './dist/agents.js'; import {emptyCatalog} from './dist/orchestration/builtins.js'; import {routeOrchestration} from './dist/orchestration/router.js'; import {preparePipeline} from './dist/orchestration/pipeline.js'; import {buildAgentPrompt} from './dist/utils/agentPrompt.js'; const t='sửa lỗi đăng nhập bị crash'; const r=routeOrchestration(t, emptyCatalog); const p=preparePipeline(t, r, getAgent('fix-bugs')); const map={analyze:'auto',fix:'fix-bugs',test:'qa',review:'review-code',persist:'save-history'}; let total=0; for (const task of p.tasks) { const pr=buildAgentPrompt(t, getAgent(map[task.phase]), r, emptyCatalog, p); total+=pr.length; console.log(task.phase, pr.length, 'chars ~', Math.round(pr.length/4), 'tokens'); } console.log('TOTAL 5 phase:', total, 'chars ~', Math.round(total/4), 'tokens');\")",
       "Shell(node resources/_shared/scripts/release-check.mjs)",
       "Shell(node dist/tests/openCodeProvider.test.js)",
-      "Shell(node dist/tests/outputBranding.test.js)"
+      "Shell(node dist/tests/outputBranding.test.js)",
+      "Shell(node dist/tests/nativeAgent.test.js)"
     ],
     "deny": [],
     "defaultMode": "default"

@@ -39,8 +39,9 @@ try {
 
   assert.equal(response, 'Đã đọc file.');
   assert.equal(model.requests.length, 2);
-  const secondInput = model.requests[1]?.input[0];
-  assert.equal(model.requests[1]?.previousResponseId, 'response-1');
+  const firstInput = model.requests[1]?.input[1];
+  assert.ok(firstInput !== undefined && 'role' in firstInput && firstInput.role === 'assistant');
+  const secondInput = model.requests[1]?.input[2];
   assert.ok(secondInput !== undefined && 'type' in secondInput);
   assert.match(secondInput.output, /xin chào/);
   assert.deepEqual(events, ['tool_start', 'tool_complete', 'text_delta']);

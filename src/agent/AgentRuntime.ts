@@ -17,7 +17,6 @@ OUTPUT FORMAT:
 - Keep every line under 100 characters; avoid wide tables, emoji, or HTML-style markup.`;
 
 export class AgentRuntime {
-  private previousResponseId: string | undefined;
   private tools: readonly AgentTool[];
 
   constructor(
@@ -39,18 +38,16 @@ export class AgentRuntime {
     onEvent: (event: AgentEvent) => void,
     images: readonly AgentImage[] = [],
   ): Promise<string> {
-    let input: AgentInput[] = [{role: 'user', content: prompt}];
-    let responseId = this.previousResponseId;
+    const history: AgentInput[] = [{role: 'user', content: prompt}];
     let content = '';
 
     for (let turnIndex = 0; turnIndex < this.maxTurns; turnIndex += 1) {
       let streamedText = '';
       const turn = await this.model.createTurn({
         instructions,
-        input,
+        input: history,
         ...(turnIndex === 0 && images.length > 0 ? {images} : {}),
         tools: this.tools,
-        ...(responseId === undefined ? {} : {previousResponseId: responseId}),
         signal,
         onTextDelta: (delta) => {
           streamedText += delta;
@@ -58,7 +55,6 @@ export class AgentRuntime {
           onEvent({type: 'text_delta', content: delta});
         },
       });
-      responseId = turn.id;
 
       if (streamedText.length === 0 && turn.text.length > 0) {
         content += turn.text;
@@ -66,15 +62,21 @@ export class AgentRuntime {
       }
 
       if (turn.toolCalls.length === 0) {
-        this.previousResponseId = responseId;
         return content.trim();
       }
 
-      const outputs: AgentInput[] = [];
+      // Giữ assistant turn (tool calls) trong history để provider nối đúng
+      // function_call → function_call_output.
+      history.push({
+        role: 'assistant',
+        toolCalls: turn.toolCalls,
+        ...(turn.text.length === 0 ? {} : {text: turn.text}),
+      });
+
       for (const call of turn.toolCalls) {
         const tool = this.tools.find((candidate) => candidate.name === call.name);
         if (tool === undefined) {
-          outputs.push({
+          history.push({
             type: 'function_call_output',
             callId: call.callId,
             output: `Tool không tồn tại: ${call.name}`,
@@ -94,9 +96,8 @@ export class AgentRuntime {
           toolName: tool.name,
           summary: summarize(output),
         });
-        outputs.push({type: 'function_call_output', callId: call.callId, output});
+        history.push({type: 'function_call_output', callId: call.callId, output});
       }
-      input = outputs;
     }
 
     throw new Error(`Agent đã vượt quá giới hạn ${this.maxTurns} lượt xử lý.`);

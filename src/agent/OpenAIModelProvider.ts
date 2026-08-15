@@ -25,6 +25,14 @@ export class OpenAIModelProvider implements ModelProvider {
       if ('type' in item) {
         return {type: 'function_call_output', call_id: item.callId, output: item.output};
       }
+      if (item.role === 'assistant') {
+        return {
+          type: 'function_call',
+          call_id: item.toolCalls[0]?.callId ?? '',
+          name: item.toolCalls[0]?.name ?? '',
+          arguments: item.toolCalls[0]?.arguments ?? '{}',
+        };
+      }
       return {
         role: item.role,
         content: imageContent.length === 0
@@ -46,10 +54,6 @@ export class OpenAIModelProvider implements ModelProvider {
         instructions: request.instructions,
         input,
         tools,
-        store: true,
-        ...(request.previousResponseId === undefined
-          ? {}
-          : {previous_response_id: request.previousResponseId}),
       },
       {signal: request.signal},
     );

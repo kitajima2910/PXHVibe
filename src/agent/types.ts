@@ -17,7 +17,13 @@ export interface AgentToolOutput {
   output: string;
 }
 
-export type AgentInput = AgentInputMessage | AgentToolOutput;
+export interface AgentAssistantTurn {
+  role: 'assistant';
+  toolCalls: readonly AgentToolCall[];
+  text?: string;
+}
+
+export type AgentInput = AgentInputMessage | AgentToolOutput | AgentAssistantTurn;
 
 export interface AgentToolCall {
   callId: string;

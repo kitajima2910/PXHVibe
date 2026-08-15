@@ -10,7 +10,6 @@ export interface ModelRequest {
   input: readonly AgentInput[];
   images?: readonly AgentImage[];
   tools: readonly AgentToolDefinition[];
-  previousResponseId?: string;
   signal: AbortSignal;
   onTextDelta: (delta: string) => void;
 }

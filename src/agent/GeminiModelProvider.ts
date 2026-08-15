@@ -23,12 +23,10 @@ export class GeminiModelProvider implements ModelProvider {
   }
 
   async createTurn(request: ModelRequest): Promise<AgentModelTurn> {
-    if (request.previousResponseId === undefined) {
-      this.messages = [];
-      this.systemInstruction = request.instructions;
-      this.callIdCounter = 0;
-      this.callIdMap = new Map();
-    }
+    this.messages = [];
+    this.systemInstruction = request.instructions;
+    this.callIdCounter = 0;
+    this.callIdMap = new Map();
 
     const imageContent = await Promise.all((request.images ?? []).map(async (image) => ({
       inlineData: {
@@ -39,17 +37,43 @@ export class GeminiModelProvider implements ModelProvider {
 
     for (const item of request.input) {
       if ('type' in item) {
+        // Gộp toàn bộ functionResponse của cùng một lượt assistant vào một
+        // content user duy nhất để không vi phạm alternation.
         const toolName = this.callIdMap.get(item.callId) ?? '';
         this.callIdMap.delete(item.callId);
-        this.messages.push({
-          role: 'user',
-          parts: [{
+        const last = this.messages[this.messages.length - 1];
+        if (last !== undefined && last.role === 'user' && hasFunctionResponses(last.parts)) {
+          last.parts.push({
             functionResponse: {
               name: toolName,
               response: {response: item.output},
             },
-          }],
-        });
+          });
+        } else {
+          this.messages.push({
+            role: 'user',
+            parts: [{
+              functionResponse: {
+                name: toolName,
+                response: {response: item.output},
+              },
+            }],
+          });
+        }
+      } else if (item.role === 'assistant') {
+        const parts: unknown[] = [];
+        if (item.text !== undefined && item.text.length > 0) {
+          parts.push({text: item.text});
+        }
+        for (const call of item.toolCalls) {
+          parts.push({
+            functionCall: {
+              name: call.name,
+              args: parseJsonObject(call.arguments),
+            },
+          });
+        }
+        this.messages.push({role: 'model', parts});
       } else {
         this.messages.push({
           role: 'user',
@@ -180,26 +204,23 @@ export class GeminiModelProvider implements ModelProvider {
       });
     }
 
-    const assistantContent: unknown[] = [];
-    if (text.length > 0) {
-      assistantContent.push({text});
-    }
-    for (const call of toolCalls) {
-      assistantContent.push({
-        functionCall: {
-          name: call.name,
-          args: JSON.parse(call.arguments || '{}'),
-        },
-      });
-    }
-    if (assistantContent.length > 0) {
-      this.messages.push({role: 'model', parts: assistantContent});
-    }
-
     return {
       id: responseId || `gemini-${Date.now()}`,
       text,
       toolCalls,
     };
+  }
+}
+
+function hasFunctionResponses(parts: unknown[]): boolean {
+  return parts.some((part) => typeof part === 'object' && part !== null
+    && 'functionResponse' in part);
+}
+
+function parseJsonObject(value: string): Record<string, unknown> {
+  try {
+    return JSON.parse(value || '{}') as Record<string, unknown>;
+  } catch {
+    return {};
   }
 }
