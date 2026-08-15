@@ -23,6 +23,42 @@ const workflowPhases: Readonly<Record<string, readonly TaskPhase[]>> = {
   web: ['analyze', 'architect', 'ui-ux', 'code', 'test', 'fix', 'review', 'build', 'persist'],
 };
 
+export type PipelineComplexity = 'simple' | 'standard' | 'full';
+
+/**
+ * Ước lượng độ phức tạp của TARGET để quyết định pipeline ngắn hay đầy đủ.
+ * Request hỏi/giải thích không cần 8 phase; request build/fix thật mới cần.
+ */
+export function classifyComplexity(target: string): PipelineComplexity {
+  const value = target.toLocaleLowerCase('vi').trim();
+  if (value.length === 0) return 'simple';
+
+  const questionLike = /^(?:giải thích|cho tôi biết|kể|nêu|là gì|như thế nào|hãy giải thích|cách dùng|tại sao|tôi muốn hỏi)\b/u.test(value)
+    || /\?\s*$/.test(value)
+    || value.length < 40 && !/(?:làm|tạo|thêm|xây|sửa|fix|build|viết|implement|code|triển khai)/u.test(value);
+  if (questionLike) return 'simple';
+
+  const buildIntent = /(?:làm|tạo|thêm|xây dựng|triển khai|viết|implement|build|create|feature|fix|sửa|debug|test|release|deploy)/u.test(value);
+  if (buildIntent && value.length >= 90) return 'full';
+
+  return 'standard';
+}
+
+/** Cắt pipeline theo độ phức tạp để giảm số request model. */
+export function phasesForComplexity(phases: readonly TaskPhase[], complexity: PipelineComplexity): TaskPhase[] {
+  if (complexity === 'full' || phases.length <= 4) return [...phases];
+  const reduced: TaskPhase[] = complexity === 'simple'
+    ? phases.filter((phase) => phase === 'analyze' || phase === 'persist')
+    : phases.filter((phase) => phase === 'analyze' || phase === 'fix' || phase === 'test' || phase === 'persist');
+  // Ép thứ tự chuẩn analyze → fix → test → persist thay vì giữ vị trí gốc.
+  const ordered = complexity === 'simple'
+    ? (['analyze', 'persist'] as TaskPhase[])
+    : (['analyze', 'fix', 'test', 'persist'] as TaskPhase[]);
+  const result = ordered.filter((phase) => reduced.includes(phase));
+  // Chỉ cắt khi giảm được ít nhất 2 phase; giữ nguyên pipeline vốn đã ngắn (debug/release/meeting).
+  return result.length <= phases.length - 2 ? result : [...phases];
+}
+
 const phaseAgents: Readonly<Record<TaskPhase, string>> = {
   analyze: 'PXH PM (Auto)', meeting: 'PXH PM (Auto)', architect: 'PXH Architect',
   code: 'PXH Expert', fix: 'PXH Bug Hunter', test: 'PXH QA', review: 'PXH Reviewer',
@@ -47,7 +83,8 @@ export interface PreparedPipeline {
 
 export function preparePipeline(target: string, route: OrchestrationRoute, agent: PXHAgent): PreparedPipeline {
   const workflow = route.workflow?.id ?? 'company';
-  const phases = workflowPhases[workflow] ?? workflowPhases.company!;
+  const complexity = classifyComplexity(target);
+  const phases = phasesForComplexity(workflowPhases[workflow] ?? workflowPhases.company!, complexity);
   const request: RequestContract = {
     version: contractVersion,
     type: isRequestType(workflow) ? workflow : 'unknown',

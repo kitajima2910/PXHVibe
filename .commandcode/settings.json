@@ -4,7 +4,8 @@
       "Shell(npm:*)",
       "Shell(node dist/tests/outputStreaming.test.js)",
       "Shell(node dist/tests/slashCommands.test.js)",
-      "Shell(node dist/tests/teamRunner.test.js)"
+      "Shell(node dist/tests/teamRunner.test.js)",
+      "Shell(node dist/tests/pipeline.test.js)"
     ],
     "deny": [],
     "defaultMode": "default"

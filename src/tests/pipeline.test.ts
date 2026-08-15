@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {agents, getAgent} from '../agents.js';
 import {builtinSkills, builtinWorkflows, emptyCatalog} from '../orchestration/builtins.js';
 import {contractVersion, validateContract} from '../orchestration/contracts.js';
-import {preparePipeline, runtimeTiers, validateCapabilityPack} from '../orchestration/pipeline.js';
+import {classifyComplexity, phasesForComplexity, preparePipeline, runtimeTiers, validateCapabilityPack} from '../orchestration/pipeline.js';
 import {classifyWorkflowIntent, routeOrchestration} from '../orchestration/router.js';
 import {buildAgentPrompt} from '../utils/agentPrompt.js';
 
@@ -50,5 +50,24 @@ assert.match(prompt, /\[FIX\] PXH Bug Hunter/);
 assert.match(prompt, /\[TEST\] PXH QA/);
 assert.match(prompt, /\[REVIEW\] PXH Reviewer/);
 assert.match(prompt, /\[PERSIST\] PXH Historian/);
+
+// Smart pipeline gating: request ngắn/hỏi không cần chạy full 8 phase.
+assert.equal(classifyComplexity('giải thích file này là gì'), 'simple');
+assert.equal(classifyComplexity('hàm này hoạt động như thế nào?'), 'simple');
+assert.equal(classifyComplexity('sửa lỗi đăng nhập'), 'standard');
+assert.equal(classifyComplexity('tạo website bán hàng với React, Next.js, database, auth, payment, deploy, CI/CD, monitoring và scaling cho production'), 'full');
+assert.deepEqual(phasesForComplexity(['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'], 'simple'),
+  ['analyze', 'persist']);
+assert.deepEqual(phasesForComplexity(['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'], 'standard'),
+  ['analyze', 'fix', 'test', 'persist']);
+assert.deepEqual(phasesForComplexity(['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist'], 'full'),
+  ['analyze', 'architect', 'code', 'test', 'fix', 'review', 'build', 'persist']);
+// Pipeline ngắn (debug/release) không bị cắt thêm.
+assert.deepEqual(phasesForComplexity(['analyze', 'fix', 'test', 'review', 'persist'], 'standard'),
+  ['analyze', 'fix', 'test', 'review', 'persist']);
+
+const simpleRoute = routeOrchestration('giải thích pipeline hoạt động ra sao', emptyCatalog);
+const simplePipeline = preparePipeline('giải thích pipeline hoạt động ra sao', simpleRoute, getAgent('help'));
+assert.deepEqual(simplePipeline.tasks.map((task) => task.phase), ['analyze', 'persist']);
 
 console.log('Pipeline and contract tests: passed');
