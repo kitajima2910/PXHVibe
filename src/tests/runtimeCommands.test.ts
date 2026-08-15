@@ -7,8 +7,8 @@ import {
   formatPipelineDetails, getGitDiffSummary,
 } from '../runtime/commands.js';
 
-assert.equal(commandDefinitions.length, 23);
-assert.equal(new Set(commandDefinitions.map(([command]) => command)).size, 23);
+assert.equal(commandDefinitions.length, 24);
+assert.equal(new Set(commandDefinitions.map(([command]) => command)).size, 24);
 for (const command of ['/paste', '/cancel', '/retry', '/new', '/resume', '/session', '/context', '/detect', '/doctor', '/diff', '/history', '/version', '/about', '/clear']) {
   assert.ok(formatCommandList().includes(command));
 }

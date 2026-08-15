@@ -45,6 +45,17 @@ assert.match(visible, /MCP/);
 assert.match(visible, /Chưa cấu hình/);
 instance.unmount();
 
+const mcpOutput = new PassThrough();
+Object.assign(mcpOutput, {columns: 60, rows: 12, isTTY: true});
+let mcpFrame = '';
+mcpOutput.on('data', (chunk) => { mcpFrame += chunk.toString('utf8'); });
+const mcpInstance = render(React.createElement(TodoStrip, {
+  tasks: [], mcpServers: [{name: 'filesystem', state: 'connected', toolCount: 4}],
+}), {stdout: mcpOutput as unknown as NodeJS.WriteStream, debug: true});
+await new Promise((resolve) => setTimeout(resolve, 30));
+assert.match(stripAnsi(mcpFrame), /● filesystem · 4/);
+mcpInstance.unmount();
+
 const emptyOutput = new PassThrough();
 Object.assign(emptyOutput, {columns: 24, rows: 12, isTTY: true});
 let emptyFrame = '';

@@ -6,6 +6,7 @@ import type {AIProvider} from './AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
 import type {AgentEvent} from '../agent/types.js';
 import {stripAnsi} from '../utils/stripAnsi.js';
+import {loadMCPConfig, toOpenCodeMCPConfig} from '../mcp/MCPManager.js';
 
 const missingCliMessage =
   'Không tìm thấy PXHVibe Free runtime. Hãy cài đặt lại PXHVibe.';
@@ -70,6 +71,7 @@ export class OpenCodeProvider implements AIProvider {
         cwd: options.cwd,
         shell: false,
         windowsHide: true,
+        env: buildOpenCodeEnvironment(options.cwd),
       });
       this.activeProcess = child;
 
@@ -200,6 +202,33 @@ export class OpenCodeProvider implements AIProvider {
       child.kill();
     }
   }
+}
+
+export function buildOpenCodeEnvironment(
+  cwd: string,
+  baseEnvironment: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const mcp = toOpenCodeMCPConfig(loadMCPConfig(cwd));
+  if (Object.keys(mcp).length === 0) return {...baseEnvironment};
+  let existing: Record<string, unknown> = {};
+  const rawConfig = baseEnvironment.OPENCODE_CONFIG_CONTENT;
+  if (rawConfig !== undefined) {
+    try {
+      const parsed = JSON.parse(rawConfig) as unknown;
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        existing = parsed as Record<string, unknown>;
+      }
+    } catch {
+      throw new Error('OPENCODE_CONFIG_CONTENT hiện tại không phải JSON hợp lệ.');
+    }
+  }
+  const existingMCP = typeof existing.mcp === 'object' && existing.mcp !== null && !Array.isArray(existing.mcp)
+    ? existing.mcp as Record<string, unknown>
+    : {};
+  return {
+    ...baseEnvironment,
+    OPENCODE_CONFIG_CONTENT: JSON.stringify({...existing, mcp: {...existingMCP, ...mcp}}),
+  };
 }
 
 export function buildOpenCodeArguments(

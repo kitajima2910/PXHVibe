@@ -9,12 +9,19 @@ There is no shell tool. If verification requires a command, explain that limitat
 
 export class AgentRuntime {
   private previousResponseId: string | undefined;
+  private tools: readonly AgentTool[];
 
   constructor(
     private readonly model: ModelProvider,
-    private readonly tools: readonly AgentTool[],
+    tools: readonly AgentTool[],
     private readonly maxTurns = 12,
-  ) {}
+  ) {
+    this.tools = tools;
+  }
+
+  setTools(tools: readonly AgentTool[]): void {
+    this.tools = tools;
+  }
 
   async run(
     prompt: string,

@@ -149,7 +149,7 @@ Mỗi TARGET được chạy thành nhiều phase thật thay vì chỉ mô ph�
 - Sáu contract Event, Result, Response, Config, Tools và Agent được validate trong runtime.
 - Lỗi tạm thời được retry tối đa hai lần; quota, image capability và thao tác hủy không bị retry mù.
 - Checkpoint được ghi atomically tại `.pxhvibe/runtime-state.json`; dùng `/resume` để tiếp tục từ phase lỗi hoặc `/retry` để chạy lại TARGET gần nhất.
-- Có 23 lệnh native: `/help`, `/models`, `/agents`, `/skills`, `/workflows`, `/status`, `/pipeline`, `/validate`, `/paste`, `/copy`, `/cancel`, `/retry`, `/new`, `/resume`, `/session`, `/context`, `/detect`, `/doctor`, `/diff`, `/history`, `/version`, `/about`, `/clear`.
+- Có 24 lệnh native: `/help`, `/models`, `/agents`, `/skills`, `/workflows`, `/status`, `/mcp`, `/pipeline`, `/validate`, `/paste`, `/copy`, `/cancel`, `/retry`, `/new`, `/resume`, `/session`, `/context`, `/detect`, `/doctor`, `/diff`, `/history`, `/version`, `/about`, `/clear`.
 - `/help` chia lệnh theo nhóm AI, phiên, project và tiện ích. `/agents` dùng danh sách compact, chỉ hiển thị mô tả của specialist đang chọn để giảm nhiễu trong terminal hẹp.
 - CLI hỗ trợ `pxh --version` và `pxh --help` mà không khởi động TUI.
 
@@ -169,7 +169,36 @@ Khi agent chạy, compose box hiển thị thời gian đã chạy, phase hiện
 
 Body dùng bố cục hai cột: khoảng 80% bên trái dành cho history và 20% bên phải là sidebar cố định. Task được đặt tên theo công việc thực tế như `Phân tích yêu cầu`, `Xây dựng gameplay`, `Chạy kiểm thử` thay vì chỉ hiện mã phase. Mỗi task chờ hiển thị specialist dự kiến; task đang chạy bung thêm specialist, số lần thử và activity thật gần nhất từ runtime. Task dùng `○` đang chờ, `●` đang thực hiện, `✓` đã hoàn tất, `✖` lỗi và `■` đã hủy. Phase hoàn tất được thu gọn, làm mờ/gạch ngang; bộ đếm hiển thị số task đã xong trên tổng số task. Sidebar có chiều rộng tối thiểu 20 cột và giữ nguyên sau khi pipeline hoàn tất.
 
-Phần `MCP` đã được dành sẵn dưới task list. Bản hiện tại hiển thị `Chưa cấu hình`; kiến trúc này cho phép bổ sung trạng thái MCP server sau này mà không làm giảm thêm chiều cao vùng coding.
+Phần `MCP` dưới task list hiển thị từng server, trạng thái kết nối và số tool đã discover.
+PXHVibe đọc `.pxhvibe/mcp.json`; Custom API dùng MCP client native và chuyển tool sang function
+tool của Responses API, còn Free mode bridge cùng cấu hình sang OpenCode. Ví dụ:
+
+```json
+{
+  "servers": {
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "remote-api": {
+      "type": "remote",
+      "url": "https://example.com/mcp",
+      "headers": {"Authorization": "Bearer {env:MCP_TOKEN}"},
+      "timeout": 30000
+    }
+  }
+}
+```
+
+Local server hỗ trợ thêm `environment`, `cwd`, `timeout`; mọi server có thể đặt
+`disabled: true`. Dùng `{env:TEN_BIEN}` để lấy secret từ environment thay vì ghi token vào file.
+`/mcp` xem trạng thái, `/mcp refresh` nạp lại cấu hình và `/mcp doctor` thực hiện handshake
+kiểm tra tất cả server. Remote MCP hiện hỗ trợ header/token; OAuth tương tác chưa được PXHVibe
+tự mở trình duyệt, nhưng Free mode vẫn có thể dùng luồng auth do OpenCode quản lý.
+
+Chỉ chạy MCP config từ project bạn tin cậy: local server là process thật được khởi động với quyền
+của tài khoản hiện tại. Nếu không muốn commit cấu hình hoặc checkpoint, thêm `.pxhvibe/` vào
+`.gitignore`.
 
 ### Long prompt transport trên Windows
 

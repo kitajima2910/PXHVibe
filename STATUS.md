@@ -1,5 +1,53 @@
 # STATUS
 
+## Triển khai MCP native cho PXHVibe
+
+### Nguyên nhân gốc
+
+- Sidebar mới có placeholder `MCP · Chưa cấu hình`; runtime không đọc MCP config, không handshake hoặc discover tool.
+- Custom API chỉ đăng ký năm workspace tool cố định với Responses API.
+- Free mode chạy OpenCode bằng `--pure`, nên MCP config của project chưa được đưa vào worker.
+
+### Đã thay đổi gì
+
+- Thêm MCP registry đọc `.pxhvibe/mcp.json`, validate local stdio/remote Streamable HTTP server, hỗ trợ timeout, disable, environment/header và secret `{env:TEN_BIEN}`.
+- Kết nối bằng MCP SDK chính thức, discover tool, namespace tool theo server, chuyển JSON Schema sang function tool và chuyển kết quả MCP về agent runtime.
+- Custom API nhận MCP tools cùng workspace tools mà không thay đổi vòng lặp agent hiện tại.
+- Free mode merge MCP config vào `OPENCODE_CONFIG_CONTENT`, kể cả khi người dùng đã có config inline khác.
+- Sidebar hiển thị trạng thái/tổng tool theo server. Thêm `/mcp`, `/mcp refresh`, `/mcp doctor`; tổng slash command tăng từ 23 lên 24.
+- Bổ sung tài liệu cấu hình, secret và cảnh báo chỉ chạy local MCP server từ project đáng tin cậy.
+
+### File đã sửa
+
+- `package.json`, `package-lock.json`
+- `src/mcp/MCPManager.ts`
+- `src/agent/AgentRuntime.ts`
+- `src/providers/AIProvider.ts`
+- `src/providers/CustomAgentProvider.ts`
+- `src/providers/OpenCodeProvider.ts`
+- `src/components/TodoStrip.tsx`
+- `src/runtime/commands.ts`
+- `src/app.tsx`
+- `src/tests/mcpManager.test.ts`
+- `src/tests/todoStrip.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `src/tests/runtimeCommands.test.ts`
+- `README.md`, `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- MCP integration test dùng server stdio thật: handshake, `tools/list`, `tools/call`, kết quả UTF-8 và đóng kết nối đều đạt.
+- OpenCode config bridge giữ config hiện có và merge local/remote MCP server đúng.
+- `npm test`: đạt toàn bộ 19 nhóm test.
+- `release-check.mjs`: đạt integrity `v0.16.0`.
+- `npm pack --dry-run`: đạt, 325 file, package 228,2 kB; lần đầu bị sandbox chặn npm cache `EPERM`, chạy lại ngoài sandbox thành công.
+
+### Vấn đề còn lại
+
+- Remote MCP dùng header/token và nhận biết lỗi auth; PXHVibe chưa tự mở browser/callback cho OAuth tương tác. Free mode có thể dùng credential OAuth đã được OpenCode quản lý.
+- Thay đổi này chưa bump version hoặc publish một bản npm mới.
+
 ## Phát hành npm: `pxhvibe@0.16.0`
 
 ### Đã thay đổi gì

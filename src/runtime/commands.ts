@@ -12,6 +12,7 @@ export interface DisplayPhase {
 export const commandDefinitions = [
   ['/help', 'Danh sách lệnh'], ['/models', 'Chọn model'], ['/agents', 'Chọn agent'],
   ['/skills', 'Xem skills'], ['/workflows', 'Xem workflows'], ['/status', 'Capability status'],
+  ['/mcp', 'MCP server status'],
   ['/pipeline', 'Pipeline gần nhất'], ['/validate', 'Validate runtime'], ['/paste', 'Dán ảnh'],
   ['/copy', 'Copy response'], ['/cancel', 'Hủy phase hiện tại'], ['/retry', 'Chạy lại TARGET'],
   ['/new', 'Tạo session mới'], ['/resume', 'Tiếp tục checkpoint'], ['/session', 'Session state'],
@@ -24,7 +25,7 @@ export function formatCommandList(): string {
   return [
     'AI       /models  /agents  /skills  /workflows',
     'Phiên    /new  /resume  /retry  /session  /history  /clear',
-    'Project  /status  /pipeline  /validate  /context  /detect  /doctor  /diff',
+    'Project  /status  /mcp  /pipeline  /validate  /context  /detect  /doctor  /diff',
     'Tiện ích /paste  /copy  /cancel  /version  /about  /help',
   ].join('\n');
 }

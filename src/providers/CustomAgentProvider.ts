@@ -3,6 +3,7 @@ import {OpenAIModelProvider} from '../agent/OpenAIModelProvider.js';
 import {createWorkspaceTools} from '../agent/tools/workspaceTools.js';
 import type {AIProvider} from './AIProvider.js';
 import type {ProviderRequestOptions, ProviderResponse} from '../types/provider.js';
+import type {AgentTool} from '../agent/types.js';
 
 export interface CustomApiConfig {
   baseURL: string;
@@ -43,5 +44,9 @@ export class CustomAgentProvider implements AIProvider {
   cancel(): void {
     this.activeController?.abort();
     this.activeController = undefined;
+  }
+
+  setMCPTools(tools: readonly AgentTool[]): void {
+    this.runtime.setTools([...createWorkspaceTools(), ...tools]);
   }
 }

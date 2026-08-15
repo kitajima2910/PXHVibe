@@ -36,6 +36,7 @@ import {
   formatPipelineDetails, getGitDiffSummary,
 } from './runtime/commands.js';
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
+import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -154,10 +155,37 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [activityLabel, setActivityLabel] = useState('Đang khởi động worker...');
   const [phaseLabel, setPhaseLabel] = useState('khởi động');
   const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
+  const [mcpManager] = useState(() => new MCPManager(workingDirectory));
+  const [mcpServers, setMcpServers] = useState<readonly MCPServerStatus[]>([]);
+  const mcpReadyRef = useRef<Promise<readonly MCPServerStatus[]> | undefined>(undefined);
   const resumeSessionRef = useRef<RuntimeSession | undefined>(undefined);
   const autoResumeStartedRef = useRef(false);
   const promptDraftRef = useRef<PromptDraft | undefined>(undefined);
   const contextUsage = getContextUsage(messages);
+
+  const configureMCP = async (targetProvider: AIProvider, forceConnect = false): Promise<readonly MCPServerStatus[]> => {
+    try {
+      const statuses = forceConnect || targetProvider.setMCPTools !== undefined
+        ? await mcpManager.refresh()
+        : (await mcpManager.close(), mcpManager.load());
+      targetProvider.setMCPTools?.(mcpManager.tools);
+      setMcpServers([...statuses]);
+      return statuses;
+    } catch (error: unknown) {
+      targetProvider.setMCPTools?.([]);
+      const statuses: MCPServerStatus[] = [{
+        name: 'config', state: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      }];
+      setMcpServers(statuses);
+      return statuses;
+    }
+  };
+
+  const ensureMCPReady = (targetProvider: AIProvider): Promise<readonly MCPServerStatus[]> => {
+    mcpReadyRef.current ??= configureMCP(targetProvider);
+    return mcpReadyRef.current;
+  };
 
   const refreshModelHealth = async (): Promise<void> => {
     if (isCheckingModelHealth || isModelHealthFresh(modelHealthReport)) return;
@@ -273,6 +301,22 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         id: createMessageId(), role: 'system',
         content: `PXHVibe v${appVersion} · ${bundledAgentCount} agents · 4 tiers · ${bundledWorkflowCount} workflows · ${bundledSkillCount} skills · 6 contracts${projectAgentCount === 0 ? '' : ` · +${projectAgentCount} project agents`}`,
         createdAt: new Date(),
+      }]);
+      return;
+    }
+
+    if (command === '/mcp' || command === '/mcp refresh' || command === '/mcp doctor') {
+      let refreshedStatuses: readonly MCPServerStatus[] | undefined;
+      if (command !== '/mcp') {
+        refreshedStatuses = await configureMCP(currentProvider, command === '/mcp doctor');
+        mcpReadyRef.current = Promise.resolve(refreshedStatuses);
+      }
+      const statuses = command === '/mcp'
+        ? (mcpServers.length === 0 ? mcpManager.load() : mcpServers)
+        : refreshedStatuses ?? [];
+      setMcpServers([...statuses]);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'system', content: formatMCPStatus(statuses), createdAt: new Date(),
       }]);
       return;
     }
@@ -472,6 +516,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       }]);
       return;
     }
+
+    await ensureMCPReady(currentProvider);
 
     const routingTarget = buildRoutingTarget(messages, content);
     const orchestrationRoute = routeOrchestration(routingTarget, catalog);
@@ -676,6 +722,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
     currentProvider.cancel();
     const nextProvider = createProvider(mode.provider, mode.model);
+    mcpReadyRef.current = configureMCP(nextProvider);
     setCurrentProvider(nextProvider);
     setStatus('Ready');
     setIsModePickerOpen(false);
@@ -690,6 +737,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const handleCustomSetup = (config: CustomApiConfig): void => {
     currentProvider.cancel();
     const nextProvider = createCustomProvider(config);
+    mcpReadyRef.current = configureMCP(nextProvider);
     setCurrentProvider(nextProvider);
     setStatus('Ready');
     setIsCustomSetupOpen(false);
@@ -714,6 +762,11 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       createdAt: new Date(),
     }]);
   };
+
+  useEffect(() => {
+    void ensureMCPReady(currentProvider);
+    return () => { void mcpManager.close(); };
+  }, []);
 
   useEffect(() => {
     if (autoResumeStartedRef.current) return;
@@ -747,7 +800,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           <MessageList messages={messages} />
         </Box>
         <Box flexDirection="column" flexBasis={0} flexGrow={1} minWidth={20}>
-          <TodoStrip tasks={stickyTasks} />
+          <TodoStrip tasks={stickyTasks} mcpServers={mcpServers} />
         </Box>
       </Box>
       {catalogView !== undefined ? (

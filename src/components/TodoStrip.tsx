@@ -1,6 +1,7 @@
 import React from 'react';
 import {Box, Text} from 'ink';
 import type {TaskPhase} from '../orchestration/contracts.js';
+import {mcpStatusSymbol, type MCPServerStatus} from '../mcp/MCPManager.js';
 
 export type TodoStatus = 'pending' | 'running' | 'pass' | 'fail' | 'cancelled';
 
@@ -13,7 +14,7 @@ export interface TodoItem {
   detail?: string;
 }
 
-export function TodoStrip({tasks}: {tasks: readonly TodoItem[]}): React.JSX.Element {
+export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[]; mcpServers?: readonly MCPServerStatus[]}): React.JSX.Element {
   const completed = tasks.filter((task) => task.status === 'pass').length;
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
@@ -39,7 +40,12 @@ export function TodoStrip({tasks}: {tasks: readonly TodoItem[]}): React.JSX.Elem
       </Box>
       <Box flexDirection="column" marginTop={1}>
         <Text bold color="cyan">MCP</Text>
-        <Text dimColor>○ Chưa cấu hình</Text>
+        {mcpServers.length === 0 && <Text dimColor>○ Chưa cấu hình</Text>}
+        {mcpServers.map((server) => (
+          <Text key={server.name} color={server.state === 'connected' ? 'green' : server.state === 'error' ? 'red' : 'gray'}>
+            {mcpStatusSymbol(server.state)} {server.name}{server.toolCount === undefined ? '' : ` · ${server.toolCount}`}
+          </Text>
+        ))}
       </Box>
     </Box>
   );

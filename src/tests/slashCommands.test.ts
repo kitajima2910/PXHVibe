@@ -121,7 +121,7 @@ input.write('\r');
 await wait(80);
 assert.ok(stripAnsi(rendered).includes('Pipeline chưa có TARGET'));
 assert.equal(provider.calls, 0);
-for (const command of ['/version', '/about', '/detect', '/doctor', '/session', '/history', '/context', '/diff', '/resume', '/retry', '/cancel', '/help']) {
+for (const command of ['/version', '/about', '/detect', '/doctor', '/mcp', '/session', '/history', '/context', '/diff', '/resume', '/retry', '/cancel', '/help']) {
   await typeText(command);
   input.write('\r');
   await wait(55);
@@ -135,7 +135,8 @@ assert.ok(commandOutput.includes('Chưa có runtime session'));
 assert.ok(commandOutput.includes('Chưa có phase history'));
 assert.ok(commandOutput.includes('Không có checkpoint để resume'));
 assert.ok(commandOutput.includes('Chưa có TARGET để retry'));
-assert.ok(commandOutput.includes('LỆNH NHANH · 23'));
+assert.ok(commandOutput.includes('MCP · Chưa cấu hình'));
+assert.ok(commandOutput.includes('LỆNH NHANH · 24'));
 assert.ok(commandOutput.includes('Project  /status'));
 assert.equal(provider.calls, 0);
 await typeText('/skills');
