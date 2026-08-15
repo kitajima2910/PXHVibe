@@ -73,6 +73,12 @@ pxh --provider=custom
 - `/help`: xem slash command hỗ trợ.
 - `Ctrl+C`: thoát.
 
+Các danh mục dài (`/models`, `/agents`, `/skills`, `/workflows`) dùng picker gọn: danh sách chỉ hiện tên,
+phần mô tả chỉ hiện cho mục đang chọn. Trong `/skills` và `/workflows`, nhấn `Enter` để mở nội dung
+Markdown đầy đủ; dùng `↑/↓` hoặc `PgUp/PgDn` để cuộn và `Enter`/`Esc` để quay lại danh sách.
+Các lệnh trạng thái (`/pipeline`, `/history`, `/session`, `/context`, `/doctor`) hiển thị từng trường trên
+một dòng; `/diff` giới hạn số dòng và báo phần còn lại để không làm vỡ bố cục TUI.
+
 ### Keymap TUI
 
 - `Enter`: gửi TARGET.
@@ -93,7 +99,7 @@ bằng `PXH_REQUEST_TIMEOUT_MS` (milliseconds, tối thiểu 1000).
 
 ## Skills, agents và workflows
 
-PXHVibe v0.14.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
+PXHVibe v0.16.0 tự đọc `AGENTS.md` theo phạm vi project và khám phá cấu hình tại các vị trí sau:
 
 - Skills: `.pxhvibe/skills/*/SKILL.md`, `.agents/skills/*/SKILL.md`, `.opencode/skills/*/SKILL.md` hoặc `skills/*/SKILL.md`.
 - Agents: `.pxhvibe/agents/*.md`, `.agents/agents/*.md`, `.opencode/agents/*.md` hoặc `agents/*.md`.
@@ -104,7 +110,7 @@ Workflow có thể thêm `agent`, `skills` và `triggers`. Economy Router tự c
 skill phù hợp và agent ưu tiên, sau đó đưa nguyên chỉ dẫn vào prompt BUILD. PXHVibe cũng có sẵn các
 capability pack để dùng ngay khi project chưa khai báo cấu hình riêng.
 
-### Capability pack v0.14.0
+### Capability pack v0.16.0
 
 - 10 agents: PM Auto, Expert, Bug Hunter, Architect, QA, Reviewer, DevOps, UI/UX, Guide và Historian.
 - Runtime 4 tầng: Interface → Orchestration → Workers → Infrastructure.

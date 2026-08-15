@@ -1,5 +1,95 @@
 # STATUS
 
+## Cập nhật v0.16.0: Xem Markdown trong catalog
+
+### Nguyên nhân gốc
+
+- `/skills` và `/workflows` chỉ truyền trường `description` một dòng từ frontmatter vào picker.
+- `compactCatalogText()` tiếp tục xóa newline nên nội dung `instructions` Markdown đã được discovery nạp sẵn không bao giờ tới lớp render.
+- Các file skill/workflow có heading, bullet, quote và code fence; render toàn bộ một lần sẽ làm tràn body TUI.
+
+### Đã thay đổi gì
+
+- Truyền nguyên `instructions` vào catalog item cho skill và workflow.
+- Nhấn `Enter` trên mục đang chọn để mở Markdown viewer; `Enter` hoặc `Esc` quay lại danh sách.
+- Markdown viewer hỗ trợ heading, bullet, numbered list, quote, inline code, bold và code fence.
+- Phân trang theo block bằng `↑/↓` hoặc `PgUp/PgDn`; code fence dài được chia tối đa 8 dòng mỗi block.
+- Dùng renderer Markdown chung cho mô tả agent đang chọn để project agent không hiện ký hiệu Markdown thô.
+- Audit các slash command còn lại: model và các command trạng thái dùng dữ liệu thường; `/diff` giữ dạng Git text/code nên không cần Markdown viewer.
+- Nâng version local lên `v0.16.0`.
+
+### File đã sửa
+
+- `src/app.tsx`
+- `src/components/CatalogPicker.tsx`
+- `src/components/FormattedText.tsx`
+- `src/components/AgentPicker.tsx`
+- `src/tests/catalogPicker.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 19 nhóm test.
+- Regression xác nhận `Enter` mở Markdown, heading/bullet/inline code được format và `Esc` quay lại picker.
+- Slash command regression xác nhận cả `/skills` và `/workflows` mở được viewer mà không gọi model.
+- React best-practices review: parse Markdown dùng `useMemo`, pagination dùng functional state, không thêm effect đồng bộ state.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.16.0`, package 237,6 kB.
+
+### Vấn đề còn lại
+
+- `v0.16.0` hiện là bản local, chưa publish npm trong TARGET này.
+
+## Cập nhật v0.15.0: Làm gọn toàn bộ slash command dài
+
+### Nguyên nhân gốc
+
+- `/models`, `/skills` và `/workflows` render mô tả của nhiều mục cùng lúc nên chiếm phần lớn màn hình và dễ làm vỡ bố cục hai cột.
+- `/pipeline`, `/history`, `/session`, `/context` và `/doctor` ghép nhiều trường vào một dòng dài, khó quét và bị wrap tùy chiều rộng terminal.
+- `/diff` có thể đưa tới 4.000 ký tự vào lịch sử mà không giới hạn theo dòng.
+
+### Đã thay đổi gì
+
+- Đổi model picker thành danh sách tên/trạng thái gọn; chỉ mục đang chọn hiện mô tả chi tiết.
+- Thêm catalog picker dùng chung cho `/skills` và `/workflows`, có cửa sổ 8 mục, bộ đếm và `PgUp/PgDn`.
+- Format `/pipeline`, `/history`, `/session`, `/context` và `/doctor` thành các dòng có nhãn rõ ràng.
+- Giới hạn `/diff` còn 8 dòng, tối đa 120 ký tự mỗi dòng và báo số dòng bị thu gọn.
+- Giữ nguyên draft, keymap và hành vi xử lý của các slash command; bổ sung regression cho các picker và formatter mới.
+- Nâng version lên `v0.15.0`.
+
+### File đã sửa
+
+- `src/app.tsx`
+- `src/components/ModePicker.tsx`
+- `src/components/CatalogPicker.tsx`
+- `src/runtime/commands.ts`
+- `src/tests/runtimeCommands.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `src/tests/catalogPicker.test.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Kết quả kiểm tra
+
+- `npm run typecheck`: đạt.
+- `npm test`: đạt toàn bộ 19 nhóm test.
+- Regression xác nhận danh mục chỉ hiện chi tiết mục được chọn; `/pipeline`, `/history`, `/session`, `/context`, `/doctor` và `/diff` không còn output một dòng quá dài.
+- React best-practices review: state dẫn xuất trong render, cập nhật index dạng functional, danh sách skill/workflow chỉ render tối đa 8 mục.
+- `npm pack --dry-run --json`: đạt cho `pxhvibe@0.15.0`, 341 file, package 236,6 kB.
+- Global install local: `pxh.cmd --version` trả `PXHVibe v0.15.0`.
+- Publish public thành công; npm registry trả `version: 0.15.0` và `dist-tags.latest: 0.15.0`.
+- `npx --yes pxhvibe@0.15.0 --version` trả `PXHVibe v0.15.0`.
+
+### Vấn đề còn lại
+
+- Không có vấn đề phát hành còn lại.
+
 ## Cập nhật v0.14.0: Làm gọn `/help` và specialist picker
 
 ### Nguyên nhân gốc

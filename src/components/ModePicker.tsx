@@ -13,6 +13,10 @@ interface ModePickerProps {
 
 export function ModePicker({modes, healthReport, isCheckingHealth, onSelect, onCancel}: ModePickerProps): React.JSX.Element {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedMode = modes[selectedIndex];
+  const selectedHealth = selectedMode === undefined
+    ? undefined
+    : healthReport?.results.find((result) => result.modeId === selectedMode.id);
 
   useEffect(() => {
     if (healthReport?.recommendedModeId === undefined) return;
@@ -40,28 +44,47 @@ export function ModePicker({modes, healthReport, isCheckingHealth, onSelect, onC
   });
 
   return (
-    <Box flexDirection="column" borderStyle="double" borderColor="green" paddingX={1}>
-      <Text bold color="green">[ SELECT MODEL ] {isCheckingHealth ? '· CHECKING FREE MODELS...' : ''}</Text>
-      {modes.map((mode, index) => {
-        const health = healthReport?.results.find((result) => result.modeId === mode.id);
-        const isRecommended = healthReport?.recommendedModeId === mode.id;
-        const healthLabel = mode.provider !== 'free'
-          ? ''
-          : isCheckingHealth && health === undefined
-            ? ' · checking'
-            : health === undefined
-              ? ''
-              : health.ok
-                ? ` · online ${(health.latencyMs / 1000).toFixed(1)}s`
-                : ' · offline';
-        const color = index === selectedIndex ? 'green' : health?.ok === false ? 'red' : 'gray';
-        return (
-          <Text key={mode.id} bold={index === selectedIndex || isRecommended} color={color}>
-            {index === selectedIndex ? '› ' : '  '}{mode.label} — {mode.description}{healthLabel}{isRecommended ? ' · ★ ĐỀ XUẤT' : ''}
-          </Text>
-        );
-      })}
-      <Text dimColor>↑/↓: Chọn  Enter: Xác nhận  Esc: Đóng</Text>
+    <Box flexDirection="column" borderStyle="single" borderColor="green" paddingX={1}>
+      <Box justifyContent="space-between">
+        <Text bold color="cyan">MODELS {isCheckingHealth ? '· đang kiểm tra...' : ''}</Text>
+        <Text dimColor>{modes.length === 0 ? '0/0' : `${selectedIndex + 1}/${modes.length}`}</Text>
+      </Box>
+      <Box flexDirection="column" marginTop={1}>
+        {modes.map((mode, index) => {
+          const health = healthReport?.results.find((result) => result.modeId === mode.id);
+          const isRecommended = healthReport?.recommendedModeId === mode.id;
+          const healthLabel = mode.provider !== 'free'
+            ? 'custom'
+            : isCheckingHealth && health === undefined
+              ? 'checking'
+              : health === undefined
+                ? 'chưa kiểm tra'
+                : health.ok
+                  ? `online ${(health.latencyMs / 1000).toFixed(1)}s`
+                  : 'offline';
+          const color = index === selectedIndex ? 'green' : health?.ok === false ? 'red' : 'gray';
+          return (
+            <Box key={mode.id} justifyContent="space-between">
+              <Text bold={index === selectedIndex || isRecommended} color={color}>
+                {index === selectedIndex ? '● ' : '  '}{mode.label}{isRecommended ? ' ★ ĐỀ XUẤT' : ''}
+              </Text>
+              <Text color={health?.ok === false ? 'red' : 'gray'}>{healthLabel}</Text>
+            </Box>
+          );
+        })}
+      </Box>
+      {selectedMode === undefined ? null : (
+        <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
+          <Text bold color="green">{selectedMode.label}</Text>
+          <Text>{selectedMode.description}</Text>
+          {selectedMode.provider === 'free' && selectedHealth !== undefined ? (
+            <Text dimColor>{selectedHealth.ok ? `Phản hồi ${(selectedHealth.latencyMs / 1000).toFixed(1)}s` : 'Không phản hồi trong lần kiểm tra gần nhất'}</Text>
+          ) : null}
+        </Box>
+      )}
+      <Box marginTop={1}>
+        <Text dimColor><Text color="green">↑↓</Text> chọn  ·  <Text color="green">Enter</Text> sử dụng  ·  <Text color="green">Esc</Text> đóng</Text>
+      </Box>
     </Box>
   );
 }

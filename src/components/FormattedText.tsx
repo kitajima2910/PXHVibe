@@ -1,6 +1,6 @@
 import React from 'react';
 import {Box, Text} from 'ink';
-import {parseTerminalBlocks} from '../utils/terminalFormat.js';
+import {parseTerminalBlocks, type TerminalBlock} from '../utils/terminalFormat.js';
 
 interface FormattedTextProps {
   content: string;
@@ -8,9 +8,18 @@ interface FormattedTextProps {
 }
 
 export function FormattedText({content, accent = 'green'}: FormattedTextProps): React.JSX.Element {
+  return <FormattedBlocks blocks={parseTerminalBlocks(content)} accent={accent} />;
+}
+
+interface FormattedBlocksProps {
+  blocks: readonly TerminalBlock[];
+  accent?: 'green' | 'yellow';
+}
+
+export function FormattedBlocks({blocks, accent = 'green'}: FormattedBlocksProps): React.JSX.Element {
   return (
     <Box flexDirection="column">
-      {parseTerminalBlocks(content).map((block, index) => {
+      {blocks.map((block, index) => {
         const key = `${block.type}-${index}`;
         if (block.type === 'blank') return <Text key={key}> </Text>;
         if (block.type === 'code') {

@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Box, Text, useInput} from 'ink';
 import type {PXHAgent} from '../agents.js';
+import {FormattedText} from './FormattedText.js';
 
 interface AgentPickerProps {
   agents: readonly PXHAgent[];
@@ -34,12 +35,12 @@ export function AgentPicker({agents, onSelect, onCancel}: AgentPickerProps): Rea
           </Text>
         ))}
       </Box>
-      {selectedAgent !== undefined && (
+      {selectedAgent !== undefined ? (
         <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
           <Text bold color="green">{selectedAgent.label}</Text>
-          <Text color="white">{compactAgentDescription(selectedAgent.description)}</Text>
+          <FormattedText content={compactAgentDescription(selectedAgent.description)} />
         </Box>
-      )}
+      ) : null}
       <Box marginTop={1}>
         <Text dimColor><Text color="green">↑↓</Text> chọn  ·  <Text color="green">Enter</Text> sử dụng  ·  <Text color="green">Esc</Text> đóng</Text>
       </Box>
