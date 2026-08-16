@@ -202,6 +202,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const suggestionHistoryRef = useRef<string[]>([]);
+  const lastChangedFilesRef = useRef<string[]>([]);
   const [mcpManager] = useState(() => new MCPManager(workingDirectory));
   const [mcpServers, setMcpServers] = useState<readonly MCPServerStatus[]>([]);
   const mcpReadyRef = useRef<Promise<readonly MCPServerStatus[]> | undefined>(undefined);
@@ -581,14 +582,20 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         if (selectedSuggestion) {
           suggestionHistoryRef.current.push(selectedSuggestion.text);
           setSuggestions([]); // Clear suggestions
+          // Frame suggestion thành patch tiếp nối code vừa làm,
+          // không gửi prompt viết lại từ đầu.
+          const changed = lastChangedFilesRef.current;
+          const patchTarget = changed.length > 0
+            ? `${selectedSuggestion.text}. Chỉ bổ sung/thay đổi tối thiểu vào file hiện có, không viết lại code.`
+            : `${selectedSuggestion.text}. Tiếp tục mở rộng trên kết quả vừa có, không viết lại từ đầu.`;
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'user',
           content: `${suggestionIndex}. ${selectedSuggestion.text}`,
           createdAt: new Date(),
         }]);
-        // Trigger vibe coding with selected suggestion
-        await handleSubmit(selectedSuggestion.text);
+        // Trigger vibe coding với patch target
+        await handleSubmit(patchTarget);
         return;
       }
     }
@@ -803,6 +810,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       // Lưu target vừa hoàn thành vào lịch sử để vòng lặp gợi ý
       // không lặp lại ý tưởng cũ, luôn ra tính năng mới phù hợp.
       suggestionHistoryRef.current.push(contextualTarget);
+      lastChangedFilesRef.current = filesChanged;
       const newSuggestions = generateSuggestions({
         ...suggestionContext,
         history: suggestionHistoryRef.current,
@@ -964,7 +972,11 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
               onSelect={(suggestion) => {
                 suggestionHistoryRef.current.push(suggestion.text);
                 setSuggestions([]);
-                void handleSubmit(suggestion.text);
+                const changed = lastChangedFilesRef.current;
+                const patchTarget = changed.length > 0
+                  ? `${suggestion.text}. Chỉ bổ sung/thay đổi tối thiểu vào file hiện có, không viết lại code.`
+                  : `${suggestion.text}. Tiếp tục mở rộng trên kết quả vừa có, không viết lại từ đầu.`;
+                void handleSubmit(patchTarget);
               }}
             />
           )}

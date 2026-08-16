@@ -2957,3 +2957,38 @@ Không có bug code liên quan version. Phiên bản `0.18.0` nhất quán, rele
 - 10 file sửa + 3 file mới chưa commit git (theo quy tắc không tự commit).
 - Chưa tạo git tag `v0.18.0` (hiện repo không có tag nào, kể cả `v0.16.0`/`v0.17.0` bị bỏ sót trước đó).
 - Chưa publish `0.18.0` lên npm — cần `npm publish` với OTP 2FA từ user.
+
+## CODE - Giải pháp "Gợi ý tiếp theo" thành patch (không viết lại prompt)
+
+### Nguyên nhân gốc
+- Khi chọn một gợi ý, `handleSubmit(selectedSuggestion.text)` gửi suggestion như một TARGET đứng lớp. Các gợi ý hiện tại là các prompt tính năng tự đứng (vd. "Mở rộng X với options/config") không liên kết với code vừa làm, nên agent hiểu là viết lại từ đầu thay vì patch.
+
+### Đã thay đổi gì
+- `src/utils/suggestions.ts`: đổi các đề mục gợi ý thành patch tiếp nối code vừa làm, tham chiếu tên file đã thay đổi (`fileRef`/`patchPrefix`), không còn dùng `targetShort`.
+- `src/app.tsx`: thêm `lastChangedFilesRef`; khi chọn gợi ý (bàn phím 1/2/3 hoặc click) gửi `patchTarget` có hướng dẫn: bổ sung/thay đổi tối thiểu vào file hiện có, không viết lại code. Áp dụng cho cả hai đường submit (số lựa + SuggestionStrip onSelect).
+
+### File đã sửa
+- `src/utils/suggestions.ts`
+- `src/app.tsx`
+
+### Kết quả kiểm tra
+- `npm.cmd run typecheck`: thành công (pxhvibe@0.22.2).
+- `npm.cmd test`: thành công; toàn bộ 23 nhóm test đều qua.
+
+### Vấn đề còn lại
+- Gợi ý vẫn là văn bản text gửi model; chất lượng patch phụ thuộc model hiểu đúng hướng dẫn "không viết lại".
+
+## RELEASE - v0.22.3 (sync version docs + patch suggestions)
+
+### Nguyen nhan goc
+- Bump version len `0.22.3` (patch) sau khi sua "Goi y tiep theo" thanh patch. README va STATUS can chua `v0.22.3` de release-check qua.
+
+### Da thay doi gi
+- `package.json` + `package-lock.json`: `0.22.2` len `0.22.3`.
+- `README.md`: ban phat hanh hien tai len `v0.22.3`.
+- `src/utils/suggestions.ts` + `src/app.tsx`: "Goi y tiep theo" goi patch tiep noi, khong viet lai prompt.
+- `STATUS.md`: them phan nay (`v0.22.3`).
+
+### Ket qua kiem tra
+- `npm.cmd run release:check` (typecheck + test + release-check): se chay sau build.
+- Build + 23 nhom test: deu qua o phien CODE truoc.

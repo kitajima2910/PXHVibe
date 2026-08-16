@@ -36,49 +36,53 @@ function buildCandidatePool(context: SuggestionContext): Suggestion[] {
     .replace(/\b(mở rộng|thêm|mở rộng thêm)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
-  const targetShort = cleanTarget.length > 45 ? `${cleanTarget.slice(0, 42)}...` : cleanTarget;
   const firstFile = filesChanged[0] ?? undefined;
   const hasCode = filesChanged.some((f) => /\.(ts|tsx|js|jsx|py|go|rs|java|cpp|c)$/.test(f));
   const targetLower = target.toLowerCase();
 
+  const fileRef = filesChanged.length > 0
+    ? ` (file: ${filesChanged.slice(0, 3).join(', ')}${filesChanged.length > 3 ? ', ...' : ''})`
+    : '';
+  const patchPrefix = `Patch tính năng vừa làm${fileRef}`;
+
   const candidates: Suggestion[] = [];
 
-  // 1. Test / validation — chỉ khi chưa test
+  // 1. Test / validation — patch tiếp nối, không viết lại
   if (filesChanged.length > 0 && !targetLower.includes('test') && !targetLower.includes('kiểm')) {
     candidates.push({
       id: candidates.length + 1,
-      text: `Thêm test cho ${firstFile ?? 'các file vừa thay đổi'}`,
+      text: `${patchPrefix}: bổ sung test cho code vừa viết`,
       category: 'improvement',
     });
   }
 
-  // 2. Documentation — chỉ khi có code và chưa docs
+  // 2. Documentation — patch tiếp nối, không viết lại
   if (hasCode && !targetLower.includes('doc') && !targetLower.includes('readme')) {
     candidates.push({
       id: candidates.length + 1,
-      text: 'Thêm documentation và comments cho code',
+      text: `${patchPrefix}: thêm documentation/comments cho code vừa viết`,
       category: 'idea',
     });
   }
 
-  // 3. Pool tính năng mới mở rộng — luôn xoay vòng, cá nhân hóa theo target
+  // 3. Pool patch tính năng — luôn xoay vòng, gắn với code vừa làm (không rewrite prompt)
   const featureIdeas: Array<{text: string; category: Suggestion['category']}> = [
-    { text: `Mở rộng "${targetShort}" với options/config linh hoạt`, category: 'upgrade' },
-    { text: `Thêm error handling và edge cases cho "${targetShort}"`, category: 'upgrade' },
-    { text: `Thêm logging/telemetry để giám sát "${targetShort}"`, category: 'upgrade' },
-    { text: `Tối ưu performance cho "${targetShort}"`, category: 'improvement' },
-    { text: `Thêm input validation cho "${targetShort}"`, category: 'improvement' },
-    { text: `Thêm retry/timeout cho "${targetShort}" chạy ổn định`, category: 'upgrade' },
-    { text: `Thêm dark mode / theme cho "${targetShort}"`, category: 'idea' },
-    { text: `Thêm export/import dữ liệu cho "${targetShort}"`, category: 'idea' },
-    { text: `Thêm i18n đa ngôn ngữ cho "${targetShort}"`, category: 'idea' },
-    { text: `Refactor "${targetShort}" để dễ bảo trì`, category: 'improvement' },
-    { text: `Thêm CLI subcommands cho "${targetShort}"`, category: 'upgrade' },
-    { text: `Thêm CI/CD workflow cho dự án`, category: 'upgrade' },
-    { text: `Thêm caching để tăng tốc "${targetShort}"`, category: 'improvement' },
-    { text: `Thêm unit + integration tests cho "${targetShort}"`, category: 'improvement' },
-    { text: `Thêm undo/rollback an toàn cho "${targetShort}"`, category: 'idea' },
-    { text: `Thêm giao diện config UI cho "${targetShort}"`, category: 'idea' },
+    { text: `${patchPrefix}: thêm options/config linh hoạt (mở rộng tối thiểu)`, category: 'upgrade' },
+    { text: `${patchPrefix}: thêm error handling & edge cases`, category: 'upgrade' },
+    { text: `${patchPrefix}: thêm logging/telemetry giám sát`, category: 'upgrade' },
+    { text: `${patchPrefix}: tối ưu performance`, category: 'improvement' },
+    { text: `${patchPrefix}: thêm input validation`, category: 'improvement' },
+    { text: `${patchPrefix}: thêm retry/timeout để chạy ổn định`, category: 'upgrade' },
+    { text: `${patchPrefix}: thêm dark mode/theme cho giao diện`, category: 'idea' },
+    { text: `${patchPrefix}: thêm export/import dữ liệu`, category: 'idea' },
+    { text: `${patchPrefix}: thêm i18n đa ngôn ngữ`, category: 'idea' },
+    { text: `${patchPrefix}: refactor nhẹ giữ nguyên hành vi (dễ bảo trì)`, category: 'improvement' },
+    { text: `${patchPrefix}: thêm CLI subcommands cho dự án`, category: 'upgrade' },
+    { text: `${patchPrefix}: thêm CI/CD workflow cho dự án`, category: 'upgrade' },
+    { text: `${patchPrefix}: thêm caching tăng tốc`, category: 'improvement' },
+    { text: `${patchPrefix}: thêm unit + integration tests`, category: 'improvement' },
+    { text: `${patchPrefix}: thêm undo/rollback an toàn`, category: 'idea' },
+    { text: `${patchPrefix}: thêm config UI`, category: 'idea' },
   ];
 
   for (const idea of featureIdeas) {
