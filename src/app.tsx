@@ -38,7 +38,7 @@ import {
 } from './runtime/commands.js';
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
-import {generateSuggestions, formatSuggestions, parseSuggestionSelection, type Suggestion} from './utils/suggestions.js';
+import {generateSuggestions, formatSuggestions, parseSuggestionSelection, createResumeSuggestion, type Suggestion} from './utils/suggestions.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -860,6 +860,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           createdAt: new Date(),
         }]);
         setStatus('Ready');
+        // Gợi ý tiếp tục/resume khi một giai đoạn bị dừng lại.
+        if (storedSession !== undefined && storedSession.status !== 'pass') {
+          setSuggestions([createResumeSuggestion()]);
+        }
       } else {
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
@@ -998,6 +1002,25 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
             <SuggestionStrip
               suggestions={suggestions}
               onSelect={(suggestion) => {
+                if (suggestion.action === 'resume') {
+                  void (async () => {
+                    const stored = await new SessionStore(workingDirectory).load();
+                    if (stored === undefined || stored.status === 'pass') {
+                      setMessages((currentMessages) => [...currentMessages, {
+                        id: createMessageId(),
+                        role: 'system',
+                        content: stored === undefined ? 'Không có checkpoint để resume.' : 'Session gần nhất đã hoàn tất.',
+                        createdAt: new Date(),
+                      }]);
+                      setSuggestions([]);
+                      return;
+                    }
+                    resumeSessionRef.current = makeSessionResumable(stored);
+                    setSuggestions([]);
+                    await handleSubmit(stored.target);
+                  })();
+                  return;
+                }
                 suggestionHistoryRef.current.push(suggestion.text);
                 setSuggestions([]);
                 const changed = lastChangedFilesRef.current;

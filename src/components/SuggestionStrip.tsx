@@ -6,6 +6,7 @@ export interface Suggestion {
   id: number;
   text: string;
   category: 'improvement' | 'idea' | 'upgrade';
+  action?: 'resume';
 }
 
 interface SuggestionStripProps {

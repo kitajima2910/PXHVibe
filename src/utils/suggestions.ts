@@ -6,6 +6,7 @@ export interface Suggestion {
   id: number;
   text: string;
   category: 'improvement' | 'idea' | 'upgrade';
+  action?: 'resume';
 }
 
 export interface SuggestionContext {
@@ -118,6 +119,19 @@ export function generateSuggestions(context: SuggestionContext): Suggestion[] {
   }
 
   return result;
+}
+
+/**
+ * Gợi ý tiếp tục/resume khi một giai đoạn vibe coding bị dừng lại,
+ * để người dùng có thể chạy tiếp từ checkpoint (hoặc gõ /resume).
+ */
+export function createResumeSuggestion(): Suggestion {
+  return {
+    id: 1,
+    text: 'Tiếp tục vibe coding từ checkpoint (dùng lệnh /resume)',
+    category: 'idea',
+    action: 'resume',
+  };
 }
 
 /**

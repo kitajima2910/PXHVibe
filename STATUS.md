@@ -25,6 +25,31 @@
 
 ---
 
+## FEATURE — Gợi ý tiếp tục/resume khi giai đoạn vibe coding bị dừng
+
+### Nguyên nhân gốc
+- Khi đang vibe coding mà một giai đoạn bị dừng (user cancel / Esc), app chỉ hiện thông báo "Đã dừng lượt chạy" nhưng không gợi ý người dùng tiếp tục.
+- Đã có sẵn `/resume` command và keyword "tiếp tục/continue" để resume từ checkpoint, nhưng user không được nhắc nhở khi vừa dừng → dễ bỏ quên session dang dở.
+
+### Đã thay đổi
+- `src/utils/suggestions.ts`:
+  - `Suggestion` interface thêm `action?: 'resume'`.
+  - Thêm `createResumeSuggestion()` trả về gợi ý "Tiếp tục vibe coding từ checkpoint (dùng lệnh /resume)".
+- `src/components/SuggestionStrip.tsx`: `Suggestion` interface thêm `action?: 'resume'` (giữ tương thích).
+- `src/app.tsx`:
+  - Nhánh `isCancellationError`: nếu có session chưa hoàn tất (`storedSession.status !== 'pass'`) thì `setSuggestions([createResumeSuggestion()])` để hiển thị gợi ý tiếp tục.
+  - `SuggestionStrip` `onSelect`: nếu `suggestion.action === 'resume'` thì load checkpoint và resume (giống `/resume`), ngược lại giữ hành vi patch tiếp nối cũ.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Gợi ý resume chỉ hiện khi có checkpoint lưu (session chưa `pass`); nếu user dừng trước khi có checkpoint thì không hiện (đúng hành vi).
+- Chọn gợi ý resume sẽ resume luôn, không qua bước xác nhận; nếu muốn an toàn hơn có thể thêm confirm sau.
+
+---
+
 ## REMOVE — Bỏ label "Gợi ý tiếp theo (click hoặc gõ 1/2/3)"
 
 ### Nguyên nhân gốc
