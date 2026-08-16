@@ -66,6 +66,7 @@ export class GeminiModelProvider implements ModelProvider {
           parts.push({text: item.text});
         }
         for (const call of item.toolCalls) {
+          this.callIdMap.set(call.callId, call.name);
           parts.push({
             functionCall: {
               name: call.name,
@@ -84,13 +85,13 @@ export class GeminiModelProvider implements ModelProvider {
       }
     }
 
-    const tools = request.tools.map((tool) => ({
-      function_declarations: [{
-        name: tool.name,
-        description: tool.description,
-        parameters: tool.parameters,
-      }],
-    }));
+    const tools = request.tools.length > 0
+      ? [{function_declarations: request.tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters,
+        }))}]
+      : [];
 
     const response = await fetch(
       `${this.baseURL}/v1beta/models/${encodeURIComponent(this.model)}:streamGenerateContent?alt=sse`,

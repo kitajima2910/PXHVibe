@@ -216,7 +216,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   };
 
   const ensureMCPReady = (targetProvider: AIProvider): Promise<readonly MCPServerStatus[]> => {
-    mcpReadyRef.current ??= configureMCP(targetProvider);
+    mcpReadyRef.current ??= configureMCP(targetProvider).catch((err) => {
+      mcpReadyRef.current = undefined;
+      throw err;
+    });
     return mcpReadyRef.current;
   };
 

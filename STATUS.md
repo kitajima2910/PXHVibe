@@ -1,5 +1,43 @@
 # STATUS
 
+## FIX — Audit lỗi runtime: 6 bugs across providers, MCP, TUI
+
+### Nguyên nhân gốc
+Audit toàn bộ codebase PXHVibe phát hiện 6 lỗi ảnh hưởng runtime:
+
+1. **CRITICAL** `GeminiModelProvider.ts:28-76` — `callIdMap` bị reset mỗi turn nhưng không được populate từ input history → mọi `functionResponse` multi-turn gửi `name: ''` → Gemini API lỗi.
+2. **HIGH** `app.tsx:219` — `mcpReadyRef ??= configureMCP()` cache rejected promise vĩnh viễn → MCP fail một lần thì không bao giờ retry được trong phiên.
+3. **MEDIUM** `GeminiModelProvider.ts:87-93` — Mỗi tool gửi thành `{function_declarations: [tool]}` riêng lẻ thay vì `{function_declarations: [tool1, tool2, ...]}` gộp chung → format không chuẩn Gemini API.
+4. **MEDIUM** `AnthropicModelProvider.ts:81` — `type: 'custom'` trong tool definition không thuộc spec Anthropic Messages API → có thể bị reject ở endpoint nghiêm ngặt.
+5. **MEDIUM** `ChatCompletionsModelProvider.ts:40-52` — Images được attach vào MỖI user message thay vì chỉ message đầu → lãng phí tokens, nhầm lẫn model.
+6. **LOW** `Header.tsx:21` — `contextColor` ternary trả `'gray'` cho cả `>=70` và `<70` → branch `>=70` vô nghĩa.
+
+### Đã thay đổi
+
+- `GeminiModelProvider.ts`:
+  - Thêm `this.callIdMap.set(call.callId, call.name)` trong loop assistant input (line ~69) — fix CRITICAL.
+  - Gộp tools thành một `{function_declarations: [...]}` duy nhất (line ~87) — fix tools format.
+- `app.tsx`: `ensureMCPReady` wrap `.catch()` để clear `mcpReadyRef.current` khi reject → cho phép retry — fix HIGH.
+- `AnthropicModelProvider.ts`: Xóa `type: 'custom'` khỏi tool definition (line 81) — fix invalid field.
+- `ChatCompletionsModelProvider.ts`: Thêm `imagesAttached` flag, chỉ attach images vào user message đầu tiên — fix image duplication.
+- `Header.tsx`: Đổi `contextColor` thành `>=90 ? 'red' : >=70 ? 'yellow' : 'gray'` — fix color logic.
+
+### File đã sửa
+- `src/agent/GeminiModelProvider.ts` (2 thay đổi)
+- `src/app.tsx` (1 thay đổi)
+- `src/agent/AnthropicModelProvider.ts` (1 thay đổi)
+- `src/agent/ChatCompletionsModelProvider.ts` (1 thay đổi)
+- `src/components/Header.tsx` (1 thay đổi)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Anthropic/Gemini provider chưa test với API thật (unit test chỉ verify constructor + method signature).
+- `AgentRuntime` không check abort signal giữa các tool executions (MEDIUM) — user phải chờ tool hiện tại xong mới cancel được.
+- `teamRunner` gửi image attachments đến mọi phase pipeline (LOW) — lãng phí tokens cho phases không cần images.
+
 ## FIX — Free mode inactivity timeout retry quá lâu (300 giây × 3 lần)
 
 ### Nguyên nhân gốc

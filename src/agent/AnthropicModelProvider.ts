@@ -78,7 +78,6 @@ export class AnthropicModelProvider implements ModelProvider {
     }
 
     const tools = request.tools.map((tool) => ({
-      type: 'custom',
       name: tool.name,
       description: tool.description,
       input_schema: tool.parameters,

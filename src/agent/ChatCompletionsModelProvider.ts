@@ -21,6 +21,7 @@ export class ChatCompletionsModelProvider implements ModelProvider {
 
   async createTurn(request: ModelRequest): Promise<AgentModelTurn> {
     const messages: ChatCompletionMessageParam[] = [];
+    let imagesAttached = false;
     for (const item of request.input) {
       if ('type' in item) {
         messages.push({role: 'tool', tool_call_id: item.callId, content: item.output});
@@ -37,7 +38,8 @@ export class ChatCompletionsModelProvider implements ModelProvider {
         });
       } else {
         const text = item.content;
-        const images = request.images ?? [];
+        const images = (!imagesAttached) ? (request.images ?? []) : [];
+        imagesAttached = true;
         const content = images.length === 0
           ? text
           : [
