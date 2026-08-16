@@ -22,9 +22,31 @@
 ### Vấn đề còn lại
 - Nếu clone project mới hoặc sau khi xóa `node_modules`, phải chạy `npm install` (không dùng `--omit=dev`) để có đủ devDependencies cho `build`/`test`/`typecheck`.
 - `npm run dev` là TUI tương tác — cần chạy trong terminal thật (không phải pipe/redirect) để thấy giao diện.
+---
+
+## RELEASE — v0.22.5 (bump version + GitHub release; npm publish thủ công)
+
+### Nguyên nhân gốc
+- Tích hợp xong tính năng: bỏ gợi ý 1/2/3 "tiếp theo" sau mỗi lần vibe code, và gợi ý dạng text tiếp tục/resume khi một giai đoạn bị dừng (timeout >Xs / hết lượt / lặp tool) còn checkpoint.
+- Cần bump version lên 0.22.5, đồng bộ README + STATUS, rồi tạo GitHub release. `npm publish` do user chạy thủ công (trigger `prepublishOnly` → `release:check` yêu cầu docs chứa `v0.22.5`).
+
+### Đã thay đổi
+- `package.json` + `package-lock.json`: `0.22.4` → `0.22.5`.
+- `README.md`: `v0.22.4` → `v0.22.5`.
+- `STATUS.md`: thêm mục RELEASE v0.22.5 (chứa `v0.22.5` để qua `release:check`).
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- `npm run release:check` (sau khi publish) yêu cầu README + STATUS đều chứa `v0.22.5` → đã thỏa mãn.
+
+### Vấn đề còn lại
+- Chưa `npm publish` (user tự chạy thủ công).
+- GitHub release đã tạo tag `v0.22.5` + Release notes.
 
 ---
-## FEATURE/REMOVE — Bỏ gợi ý 1/2/3 sau vibe code; gợi ý tiếp tục/resume khi giai đoạn bị dừng
+
+## FEATURE/REMOVE — Bỏ gợi ý 1/2/3 sau vibe code; gợi ý tiếp tục/resume khi giai đoạn bị dừng
 
 ### Nguyên nhân gốc
 - Sau mỗi lần vibe code xong, app tự động sinh 3 gợi ý 'tiếp theo' (1/2/3) để user chọn hướng phát triển. User không cần nữa → muốn bỏ hoàn toàn.
