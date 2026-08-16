@@ -15,6 +15,7 @@ import {createCustomProvider} from './providers/createProvider.js';
 import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {Banner} from './components/Banner.js';
+import {SuggestionStrip, type Suggestion as SuggestionType} from './components/SuggestionStrip.js';
 import {agents, getAgent, mergeAgentCatalog, routeAgent, type PXHAgent} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 import {CatalogPicker, type CatalogPickerItem} from './components/CatalogPicker.js';
@@ -799,7 +800,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       };
       const newSuggestions = generateSuggestions(suggestionContext);
       setSuggestions(newSuggestions);
-      appendAssistantContent(formatSuggestions(newSuggestions));
       
       setStatus('Ready');
     } catch (error: unknown) {
@@ -949,26 +949,37 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           onCancel={() => setIsModePickerOpen(false)}
         />
       ) : (
-        <PromptInput
-          onSubmit={(content, preservedDraft) => {
-            promptDraftRef.current = preservedDraft;
-            void handleSubmit(content);
-          }}
-          onCancel={() => currentProvider.cancel()}
-          onExit={() => {
-            currentProvider.cancel();
-            for (const image of pendingImages) void removeTemporaryImage(image);
-          }}
-          isBusy={isBusy || isPastingImage}
-          attachments={pendingImages}
-          onPasteImage={() => void handlePasteImage()}
-          onRemoveLastImage={handleRemoveLastImage}
-          {...(busyStartedAt === undefined ? {} : {busyStartedAt})}
-          {...(lastActivityAt === undefined ? {} : {lastActivityAt})}
-          activityLabel={activityLabel}
-          phaseLabel={phaseLabel}
-          {...(promptDraftRef.current === undefined ? {} : {initialDraft: promptDraftRef.current})}
-        />
+        <Box flexDirection="column">
+          {suggestions.length > 0 && !isBusy && (
+            <SuggestionStrip
+              suggestions={suggestions}
+              onSelect={(suggestion) => {
+                setSuggestions([]);
+                void handleSubmit(suggestion.text);
+              }}
+            />
+          )}
+          <PromptInput
+            onSubmit={(content, preservedDraft) => {
+              promptDraftRef.current = preservedDraft;
+              void handleSubmit(content);
+            }}
+            onCancel={() => currentProvider.cancel()}
+            onExit={() => {
+              currentProvider.cancel();
+              for (const image of pendingImages) void removeTemporaryImage(image);
+            }}
+            isBusy={isBusy || isPastingImage}
+            attachments={pendingImages}
+            onPasteImage={() => void handlePasteImage()}
+            onRemoveLastImage={handleRemoveLastImage}
+            {...(busyStartedAt === undefined ? {} : {busyStartedAt})}
+            {...(lastActivityAt === undefined ? {} : {lastActivityAt})}
+            activityLabel={activityLabel}
+            phaseLabel={phaseLabel}
+            {...(promptDraftRef.current === undefined ? {} : {initialDraft: promptDraftRef.current})}
+          />
+        </Box>
       )}
       <Footer />
     </Box>
