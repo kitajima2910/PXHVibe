@@ -23,7 +23,7 @@ export class AgentRuntime {
   constructor(
     private readonly model: ModelProvider,
     tools: readonly AgentTool[],
-    private readonly maxTurns = 12,
+    private readonly maxTurns = 24,
   ) {
     this.tools = tools;
   }
@@ -41,7 +41,9 @@ export class AgentRuntime {
   ): Promise<string> {
     const history: AgentInput[] = [{role: 'user', content: prompt}];
     let content = '';
+    let appliedChanges = 0;
     const seenCalls = new Map<string, number>();
+    const recentToolNames: string[] = [];
 
     for (let turnIndex = 0; turnIndex < this.maxTurns; turnIndex += 1) {
       let streamedText = '';
@@ -77,6 +79,20 @@ export class AgentRuntime {
         throw new Error('Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.');
       }
 
+      // Phát hiện lặp tool đọc liên tiếp (arguments khác nhau mỗi lần):
+      // cùng tool chỉ-đọc được gọi ≥5 lượt liên tiếp gần như chắc chắn là kẹt vòng lặp.
+      // apply_patch xen kẽ được xem là tiến trình hợp lệ nên không đếm.
+      const readOnly = turn.toolCalls.every((call) => isReadOnlyTool(call.name));
+      if (readOnly) {
+        recentToolNames.push(turn.toolCalls.map((call) => call.name).join(','));
+        if (recentToolNames.length > 5) recentToolNames.shift();
+        if (recentToolNames.length === 5 && recentToolNames.every((names) => names === recentToolNames[0])) {
+          throw new Error('Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.');
+        }
+      } else {
+        recentToolNames.length = 0;
+      }
+
       // Giữ assistant turn (tool calls) trong history để provider nối đúng
       // function_call → function_call_output.
       history.push({
@@ -100,6 +116,9 @@ export class AgentRuntime {
         let output: string;
         try {
           output = await tool.execute(parseArguments(call.arguments), cwd);
+          if (tool.name === 'apply_patch' && (output.startsWith('Đã tạo') || output.startsWith('Đã cập nhật'))) {
+            appliedChanges += 1;
+          }
         } catch (error: unknown) {
           output = `Lỗi: ${error instanceof Error ? error.message : 'Không xác định'}`;
         }
@@ -112,6 +131,14 @@ export class AgentRuntime {
       }
     }
 
+    // Hết lượt: nếu có output text hoặc đã sửa file thì trả về kèm ghi chú
+    // thay vì fail cứng — agent có thể đã hoàn thành công việc.
+    if (content.trim().length > 0 || appliedChanges > 0) {
+      const summary = appliedChanges > 0
+        ? `Đã thực hiện ${appliedChanges} thay đổi file (apply_patch) trong lượt chạy này.`
+        : 'Agent đã xử lý nhưng chưa tổng kết trước khi hết lượt.';
+      return `${content.trim()}\n\n> Ghi chú: hết ${this.maxTurns} lượt xử lý. ${summary} Kết quả chi tiết nằm trong git diff sau lượt chạy.`.trim();
+    }
     throw new Error(`Agent đã vượt quá giới hạn ${this.maxTurns} lượt xử lý.`);
   }
 }
@@ -122,6 +149,10 @@ function parseArguments(value: string): unknown {
   } catch {
     throw new Error('Model trả về arguments không phải JSON hợp lệ.');
   }
+}
+
+function isReadOnlyTool(name: string): boolean {
+  return name === 'list_files' || name === 'read_file' || name === 'search_text' || name === 'git_diff';
 }
 
 function summarize(value: string): string {

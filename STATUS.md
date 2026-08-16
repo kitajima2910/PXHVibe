@@ -1,5 +1,27 @@
 # STATUS
 
+## FIX — Agent hết lượt không còn fail cứng (Custom API DeepSeek)
+
+### Nguyên nhân gốc
+- Dù đã bỏ retry mù, agent Custom API (DeepSeek) vẫn hết 12 lượt tool call với task thật (đọc file → sửa → test...), `AgentRuntime` throw `Agent đã vượt quá giới hạn 12 lượt xử lý` → teamRunner đánh phase FIX fail toàn bộ dù agent có thể đã sửa xong file.
+- Loop detector cũ chỉ bắt tập tool call trùng khớp chính xác (name + arguments); agent lặp cùng tool với arguments đổi mỗi lần thì không bị bắt.
+
+### Đã thay đổi
+- `AgentRuntime`:
+  - Tăng `maxTurns` mặc định từ 12 lên 24.
+  - Loop detector bổ sung: cùng tool **chỉ-đọc** (list_files/read_file/search_text/git_diff) được gọi ≥5 lượt liên tiếp (arguments khác nhau) cũng bị chặn; `apply_patch` xen kẽ được coi là tiến trình hợp lệ, không tính.
+  - Hết lượt nhưng đã có text output HOẶC đã `apply_patch` thành công (`appliedChanges` đếm output `Đã tạo`/`Đã cập nhật`) → trả về nội dung kèm ghi chú `> Ghi chú: hết N lượt... Kết quả chi tiết nằm trong git diff sau lượt chạy.` thay vì throw.
+  - Chỉ throw khi hết lượt mà không có output text lẫn thay đổi file (kẹt hoàn toàn).
+- Test: `nativeAgent.test.ts` thêm `ApplyPatchUntilLimitProvider` xác nhận hết lượt nhưng đã sửa file thì trả về kèm ghi chú.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Phase FIX hết lượt (nhưng đã sửa file) giờ PASS với ghi chú; TEST/REVIEW phase tiếp theo sẽ kiểm tra chất lượng. Nếu hết lượt mà chưa sửa gì, vẫn fail cứng.
+- Với task rất lớn, 24 lượt vẫn có thể không đủ; người dùng có thể chia nhỏ TARGET.
+
 ## FIX — Diff view kiểu git + thiết kế lại TUI
 
 ### Nguyên nhân gốc

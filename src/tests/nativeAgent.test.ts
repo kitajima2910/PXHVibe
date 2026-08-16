@@ -35,6 +35,25 @@ class LoopModelProvider implements ModelProvider {
   }
 }
 
+// Model luôn áp dụng patch thành công tới khi hết lượt (maxTurns=3):
+// agent đã sửa file nhưng chưa tổng kết → runtime phải trả về kèm ghi chú, không fail.
+class ApplyPatchUntilLimitProvider implements ModelProvider {
+  private turn = 0;
+  async createTurn(): Promise<AgentModelTurn> {
+    this.turn += 1;
+    const target = `file-${this.turn}.txt`;
+    return {
+      id: `patch-${this.turn}`,
+      text: '',
+      toolCalls: [{
+        callId: `call-patch-${this.turn}`,
+        name: 'apply_patch',
+        arguments: JSON.stringify({path: target, old_text: '', new_text: `nội dung ${this.turn}`}),
+      }],
+    };
+  }
+}
+
 const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'pxhvibe-native-'));
 try {
   await writeFile(path.join(temporaryDirectory, 'hello.txt'), 'xin chào', 'utf8');
@@ -64,6 +83,17 @@ try {
     loopRuntime.run('Liệt kê file', temporaryDirectory, new AbortController().signal, () => undefined),
     /lặp tool call/,
   );
+
+  // Hết lượt nhưng đã sửa file → trả về kèm ghi chú, không fail cứng.
+  const patchingRuntime = new AgentRuntime(new ApplyPatchUntilLimitProvider(), tools, 3);
+  const patchingResponse = await patchingRuntime.run(
+    'Sửa hello.txt',
+    temporaryDirectory,
+    new AbortController().signal,
+    () => undefined,
+  );
+  assert.match(patchingResponse, /hết 3 lượt/);
+  assert.match(patchingResponse, /apply_patch/);
 
   const patchTool = tools.find((tool) => tool.name === 'apply_patch');
   assert.ok(patchTool !== undefined);
