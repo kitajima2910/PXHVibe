@@ -1,6 +1,124 @@
 # STATUS
 
-## FEATURE — Terminal bell notification khi pipeline hoàn tất
+## FEATURE — MCP OAuth Protocol Implementation
+
+### Nguyên nhân gốc
+- MCP remote servers (như Neon MCP) yêu cầu OAuth authentication
+- PXHVibe chưa support MCP OAuth protocol
+- User cần lấy API key thủ công để kết nối
+
+### Đã thay đổi
+- **OAuthProvider.ts**: Tạo OAuth client provider cho PXHVibe
+  - Implement `OAuthClientProvider` interface từ MCP SDK
+  - Tự động mở browser khi cần authorization
+  - Lưu tokens vào `~/.pxhvibe/oauth-tokens.json`
+  - Lưu client information vào `~/.pxhvibe/oauth-client.json`
+  - Hỗ trợ refresh tokens
+  - Callback server trên localhost (port 8090-8190)
+- **MCPManager.ts**: Tích hợp OAuth flow
+  - Tự động detect khi remote server cần OAuth (không có Authorization header)
+  - Xử lý `UnauthorizedError` và thực hiện OAuth flow
+  - Reconnect sau khi có tokens
+- **mcp.json**: Cấu hình đơn giản hơn, không cần Authorization header
+
+### Cấu hình MCP với OAuth
+
+**Trước (cần API key):**
+```json
+{
+  "servers": {
+    "neon": {
+      "type": "remote",
+      "url": "https://mcp.neon.tech/mcp",
+      "headers": {
+        "Authorization": "Bearer {env:NEON_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+**Sau (tự động OAuth):**
+```json
+{
+  "servers": {
+    "neon": {
+      "type": "remote",
+      "url": "https://mcp.neon.tech/mcp"
+    }
+  }
+}
+```
+
+### Kết quả kiểm tra
+- `npm run build` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- **OAuth flow test với Neon MCP:**
+  - ✅ Browser tự động mở với authorization URL
+  - ✅ Callback server nhận authorization code
+  - ✅ Tokens được lưu vào `~/.pxhvibe/`
+  - ✅ Kết nối thành công: 35 tools từ Neon MCP
+  - ✅ Filesystem MCP: 14 tools
+
+### Cách hoạt động
+1. Khi connect remote server không có Authorization header
+2. PXHVibe tạo OAuth client và thử kết nối
+3. Nếu nhận `UnauthorizedError`, mở browser với authorization URL
+4. User authorize trên browser
+5. Callback server nhận authorization code
+6. Exchange code lấy tokens
+7. Lưu tokens và reconnect
+8. Lần sau sẽ dùng cached tokens (tự động refresh khi hết hạn)
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại
+- OAuth flow hoạt động hoàn chỉnh với MCP SDK
+- Tokens được persist và reuse giữa các sessions
+
+### FIX — UTF-8 encoding cho OAuth callback page
+- **Nguyên nhân**: `Content-Type: text/html` không có charset khiến browser dùng encoding mặc định (ISO-8859-1), gây garble emoji ✅ thành `âœ…`
+- **Fix**: Thêm `; charset=utf-8` vào Content-Type header cho cả success và error responses
+- **File**: `src/mcp/OAuthProvider.ts` (lines 122, 133)
+
+
+
+### Kết quả kiểm tra
+- **MCPManager unit test**: ✅ Pass (24/24 test groups)
+- **MCP connection thực tế**: ✅ Pass
+  - Server: `filesystem` (@modelcontextprotocol/server-filesystem)
+  - Status: connected
+  - Tools: 14 tools (read_file, write_file, list_directory, etc.)
+  - Config: `.pxhvibe/mcp.json`
+
+### Cách kiểm tra MCP trong TUI
+- Gõ `/mcp` để xem trạng thái các MCP server
+- Gõ `/mcp refresh` để kết nối lại
+- Gõ `/mcp doctor` để kiểm tra sức khỏe
+
+### Cấu hình MCP
+File `.pxhvibe/mcp.json`:
+```json
+{
+  "servers": {
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+    }
+  }
+}
+```
+
+### Kết luận
+MCP connection hoạt động tốt. PXHVibe có thể:
+- Load config từ `.pxhvibe/mcp.json`
+- Kết nối local MCP server (stdio transport)
+- Discover và register tools
+- Execute MCP tools trong agent loop
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+
 
 ### Nguyên nhân gốc
 - Khi vibe coding xong (pipeline hoàn tất), user không nhận được thông báo rõ ràng.

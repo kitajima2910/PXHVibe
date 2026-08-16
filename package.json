@@ -75,6 +75,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "ink": "^7.1.1",
+    "open": "^11.0.1",
     "openai": "^7.4.0",
     "opencode-ai": "^1.18.18",
     "react": "^19.2.8"

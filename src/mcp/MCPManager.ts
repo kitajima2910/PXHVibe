@@ -4,7 +4,9 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
+import {UnauthorizedError} from '@modelcontextprotocol/sdk/client/auth.js';
 import type {AgentTool} from '../agent/types.js';
+import {PXHVOAuthProvider} from './OAuthProvider.js';
 
 export type MCPServerState = 'disabled' | 'configured' | 'connecting' | 'connected' | 'error';
 
@@ -24,6 +26,7 @@ export interface RemoteMCPServerConfig extends MCPServerBase {
   type: 'remote';
   url: string;
   headers?: Record<string, string>;
+  auth?: 'oauth';
 }
 
 export type MCPServerConfig = LocalMCPServerConfig | RemoteMCPServerConfig;
@@ -193,21 +196,73 @@ export function mcpStatusSymbol(state: MCPServerState): string {
 
 async function connectServer(name: string, config: MCPServerConfig, workspace: string): Promise<MCPConnection> {
   const client = new Client({name: `pxhvibe-${name}`, version: '1.0.0'});
-  const transport = config.type === 'local'
-    ? new StdioClientTransport({
-      command: config.command[0]!,
-      args: config.command.slice(1),
-      cwd: config.cwd === undefined ? workspace : path.resolve(workspace, config.cwd),
-      env: {...stringEnvironment(process.env), ...resolveValues(config.environment ?? {})},
-      stderr: 'pipe',
-    })
-    : new StreamableHTTPClientTransport(new URL(config.url), {
-      requestInit: {headers: resolveValues(config.headers ?? {})},
+  
+  // For remote servers, check if we need OAuth
+  if (config.type === 'remote') {
+    const headers = resolveValues(config.headers ?? {});
+    
+    // If no Authorization header, try OAuth
+    if (!headers['Authorization'] && !headers['authorization']) {
+      return connectWithOAuth(client, name, config);
+    }
+    
+    // Use provided headers
+    const transport = new StreamableHTTPClientTransport(new URL(config.url), {
+      requestInit: {headers},
     });
-  // SDK transport classes currently disagree with Transport under
-  // exactOptionalPropertyTypes, although both implement the runtime contract.
+    await client.connect(transport as Transport);
+    return {client, close: () => client.close()};
+  }
+  
+  // Local server
+  const transport = new StdioClientTransport({
+    command: config.command[0]!,
+    args: config.command.slice(1),
+    cwd: config.cwd === undefined ? workspace : path.resolve(workspace, config.cwd),
+    env: {...stringEnvironment(process.env), ...resolveValues(config.environment ?? {})},
+    stderr: 'pipe',
+  });
   await client.connect(transport as Transport);
   return {client, close: () => client.close()};
+}
+
+async function connectWithOAuth(
+  client: Client,
+  name: string,
+  config: RemoteMCPServerConfig,
+): Promise<MCPConnection> {
+  const oauthProvider = new PXHVOAuthProvider(name);
+  
+  // Try to connect with existing tokens first
+  let transport = new StreamableHTTPClientTransport(new URL(config.url), {
+    authProvider: oauthProvider,
+  });
+  
+  try {
+    await client.connect(transport as Transport);
+    return {client, close: () => client.close()};
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      // Need to perform OAuth
+      console.log(`🔐 OAuth required for ${name}`);
+      
+      // Wait for OAuth callback
+      const authCode = await oauthProvider.waitForCallback();
+      
+      // Complete OAuth flow
+      await transport.finishAuth(authCode);
+      
+      // Reconnect with authenticated transport
+      transport = new StreamableHTTPClientTransport(new URL(config.url), {
+        authProvider: oauthProvider,
+      });
+      await client.connect(transport as Transport);
+      
+      oauthProvider.closeCallbackServer();
+      return {client, close: () => client.close()};
+    }
+    throw error;
+  }
 }
 
 function createMCPTool(
@@ -292,6 +347,7 @@ function parseServerConfig(name: string, value: unknown, configPath: string): MC
     return {
       type: 'remote', url: value.url, ...shared,
       ...(isStringRecord(value.headers) ? {headers: value.headers} : {}),
+      ...(value.auth === 'oauth' ? {auth: 'oauth'} : {}),
     };
   }
   throw new Error(`MCP server "${name}" cần type local + command[] hoặc type remote + url.`);
