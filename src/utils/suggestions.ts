@@ -13,70 +13,107 @@ export interface SuggestionContext {
   lastOutput: string;
   filesChanged: string[];
   pipelinePhases: string[];
+  history?: readonly string[];
 }
 
 /**
- * Generate 3 suggestions based on completed task context
+ * Chuẩn hóa text để so sánh trùng lặp giữa các round.
  */
-export function generateSuggestions(context: SuggestionContext): Suggestion[] {
-  const suggestions: Suggestion[] = [];
-  
-  // Analyze context to generate relevant suggestions
-  const { target, lastOutput, filesChanged } = context;
-  
-  // Suggestion 1: Testing/Validation
-  if (filesChanged.length > 0 && !target.toLowerCase().includes('test')) {
-    suggestions.push({
-      id: 1,
-      text: `Thêm test cho ${filesChanged[0] ?? 'các file đã thay đổi'}`,
-      category: 'improvement',
-    });
-  } else {
-    suggestions.push({
-      id: 1,
-      text: 'Tối ưu performance cho code vừa viết',
+function normalize(text: string): string {
+  return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Tạo danh sách ý tưởng "tính năng mới" phù hợp với ngữ cảnh hiện tại,
+ * dùng làm nguồn cho vòng lặp gợi ý vô tận. Mỗi ý tưởng được cá nhân hóa
+ * theo target/filesChanged để luôn cảm thấy mới và liên quan đến vibe coding.
+ */
+function buildCandidatePool(context: SuggestionContext): Suggestion[] {
+  const { target, filesChanged } = context;
+  // Làm sạch target để tránh lặp chồng các câu gợi ý trước (vòng lặp vô tận).
+  const cleanTarget = target
+    .replace(/[""]/g, '')
+    .replace(/\b(mở rộng|thêm|mở rộng thêm)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const targetShort = cleanTarget.length > 45 ? `${cleanTarget.slice(0, 42)}...` : cleanTarget;
+  const firstFile = filesChanged[0] ?? undefined;
+  const hasCode = filesChanged.some((f) => /\.(ts|tsx|js|jsx|py|go|rs|java|cpp|c)$/.test(f));
+  const targetLower = target.toLowerCase();
+
+  const candidates: Suggestion[] = [];
+
+  // 1. Test / validation — chỉ khi chưa test
+  if (filesChanged.length > 0 && !targetLower.includes('test') && !targetLower.includes('kiểm')) {
+    candidates.push({
+      id: candidates.length + 1,
+      text: `Thêm test cho ${firstFile ?? 'các file vừa thay đổi'}`,
       category: 'improvement',
     });
   }
-  
-  // Suggestion 2: Documentation
-  if (filesChanged.some(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js'))) {
-    suggestions.push({
-      id: 2,
+
+  // 2. Documentation — chỉ khi có code và chưa docs
+  if (hasCode && !targetLower.includes('doc') && !targetLower.includes('readme')) {
+    candidates.push({
+      id: candidates.length + 1,
       text: 'Thêm documentation và comments cho code',
       category: 'idea',
     });
-  } else {
-    suggestions.push({
-      id: 2,
-      text: 'Review và refactor code để clean hơn',
-      category: 'idea',
-    });
   }
-  
-  // Suggestion 3: Feature expansion
-  const targetLower = target.toLowerCase();
-  if (targetLower.includes('fix') || targetLower.includes('sửa')) {
-    suggestions.push({
-      id: 3,
-      text: 'Thêm error handling và edge cases',
-      category: 'upgrade',
-    });
-  } else if (targetLower.includes('add') || targetLower.includes('thêm') || targetLower.includes('tạo')) {
-    suggestions.push({
-      id: 3,
-      text: 'Mở rộng tính năng với options/config',
-      category: 'upgrade',
-    });
-  } else {
-    suggestions.push({
-      id: 3,
-      text: 'Thêm logging và monitoring',
-      category: 'upgrade',
-    });
+
+  // 3. Pool tính năng mới mở rộng — luôn xoay vòng, cá nhân hóa theo target
+  const featureIdeas: Array<{text: string; category: Suggestion['category']}> = [
+    { text: `Mở rộng "${targetShort}" với options/config linh hoạt`, category: 'upgrade' },
+    { text: `Thêm error handling và edge cases cho "${targetShort}"`, category: 'upgrade' },
+    { text: `Thêm logging/telemetry để giám sát "${targetShort}"`, category: 'upgrade' },
+    { text: `Tối ưu performance cho "${targetShort}"`, category: 'improvement' },
+    { text: `Thêm input validation cho "${targetShort}"`, category: 'improvement' },
+    { text: `Thêm retry/timeout cho "${targetShort}" chạy ổn định`, category: 'upgrade' },
+    { text: `Thêm dark mode / theme cho "${targetShort}"`, category: 'idea' },
+    { text: `Thêm export/import dữ liệu cho "${targetShort}"`, category: 'idea' },
+    { text: `Thêm i18n đa ngôn ngữ cho "${targetShort}"`, category: 'idea' },
+    { text: `Refactor "${targetShort}" để dễ bảo trì`, category: 'improvement' },
+    { text: `Thêm CLI subcommands cho "${targetShort}"`, category: 'upgrade' },
+    { text: `Thêm CI/CD workflow cho dự án`, category: 'upgrade' },
+    { text: `Thêm caching để tăng tốc "${targetShort}"`, category: 'improvement' },
+    { text: `Thêm unit + integration tests cho "${targetShort}"`, category: 'improvement' },
+    { text: `Thêm undo/rollback an toàn cho "${targetShort}"`, category: 'idea' },
+    { text: `Thêm giao diện config UI cho "${targetShort}"`, category: 'idea' },
+  ];
+
+  for (const idea of featureIdeas) {
+    candidates.push({ id: candidates.length + 1, ...idea });
   }
-  
-  return suggestions;
+
+  return candidates;
+}
+
+/**
+ * Generate 3 suggestions based on completed task context.
+ * Đảm bảo không lặp lại các gợi ý/目标 đã dùng ở các round trước
+ * (dựa vào `history`), giúp vòng lặp gợi ý tiếp tục vô tận với tính năng mới.
+ */
+export function generateSuggestions(context: SuggestionContext): Suggestion[] {
+  const pool = buildCandidatePool(context);
+  const used = new Set((context.history ?? []).map(normalize));
+
+  // Lọc bỏ các gợi ý đã từng xuất hiện, giữ nguyên thứ tự ưu tiên.
+  const fresh = pool.filter((candidate) => !used.has(normalize(candidate.text)));
+
+  // Nếu pool còn ít hơn 3 (đã gợi ý gần hết), sinh thêm biến thể mới
+  // dựa trên target để vòng lặp không bao giờ cạn ý tưởng.
+  const source = fresh.length >= 3 ? fresh : pool;
+  const result: Suggestion[] = [];
+  const seen = new Set<string>();
+  for (const candidate of source) {
+    const key = normalize(candidate.text);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({ ...candidate, id: result.length + 1 });
+    if (result.length === 3) break;
+  }
+
+  return result;
 }
 
 /**

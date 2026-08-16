@@ -201,6 +201,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [phaseLabel, setPhaseLabel] = useState('khởi động');
   const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const suggestionHistoryRef = useRef<string[]>([]);
   const [mcpManager] = useState(() => new MCPManager(workingDirectory));
   const [mcpServers, setMcpServers] = useState<readonly MCPServerStatus[]>([]);
   const mcpReadyRef = useRef<Promise<readonly MCPServerStatus[]> | undefined>(undefined);
@@ -576,9 +577,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     // Check if input is a suggestion selection (1, 2, 3)
     const suggestionIndex = parseSuggestionSelection(content);
     if (suggestionIndex !== null && suggestions.length > 0) {
-      const selectedSuggestion = suggestions[suggestionIndex - 1];
-      if (selectedSuggestion) {
-        setSuggestions([]); // Clear suggestions
+        const selectedSuggestion = suggestions[suggestionIndex - 1];
+        if (selectedSuggestion) {
+          suggestionHistoryRef.current.push(selectedSuggestion.text);
+          setSuggestions([]); // Clear suggestions
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'user',
@@ -798,7 +800,13 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         filesChanged,
         pipelinePhases: pipeline.tasks.map(t => t.phase),
       };
-      const newSuggestions = generateSuggestions(suggestionContext);
+      // Lưu target vừa hoàn thành vào lịch sử để vòng lặp gợi ý
+      // không lặp lại ý tưởng cũ, luôn ra tính năng mới phù hợp.
+      suggestionHistoryRef.current.push(contextualTarget);
+      const newSuggestions = generateSuggestions({
+        ...suggestionContext,
+        history: suggestionHistoryRef.current,
+      });
       setSuggestions(newSuggestions);
       
       setStatus('Ready');
@@ -954,6 +962,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
             <SuggestionStrip
               suggestions={suggestions}
               onSelect={(suggestion) => {
+                suggestionHistoryRef.current.push(suggestion.text);
                 setSuggestions([]);
                 void handleSubmit(suggestion.text);
               }}

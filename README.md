@@ -11,7 +11,7 @@ pipeline nhiều phase, giao cho các specialist phù hợp, lưu checkpoint và
 tiếp trong terminal. Bạn có thể dùng Free mode đi kèm hoặc kết nối Custom API hỗ trợ OpenAI,
 Anthropic và Google Gemini, đồng thời mở rộng khả năng bằng MCP, skills, agents và workflows của project.
 
-Bản phát hành hiện tại: **v0.21.1**.
+Bản phát hành hiện tại: **v0.22.0**.
 
 ## Điểm nổi bật
 

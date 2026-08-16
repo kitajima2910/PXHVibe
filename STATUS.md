@@ -1,5 +1,41 @@
 # STATUS
 
+## RELEASE — v0.22.0 (bump version + GitHub release + npm publish)
+
+- Version: `0.21.1` → `0.22.0`
+- GitHub: tag `v0.22.0` + GitHub Release
+- npm: `npm publish` (public)
+
+## FEATURE — Gợi ý tiếp theo loop vô tận, không lặp, fit vibe coding hiện tại
+
+### Nguyên nhân gốc
+- Hệ thống gợi ý hiện tại sinh 3 suggestion rule-based cố định (test / docs / feature) và lặp lại y hệt mỗi round.
+- Sau mỗi lần vibe code xong vòng lặp vẫn chạy (chọn gợi ý → chạy → sinh gợi ý mới), nhưng gợi ý không "mới" cũng không "phù hợp với vibe coding hiện tại" vì không nhớ ngữ cảnh đã làm.
+- Muốn: sau mỗi lần vibe code xong, luôn gợi ý thêm tính năng MỚI, liên quan đến công việc đang làm, và loop mãi không cạn ý tưởng.
+
+### Đã thay đổi
+- `src/utils/suggestions.ts`:
+  - `SuggestionContext` thêm `history?: readonly string[]` (các target + gợi ý đã dùng các round trước).
+  - Thêm `buildCandidatePool()` sinh pool ý tưởng mở rộng, mỗi ý tưởng được cá nhân hóa theo `target`/`filesChanged` (vd `Mở rộng "<target>" với options/config`).
+  - `generateSuggestions()` lọc bỏ gợi ý đã nằm trong `history` (so sánh đã normalize bỏ dấu/khoảng trắng), ưu tiên ý tưởng chưa dùng; nếu pool cạn thì sinh biến thể mới từ target → vòng lặp không bao giờ lặp lại.
+  - Làm sạch `target` (bỏ dấu ngoặc kép, bỏ prefix "mở rộng/thêm" lặp chồng, giới hạn 45 ký tự) để text gợi ý không bị lồng chồng qua các round.
+- `src/app.tsx`:
+  - Thêm `suggestionHistoryRef` (`useRef<string[]>([])`) theo dõi lịch sử target + gợi ý đã chọn trong session.
+  - Ghi `selectedSuggestion.text` vào history khi chọn bằng số (1/2/3) và khi click chuột (`SuggestionStrip` onSelect).
+  - Khi vibe code hoàn tất, ghi `contextualTarget` vào history và truyền `history` vào `generateSuggestions()` → round sau sinh gợi ý MỚI, fit ngữ cảnh.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- Script verify: chạy 4 round liên tiếp, flatten 12 suggestion → 12 unique, không trùng (NO DUP); text gợi ý sạch, không lồng chồng dấu ngoặc.
+
+### Vấn đề còn lại
+- Gợi ý vẫn rule-based (không dùng AI sinh ý tưởng); có thể nâng cấp bằng AI-generated suggestions sau này nếu cần.
+- Lịch sử chỉ lưu trong memory (không persist giữa sessions) — giống thiết kế suggestions trước.
+- Nếu target rất ngắn/trùng lặp, một vài round đầu có thể ra gợi ý tương tự nhau trước khi pool xoay hết.
+
+---
+
 ## FIX — macOS/Linux Compatibility (v0.21.1)
 
 ### Nguyên nhân gốc
