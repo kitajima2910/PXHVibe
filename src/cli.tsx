@@ -3,12 +3,11 @@ import React from 'react';
 import {render} from 'ink';
 import {App} from './app.js';
 import {createProvider, parseModelName, parseProviderName} from './providers/createProvider.js';
-import {enterTerminalScreen, setTerminalTitle} from './utils/terminalTitle.js';
+import {enterTerminalScreen} from './utils/terminalTitle.js';
 import {appVersion} from './version.js';
 import {formatCommandList} from './runtime/commands.js';
 
 try {
-  setTerminalTitle('PXHVibe');
   const args = process.argv.slice(2);
   if (args.includes('--version') || args.includes('-v')) {
     console.log(`PXHVibe v${appVersion}`);
@@ -22,7 +21,7 @@ try {
     providerName,
     providerName === 'free' ? parseModelName(args) : undefined,
   );
-  const terminalScreen = enterTerminalScreen();
+  const terminalScreen = enterTerminalScreen('PXHVibe');
   const instance = render(<App provider={provider} />, {
     kittyKeyboard: {mode: 'enabled', flags: ['disambiguateEscapeCodes']},
     // Ink's built-in Ctrl+C handler only recognizes the legacy byte. Let the

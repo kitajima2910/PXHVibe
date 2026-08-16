@@ -1,6 +1,30 @@
 # STATUS
 
-## UI — Đổi tông màu chính sang PINK
+## FIX — Terminal window title hiển thị "PXHVibe" khi chạy TUI
+
+### Nguyên nhân gốc
+- `setTerminalTitle('PXHVibe')` được gọi TRƯỚC `enterTerminalScreen()` — tức là trước khi terminal vào alternate screen mode.
+- Trên nhiều terminal (đặc biệt Windows Terminal, cmd, PowerShell), escape sequence set title chỉ hoạt động khi terminal đã ở alternate screen.
+- Kết quả: title không được set, terminal vẫn hiển thị "node", "cmd", hoặc "powershell".
+
+### Đã thay đổi
+- **terminalTitle.ts**: Tích hợp `setTerminalTitle()` vào `enterTerminalScreen()` — title được set NGAY SAU khi terminal vào alternate screen, đảm bảo escape sequence hoạt động trên mọi terminal.
+- **cli.tsx**: Bỏ `setTerminalTitle('PXHVibe')` riêng lẻ, truyền title vào `enterTerminalScreen('PXHVibe')`.
+- **terminalTitle.test.ts**: Cập nhật test assertion để kiểm tra title escape sequence trong output của `enterTerminalScreen()`.
+
+### File đã sửa
+- `src/utils/terminalTitle.ts`
+- `src/cli.tsx`
+- `src/tests/terminalTitle.test.ts`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+
 
 ### Nguyên nhân gốc
 - TUI đang dùng tông màu green/cyan làm chủ đạo, cần đổi sang tông PINK (magenta) cho đẹp và nổi bật hơn.

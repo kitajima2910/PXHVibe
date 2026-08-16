@@ -15,9 +15,13 @@ export interface TerminalScreen {
   restore(): void;
 }
 
-export function enterTerminalScreen(output: TerminalTitleOutput = process.stdout): TerminalScreen {
+export function enterTerminalScreen(
+  title: string = 'PXHVibe',
+  output: TerminalTitleOutput = process.stdout,
+): TerminalScreen {
   if (output.isTTY !== true) return {restore() {}};
   output.write('\u001B[?1049h\u001B[?25l\u001B[?1000h\u001B[?1002h\u001B[?1006h\u001B[2J\u001B[H');
+  setTerminalTitle(title, output);
   let active = true;
   const restore = (): void => {
     if (!active) return;
