@@ -267,7 +267,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         <Box>
         <Text bold color="cyan">❯ </Text>
         {isBusy ? (
-          <Text color={isVeryStalled ? 'red' : 'yellow'}>{cancelArmed ? 'Nhấn ESC lần nữa để dừng lượt chạy.' : `${processingFrames[spinnerIndex]} ${activityLabel ?? 'Đang khởi động worker...'}`}</Text>
+          <Text color={isVeryStalled ? 'red' : 'yellow'}>{cancelArmed ? 'Nhấn ESC lần nữa để dừng lượt chạy.' : `${processingFrames[spinnerIndex]} ${activityLabel ?? 'Đang khởi động worker...'}${busyStartedAt !== undefined ? ` · ${formatElapsed((clockNow - busyStartedAt) / 1000)}` : ''}`}</Text>
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (

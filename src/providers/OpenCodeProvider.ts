@@ -285,7 +285,7 @@ export function parseOpenCodeEvent(line: string, currentStepCount = 0): ParsedRu
       return {
         events: [{
           type: 'activity',
-          content: stepCount === 1 ? 'Đang phân tích yêu cầu...' : 'Đang tiếp tục xử lý...',
+          content: stepCount === 1 ? 'Đang phân tích yêu cầu...' : `Đang xử lý bước ${stepCount}...`,
         }],
         text: '',
         fallbackText: '',

@@ -1,5 +1,29 @@
 # STATUS
 
+## UX — Cải thiện hiển thị trạng thái khi agent xử lý lâu
+
+### Nguyên nhân gốc
+- Khi chạy "PXH Bug Hunter" hoặc các agent khác, TUI chỉ hiển thị "Đang tiếp tục xử lý..." mà không có thông tin chi tiết về tiến trình hoặc thời gian đã trôi qua.
+- Người dùng không biết agent đang ở bước nào, đã chạy bao lâu, hay bị stuck.
+
+### Đã thay đổi
+- **PromptInput.tsx**: Thêm elapsed time vào activity label — hiển thị dạng `⠙ Đang xử lý bước 3... · 01:23` để người dùng biết chính xác thời gian chờ.
+- **OpenCodeProvider.ts**: Thay "Đang tiếp tục xử lý..." bằng `Đang xử lý bước N...` (với N là step count) — cho biết agent đang ở bước nào trong quá trình xử lý.
+
+### File đã sửa
+- `src/components/PromptInput.tsx` (line 270)
+- `src/providers/OpenCodeProvider.ts` (line 288)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Tool execution vẫn chạy tuần tự (không song song) để tránh race condition khi nhiều tool cùng sửa file — đây là thiết kế đúng, không phải bug.
+- Với task phức tạp, agent có thể chạy 10-20 bước, mỗi bước 10-30 giây → tổng thời gian 2-10 phút là bình thường.
+
+
+
 ## UI — Thiết kế lại TUI đẹp hơn và hiện đại hơn
 
 ### Nguyên nhân gốc
