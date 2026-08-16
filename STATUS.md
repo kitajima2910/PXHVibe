@@ -25,6 +25,23 @@
 
 ---
 
+## REMOVE — Bỏ label "Gợi ý tiếp theo (click hoặc gõ 1/2/3)"
+
+### Nguyên nhân gốc
+- TARGET yêu cầu bỏ dòng tiêu đề `💡 Gợi ý tiếp theo (click hoặc gõ 1/2/3):` ở đầu SuggestionStrip. Các gợi ý vẫn hiển thị bình thường, chỉ bỏ phần label.
+
+### Đã thay đổi
+- `src/components/SuggestionStrip.tsx`: xóa `<Text bold color="magenta">💡 Gợi ý tiếp theo (click hoặc gõ 1/2/3):</Text>` khỏi JSX. Giữ nguyên danh sách 3 gợi ý (click/1/2/3 vẫn hoạt động).
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+---
+
 ## RELEASE — v0.22.2 (sync version docs với package.json)
 
 ### Nguyên nhân gốc

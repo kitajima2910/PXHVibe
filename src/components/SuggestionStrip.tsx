@@ -70,7 +70,6 @@ export function SuggestionStrip({suggestions, onSelect}: SuggestionStripProps): 
 
   return (
     <Box flexDirection="column" marginTop={1} marginBottom={1}>
-      <Text bold color="magenta">💡 Gợi ý tiếp theo (click hoặc gõ 1/2/3):</Text>
       <Box flexDirection="column" marginTop={1}>
         {suggestions.map((suggestion, index) => (
           <Box
