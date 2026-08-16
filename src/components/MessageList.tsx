@@ -129,7 +129,7 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
     const color = getSystemMessageColor(message);
     const isError = message.tone === 'error';
     return (
-      <Box paddingX={1} flexShrink={0}>
+      <Box paddingLeft={2} marginTop={1} marginBottom={1} flexShrink={0}>
         <Box gap={1}>
           <Text bold color={isError ? 'red' : 'cyan'}>{isError ? '✖' : '↳'}</Text>
           <Text bold={isError} color={color}>{message.content}</Text>
@@ -142,26 +142,27 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
   return (
     <Box
       flexDirection="column"
-      borderStyle="round"
-      borderColor={isUser ? 'yellow' : 'green'}
-      paddingX={1}
       marginTop={1}
+      marginBottom={1}
       flexShrink={0}
     >
-      <Box gap={2}>
-        <Text bold inverse color={isUser ? 'yellow' : 'green'}>
-          {' '}{isUser ? 'YOU' : 'PXH'}{' '}
-        </Text>
+      <Box gap={1}>
+        <Text bold color={isUser ? 'yellow' : 'green'}>●</Text>
+        <Text bold color={isUser ? 'yellow' : 'green'}>{isUser ? 'YOU' : 'PXH'}</Text>
         <Text dimColor>{isUser ? 'target' : 'response'}</Text>
         <Text dimColor>·</Text>
         <Text dimColor>{formatTime(message.createdAt)}</Text>
       </Box>
       {message.attachments !== undefined && message.attachments.length > 0 && (
-        <Box>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>
+        <Box paddingLeft={2}>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>
       )}
-      <FormattedText content={message.content} accent={isUser ? 'yellow' : 'green'} />
+      <Box paddingLeft={2}>
+        <FormattedText content={message.content} accent={isUser ? 'yellow' : 'green'} />
+      </Box>
       {message.diff !== undefined && message.diff.length > 0 && (
-        <DiffView content={message.diff} />
+        <Box paddingLeft={2}>
+          <DiffView content={message.diff} />
+        </Box>
       )}
     </Box>
   );

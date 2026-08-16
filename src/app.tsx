@@ -858,8 +858,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         providerName={currentProvider.name}
         agentLabel={activeAgent.label}
         status={status}
-        contextPercent={contextUsage.percent}
-        contextCompacted={contextUsage.compacted}
       />
       <Box flexDirection="row" flexBasis={0} flexGrow={1} minHeight={0}>
         <Box flexDirection="column" flexBasis={0} flexGrow={4} minWidth={0}>

@@ -1,6 +1,53 @@
 # STATUS
 
-## UX — Cải thiện hiển thị trạng thái khi agent xử lý lâu
+## UI — Bỏ context bar khỏi Header
+
+### Nguyên nhân gốc
+- Header hiển thị context bar `██████░░░░ 45%` chiếm không gian ngang nhưng không có giá trị UX.
+- Auto-compact tự động quản lý context, user không cần theo dõi % thủ công.
+- `/context` command đã hiển thị chi tiết khi cần.
+
+### Đã thay đổi
+- **Header.tsx**: Xóa props `contextPercent`, `contextCompacted`, xóa `renderContextBar()`, xóa context bar + separator `│` khỏi layout. Header giờ chỉ hiển thị: Status · Provider · Agent · WorkingDirectory.
+- **app.tsx**: Xóa 2 props `contextPercent` và `contextCompacted` truyền vào `<Header>`.
+- **slashCommands.test.ts**: Xóa assertion kiểm tra `0%` trong rendered output.
+
+### File đã sửa
+- `src/components/Header.tsx`
+- `src/app.tsx`
+- `src/tests/slashCommands.test.ts`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+
+
+### Nguyên nhân gốc
+- Message output dùng border round tạo khung bao quanh từng message, chiếm nhiều không gian ngang và tạo cảm giác "nặng".
+- Cần giao diện timeline gọn hơn, thoáng hơn, dễ quét nội dung.
+
+### Đã thay đổi
+- **MessageList.tsx**: Bỏ `borderStyle="round"` và `borderColor` khỏi message cards. Thay bằng timeline style:
+  - User/Assistant messages: dấu `●` (yellow/green) + label `YOU`/`PXH` + metadata + content indent `paddingLeft={2}`.
+  - System messages: indent `paddingLeft={2}` với icon `✖`/`↳`.
+  - Khoảng cách `marginTop={1}` và `marginBottom={1}` tạo spacing đều giữa các message.
+  - Attachments và DiffView cũng indent theo content.
+
+### File đã sửa
+- `src/components/MessageList.tsx` (lines 127-168)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+
 
 ### Nguyên nhân gốc
 - Khi chạy "PXH Bug Hunter" hoặc các agent khác, TUI chỉ hiển thị "Đang tiếp tục xử lý..." mà không có thông tin chi tiết về tiến trình hoặc thời gian đã trôi qua.
