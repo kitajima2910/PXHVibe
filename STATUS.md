@@ -1,5 +1,80 @@
 # STATUS
 
+## v0.20.0 — MCP OAuth + Input History + UI Improvements
+
+### Nguyên nhân gốc
+- Cần hỗ trợ MCP OAuth protocol để tự động authorize với remote MCP servers (Neon, etc.)
+- Cần input history navigation (Up/Down arrow) như các TUI CLI hiện đại
+- Cần cải thiện UI/UX: font Montserrat cho OAuth page, UTF-8 encoding fix
+
+### Đã thay đổi
+
+**MCP OAuth Protocol:**
+- **OAuthProvider.ts**: Tạo OAuth client provider cho PXHVibe
+  - Implement `OAuthClientProvider` interface từ MCP SDK
+  - Tự động mở browser khi cần authorization
+  - Lưu tokens vào `~/.pxhvibe/oauth-tokens.json`
+  - Lưu client information vào `~/.pxhvibe/oauth-client.json`
+  - Hỗ trợ refresh tokens
+  - Callback server trên localhost (port 8090-8190)
+- **MCPManager.ts**: Tích hợp OAuth flow
+  - Tự động detect khi remote server cần OAuth (không có Authorization header)
+  - Xử lý `UnauthorizedError` và thực hiện OAuth flow
+  - Reconnect sau khi có tokens
+- **UTF-8 fix**: Thêm `; charset=utf-8` vào Content-Type header cho OAuth callback page
+
+**Input History Navigation:**
+- **PromptInput.tsx**: Thêm input history navigation
+  - Nhấn Up/Down arrow để navigate qua các input trước đó
+  - Tự động lưu input khi submit (tránh duplicate)
+  - Vẫn hỗ trợ di chuyển cursor trong multi-line input
+
+**UI Improvements:**
+- **OAuth page**: Thêm Google Fonts Montserrat, thiết kế lại với gradient background
+- **Banner**: ASCII art "PXHVibe" với gradient magenta→cyan
+- **Theme**: Đổi tông màu chính sang PINK (magenta)
+- **Terminal title**: Set title "PXHVibe" khi vào alternate screen
+- **Messages**: Timeline style thay vì border khung
+
+**Other Features:**
+- Terminal bell notification khi pipeline hoàn tất
+- Elapsed time hiển thị trong activity label
+
+### File đã sửa
+- `src/mcp/OAuthProvider.ts` (tạo mới)
+- `src/mcp/MCPManager.ts`
+- `src/components/PromptInput.tsx`
+- `src/components/Banner.tsx`
+- `src/components/Header.tsx`
+- `src/components/TodoStrip.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/MessageList.tsx`
+- `src/components/Footer.tsx`
+- `src/components/FormattedText.tsx`
+- `src/components/ModePicker.tsx`
+- `src/components/AgentPicker.tsx`
+- `src/components/CatalogPicker.tsx`
+- `src/components/DiffView.tsx`
+- `src/components/CustomApiSetup.tsx`
+- `src/utils/terminalTitle.ts`
+- `src/cli.tsx`
+- `src/app.tsx`
+- `package.json` (bump version 0.19.0 → 0.20.0)
+- `package-lock.json`
+- `README.md` (thêm hướng dẫn MCP OAuth)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- `npm run release:check` → pass ✓
+- OAuth flow test với Neon MCP: ✅ 35 tools connected
+- Filesystem MCP: ✅ 14 tools connected
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại
+
+---
+
 ## FEATURE — Input History Navigation (Up/Down Arrow)
 
 ### Nguyên nhân gốc

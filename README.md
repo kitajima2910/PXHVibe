@@ -11,7 +11,7 @@ pipeline nhiều phase, giao cho các specialist phù hợp, lưu checkpoint và
 tiếp trong terminal. Bạn có thể dùng Free mode đi kèm hoặc kết nối Custom API hỗ trợ OpenAI,
 Anthropic và Google Gemini, đồng thời mở rộng khả năng bằng MCP, skills, agents và workflows của project.
 
-Bản phát hành hiện tại: **v0.19.0**.
+Bản phát hành hiện tại: **v0.20.0**.
 
 ## Điểm nổi bật
 
@@ -100,6 +100,39 @@ Tạo `.pxhvibe/mcp.json` trong project:
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
     },
+    "neon": {
+      "type": "remote",
+      "url": "https://mcp.neon.tech/mcp"
+    }
+  }
+}
+```
+
+### Kết nối MCP Server
+
+**Local MCP Server (stdio):**
+
+```json
+{
+  "servers": {
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."],
+      "environment": {
+        "CUSTOM_VAR": "value"
+      },
+      "cwd": "./subdir",
+      "timeout": 30000
+    }
+  }
+}
+```
+
+**Remote MCP Server với API Key:**
+
+```json
+{
+  "servers": {
     "remote-api": {
       "type": "remote",
       "url": "https://example.com/mcp",
@@ -112,20 +145,49 @@ Tạo `.pxhvibe/mcp.json` trong project:
 }
 ```
 
-Local server hỗ trợ `command`, `environment`, `cwd`, `timeout`; remote server hỗ trợ `url`,
-`headers`, `timeout`. Mọi server có thể đặt `disabled: true`. Dùng `{env:TEN_BIEN}` để lấy secret
-từ environment thay vì lưu token trong repository.
+**Remote MCP Server với OAuth (tự động mở browser):**
 
-- `/mcp`: xem trạng thái và số tool đã discover.
-- `/mcp refresh`: nạp lại cấu hình.
-- `/mcp doctor`: handshake và kiểm tra tất cả server.
+PXHVibe hỗ trợ OAuth flow tự động cho remote MCP servers. Khi server yêu cầu authentication, browser sẽ tự động mở để bạn authorize:
 
-Custom API chuyển MCP tools thành function tools trong native agent runtime. Free mode bridge cùng
-cấu hình sang OpenCode. Remote header/token đã được hỗ trợ; PXHVibe chưa tự mở browser/callback cho
-OAuth tương tác.
+```json
+{
+  "servers": {
+    "neon": {
+      "type": "remote",
+      "url": "https://mcp.neon.tech/mcp"
+    }
+  }
+}
+```
 
-> Chỉ chạy MCP config từ project bạn tin cậy. Local MCP server là process thật chạy với quyền của
-> tài khoản hiện tại.
+Khi chạy PXHVibe lần đầu, browser sẽ mở trang authorization của Neon. Sau khi authorize, tokens được lưu vào `~/.pxhvibe/oauth-tokens.json` và tự động refresh khi hết hạn.
+
+### Cấu hình MCP
+
+Local server hỗ trợ:
+- `command`: Mảng command và arguments
+- `environment`: Biến môi trường cho server process
+- `cwd`: Working directory cho server
+- `timeout`: Timeout cho operations (ms)
+
+Remote server hỗ trợ:
+- `url`: URL của MCP server
+- `headers`: HTTP headers (dùng `{env:TEN_BIEN}` để lấy secret từ environment)
+- `timeout`: Timeout cho operations (ms)
+
+Mọi server có thể đặt `disabled: true` để tắt.
+
+### Lệnh MCP trong TUI
+
+- `/mcp`: xem trạng thái và số tool đã discover
+- `/mcp refresh`: nạp lại cấu hình và reconnect
+- `/mcp doctor`: handshake và kiểm tra sức khỏe tất cả server
+
+### Bảo mật MCP
+
+> **Chỉ chạy MCP config từ project bạn tin cậy.** Local MCP server là process thật chạy với quyền của tài khoản hiện tại. Remote server có thể truy cập API của bạn.
+
+Custom API chuyển MCP tools thành function tools trong native agent runtime. Free mode bridge cùng cấu hình sang OpenCode. OAuth tokens được lưu an toàn trong `~/.pxhvibe/` và tự động refresh.
 
 ## Lệnh trong TUI
 
