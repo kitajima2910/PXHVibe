@@ -33,6 +33,9 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   const [spinnerIndex, setSpinnerIndex] = useState(0);
   const [cancelArmed, setCancelArmed] = useState(false);
   const [clockNow, setClockNow] = useState(Date.now());
+  const [inputHistory, setInputHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [currentInput, setCurrentInput] = useState('');
   const {exit} = useApp();
   const {stdout} = useStdout();
   const editorRef = useRef<DOMElement>(null);
@@ -59,6 +62,14 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
     setCancelArmed(false);
     if (cancelTimerRef.current !== undefined) clearTimeout(cancelTimerRef.current);
   }, [isBusy]);
+
+  // Reset history navigation when user starts typing
+  useEffect(() => {
+    if (historyIndex !== -1 && value !== inputHistory[historyIndex]) {
+      setHistoryIndex(-1);
+      setCurrentInput('');
+    }
+  }, [value, historyIndex, inputHistory]);
 
   useEffect(() => () => {
     if (cancelTimerRef.current !== undefined) clearTimeout(cancelTimerRef.current);
@@ -150,6 +161,12 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         onSubmit(editablePrompt, shouldPreserveDraft
           ? {value: '', cursorIndex: 0, pastedBlocks: [...pastedBlocks]}
           : undefined);
+        // Save to history if not empty and not a duplicate
+        if (editablePrompt.length > 0 && inputHistory[inputHistory.length - 1] !== editablePrompt) {
+          setInputHistory((prev) => [...prev, editablePrompt]);
+        }
+        setHistoryIndex(-1);
+        setCurrentInput('');
         setValue('');
         setCursorIndex(0);
         if (!shouldPreserveDraft) setPastedBlocks([]);
@@ -158,6 +175,12 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
       const prompt = composePromptInput(editablePrompt, pastedBlocks);
       if (prompt.length > 0) {
         onSubmit(prompt);
+        // Save to history if not a duplicate
+        if (inputHistory[inputHistory.length - 1] !== editablePrompt) {
+          setInputHistory((prev) => [...prev, editablePrompt]);
+        }
+        setHistoryIndex(-1);
+        setCurrentInput('');
         setValue('');
         setCursorIndex(0);
         setPastedBlocks([]);
@@ -186,6 +209,44 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
     }
 
     if (key.upArrow || key.downArrow) {
+      // Check if cursor is at first or last line for history navigation
+      const isFirstLine = cursorIndex <= (inputViewport.lines[0]?.end ?? 0);
+      const isLastLine = cursorIndex >= (inputViewport.lines[inputViewport.lines.length - 1]?.start ?? value.length);
+      
+      // Navigate history if at first/last line and history exists
+      if (key.upArrow && isFirstLine && inputHistory.length > 0) {
+        const newIndex = historyIndex === -1 ? inputHistory.length - 1 : Math.max(0, historyIndex - 1);
+        if (newIndex !== historyIndex) {
+          // Save current input before navigating
+          if (historyIndex === -1 && value.trim().length > 0) {
+            setCurrentInput(value);
+          }
+          setHistoryIndex(newIndex);
+          const historyValue = inputHistory[newIndex] ?? '';
+          setValue(historyValue);
+          setCursorIndex(historyValue.length);
+        }
+        return;
+      }
+      
+      if (key.downArrow && isLastLine && historyIndex !== -1) {
+        const newIndex = historyIndex + 1;
+        if (newIndex < inputHistory.length) {
+          setHistoryIndex(newIndex);
+          const historyValue = inputHistory[newIndex] ?? '';
+          setValue(historyValue);
+          setCursorIndex(historyValue.length);
+        } else {
+          // Restore current input
+          setHistoryIndex(-1);
+          setValue(currentInput);
+          setCursorIndex(currentInput.length);
+          setCurrentInput('');
+        }
+        return;
+      }
+      
+      // Otherwise, move cursor vertically
       setCursorIndex((current) => moveCursorVertically(
         current,
         value.length,

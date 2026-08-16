@@ -1,6 +1,39 @@
 # STATUS
 
-## FEATURE — MCP OAuth Protocol Implementation
+## FEATURE — Input History Navigation (Up/Down Arrow)
+
+### Nguyên nhân gốc
+- TUI CLI hiện đại (bash, zsh, etc.) hỗ trợ nhấn Up arrow để recall input trước đó
+- PXHVibe chưa có tính năng này, user phải gõ lại hoặc copy/paste
+
+### Đã thay đổi
+- **PromptInput.tsx**: Thêm input history navigation
+  - Thêm state `inputHistory` để lưu các input đã submit
+  - Thêm state `historyIndex` để track vị trí hiện tại trong history
+  - Thêm state `currentInput` để lưu input đang edit (trước khi navigate)
+  - Khi nhấn **Up arrow** ở dòng đầu tiên → load previous input từ history
+  - Khi nhấn **Down arrow** ở dòng cuối cùng → load next input từ history
+  - Khi submit → lưu input vào history (tránh duplicate)
+  - Khi bắt đầu edit → reset history navigation
+  - Vẫn hỗ trợ di chuyển cursor lên/xuống trong multi-line input
+
+### Cách hoạt động
+1. Gõ input và nhấn Enter → input được lưu vào history
+2. Nhấn Up arrow → hiện input trước đó
+3. Nhấn Down arrow → hiện input sau đó (hoặc restore input đang edit)
+4. Nếu bắt đầu edit input từ history → tự động thoát history mode
+5. History không persist giữa sessions (chỉ trong memory)
+
+### Kết quả kiểm tra
+- `npm run build` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- Tính năng hoạt động như các TUI CLI hiện đại
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại
+- History chỉ lưu trong memory, không persist giữa sessions (có thể thêm sau nếu cần)
+
+
 
 ### Nguyên nhân gốc
 - MCP remote servers (như Neon MCP) yêu cầu OAuth authentication
