@@ -14,7 +14,7 @@
 - `npm install --include=dev` → `added 4 packages, audited 155 packages, 0 vulnerabilities`.
 - `npm run typecheck` → exit 0 ✓ (tsc pass).
 - `npm run build` → exit 0 ✓ (dist được build đầy đủ).
-- `node dist/cli.js --version` → `PXHVibe v0.22.2` ✓.
+- `node dist/cli.js --version` → `PXHVibe v0.22.5` ✓.
 - `node dist/cli.js --help` → liệt kê đủ 4 nhóm slash command ✓.
 - `npm test` → toàn bộ **24/24 test groups pass** (mcp, free, agent, router, orchestration, pipeline, team, runtime-commands, format, title, modes, custom, providers, commands, branding, image, viewport, todo, picker, catalog-picker, streaming, chat-completions, diff-view) ✓.
 - `npm run dev` → build xong + TUI khởi động, process exit 0 (Ink thoát sạch khi stdout không phải TTY — hành vi bình thường khi chạy tự động, không phải lỗi) ✓.
