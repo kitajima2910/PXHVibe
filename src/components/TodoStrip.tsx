@@ -16,11 +16,16 @@ export interface TodoItem {
 
 export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[]; mcpServers?: readonly MCPServerStatus[]}): React.JSX.Element {
   const completed = tasks.filter((task) => task.status === 'pass').length;
+  const total = tasks.length;
+  const progressBar = renderProgressBar(completed, total);
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
+    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
       <Box justifyContent="space-between">
-        <Text bold color="cyan">TASKS</Text>
-        <Text color="gray">{completed}/{tasks.length} ✓</Text>
+        <Text bold color="cyan">◆ PIPELINE</Text>
+        <Text color="gray">{completed}/{total}</Text>
+      </Box>
+      <Box marginBottom={1}>
+        <Text color="cyan">{progressBar}</Text>
       </Box>
       <Box flexDirection="column">
         {tasks.length === 0 && <Text dimColor>○ Chưa có pipeline</Text>}
@@ -30,25 +35,33 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
               {todoSymbol(task.status)} {task.label}
             </Text>
             {task.status !== 'pass' && task.agentLabel !== undefined && (
-              <Text dimColor>  {task.agentLabel}{task.attempt === undefined ? '' : ` · lần ${task.attempt}`}</Text>
+              <Text dimColor>  ↳ {task.agentLabel}{task.attempt === undefined ? '' : ` · #${task.attempt}`}</Text>
             )}
             {task.status === 'running' && task.detail !== undefined && (
-              <Text color="cyan">  ↳ {compactTodoDetail(task.detail)}</Text>
+              <Text color="yellow">  ⸻ {compactTodoDetail(task.detail)}</Text>
             )}
           </Box>
         ))}
       </Box>
       <Box flexDirection="column" marginTop={1}>
-        <Text bold color="cyan">MCP</Text>
+        <Text bold color="cyan">◆ MCP</Text>
         {mcpServers.length === 0 && <Text dimColor>○ Chưa cấu hình</Text>}
         {mcpServers.map((server) => (
           <Text key={server.name} color={server.state === 'connected' ? 'green' : server.state === 'error' ? 'red' : 'gray'}>
-            {mcpStatusSymbol(server.state)} {server.name}{server.toolCount === undefined ? '' : ` · ${server.toolCount}`}
+            {mcpStatusSymbol(server.state)} {server.name}{server.toolCount === undefined ? '' : ` · ${server.toolCount} tools`}
           </Text>
         ))}
       </Box>
     </Box>
   );
+}
+
+function renderProgressBar(completed: number, total: number): string {
+  if (total === 0) return '░░░░░░░░░░';
+  const width = 10;
+  const filled = Math.round((completed / total) * width);
+  const empty = width - filled;
+  return '█'.repeat(filled) + '░'.repeat(empty);
 }
 
 export function phaseTodoLabel(phase: TaskPhase, workflow: string): string {

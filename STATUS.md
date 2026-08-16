@@ -1,5 +1,44 @@
 # STATUS
 
+## UI — Nâng cấp layout TUI xịn và đẹp hơn
+
+### Nguyên nhân gốc
+- TUI mặc định functional nhưng thiếu visual polish: Banner đơn giản, Header dùng `inverse` blocks thô, TodoStrip không có progress bar, Footer dùng dấu `·` phân cách.
+- Cần cải thiện visual hierarchy, consistency và modern feel cho toàn bộ TUI.
+
+### Đã thay đổi
+
+- **Banner.tsx**: Thiết kế lại dạng box frame `╔══╗ ║ ╚══╝` với `inverse green` cho title, version nằm cùng dòng title, `gray` cho subtitle.
+- **Header.tsx**: 
+  - Status icon mới: `● READY` (green), `◆ WORKING` (yellow), `✖ ERROR` (red).
+  - Thêm `renderContextBar()` — thanh progress `████░░░░░░` 10 blocks hiển thị context usage trực quan.
+  - Context color: `green <70%`, `yellow 70-89%`, `red ≥90%` (sửa từ logic cũ `gray` cho cả 2 branch).
+  - Dùng `│` (box drawing) làm separator thay vì `|` thô.
+  - `Agent:` label thay vì `Agent ·` cho consistency.
+- **TodoStrip.tsx**:
+  - Border `cyan` thay vì `gray` cho nổi bật.
+  - Header `◆ PIPELINE` thay vì `TASKS`.
+  - Thêm progress bar `renderProgressBar()` — `█████░░░░░`直观显示 pipeline progress.
+  - Task detail dùng `⸻` (em dash) thay vì `↳` cho cleaner look.
+  - Attempt format `#2` thay vì `lần 2`.
+  - MCP section thêm `tools` suffix.
+- **Footer.tsx**: Dùng `│` separator, English labels (`send`, `newline`, `stop`, `image`, `exit`), `cyan` color cho shortcuts.
+
+### File đã sửa
+- `src/components/Banner.tsx`
+- `src/components/Header.tsx`
+- `src/components/TodoStrip.tsx`
+- `src/components/Footer.tsx`
+- `src/tests/slashCommands.test.ts` (cập nhật assertions cho format mới)
+- `src/tests/todoStrip.test.ts` (cập nhật assertions cho format mới)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
 ## REMOVE — Tính năng hiển thị "Không có sự kiện mới" khi chờ model/runtime
 
 ### Nguyên nhân gốc

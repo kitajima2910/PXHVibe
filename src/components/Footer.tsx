@@ -5,7 +5,15 @@ export function Footer(): React.JSX.Element {
   return (
     <Box paddingX={1} justifyContent="center" marginTop={0}>
       <Text dimColor>
-        <Text color="green">Enter</Text> gửi  ·  <Text color="green">Shift+Enter</Text> xuống dòng  ·  <Text color="green">Esc×2</Text> dừng lượt  ·  <Text color="green">Alt+V</Text> ảnh  ·  <Text color="green">Ctrl+C</Text> thoát
+        <Text color="cyan">Enter</Text> send{' '}
+        <Text dimColor>│</Text>{' '}
+        <Text color="cyan">Shift+Enter</Text> newline{' '}
+        <Text dimColor>│</Text>{' '}
+        <Text color="cyan">Esc×2</Text> stop{' '}
+        <Text dimColor>│</Text>{' '}
+        <Text color="cyan">Alt+V</Text> image{' '}
+        <Text dimColor>│</Text>{' '}
+        <Text color="cyan">Ctrl+C</Text> exit
       </Text>
     </Box>
   );

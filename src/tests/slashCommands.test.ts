@@ -104,7 +104,7 @@ const instance = render(React.createElement(App, {
 
 await wait(50);
 assert.ok(stripAnsi(rendered).includes(`PXHVibe v${appVersion}`));
-assert.ok(stripAnsi(rendered).includes('CTX 0%'));
+assert.ok(stripAnsi(rendered).includes('0%'));
 await typeText('/status');
 input.write('\r');
 await wait(80);
@@ -235,7 +235,7 @@ await wait(80);
 assert.ok(stripAnsi(rendered).includes('CONTEXT ·'));
 assert.ok(stripAnsi(rendered).includes('Bộ nhớ'));
 const frameHistory = stripAnsi(rendered);
-assert.ok(frameHistory.includes('Agent · PXH PM (Auto)'));
+assert.ok(frameHistory.includes('Agent: PXH PM (Auto)'));
 assert.ok(!frameHistory.includes('BUILD / PXH Bug Hunter'));
 assert.ok(!frameHistory.includes('YOU  /  TARGET'));
 assert.ok(!frameHistory.includes('PXHVIBE  /  OUTPUT'));
