@@ -3,9 +3,11 @@ import type {ResponseInput, FunctionTool} from 'openai/resources/responses/respo
 import type {ModelProvider, ModelRequest} from './ModelProvider.js';
 import type {AgentModelTurn} from './types.js';
 import {readFile} from 'node:fs/promises';
+import {getRateLimiter} from '../utils/rateLimiter.js';
 
 export class OpenAIModelProvider implements ModelProvider {
   private readonly client: OpenAI;
+  private readonly rateLimiter = getRateLimiter('openai');
 
   constructor(
     private readonly model: string,
@@ -53,15 +55,19 @@ export class OpenAIModelProvider implements ModelProvider {
       strict: true,
     }));
 
-    const stream = this.client.responses.stream(
-      {
-        model: this.model,
-        instructions: request.instructions,
-        input,
-        tools,
-      },
-      {signal: request.signal},
+    // Use rate limiter for API calls
+    const stream = await this.rateLimiter.executeWithLimit(() => 
+      Promise.resolve(this.client.responses.stream(
+        {
+          model: this.model,
+          instructions: request.instructions,
+          input,
+          tools,
+        },
+        {signal: request.signal},
+      ))
     );
+    
     stream.on('response.output_text.delta', (event) => {
       request.onTextDelta(event.delta);
     });

@@ -1,4 +1,7 @@
+import {countTokens} from '../utils/tokenCounter.js';
+
 export const conversationContextCharacterBudget = 24_000;
+export const conversationContextTokenBudget = 8_000; // ~8k tokens tương đương ~24k chars
 
 export interface ContextMessage {
   id: string;
@@ -11,19 +14,27 @@ export interface ContextUsage {
   sourceCharacters: number;
   activeCharacters: number;
   estimatedTokens: number;
+  actualTokens: number;
   percent: number;
   compacted: boolean;
 }
 
 export function getContextUsage(messages: readonly ContextMessage[]): ContextUsage {
-  const sourceCharacters = conversationTurns(messages).reduce((sum, turn) => sum + turn.length, 0);
+  const turns = conversationTurns(messages);
+  const sourceCharacters = turns.reduce((sum, turn) => sum + turn.length, 0);
   const activeCharacters = Math.min(sourceCharacters, conversationContextCharacterBudget);
+  
+  // Sử dụng token counter thực tế
+  const actualTokens = turns.reduce((sum, turn) => sum + countTokens(turn), 0);
+  const estimatedTokens = Math.ceil(activeCharacters / 4); // Giữ lại cho backward compatibility
+  
   return {
     sourceCharacters,
     activeCharacters,
-    estimatedTokens: Math.ceil(activeCharacters / 4),
+    estimatedTokens,
+    actualTokens,
     percent: Math.min(100, Math.round(activeCharacters / conversationContextCharacterBudget * 100)),
-    compacted: sourceCharacters > conversationContextCharacterBudget,
+    compacted: sourceCharacters > conversationContextCharacterBudget || actualTokens > conversationContextTokenBudget,
   };
 }
 

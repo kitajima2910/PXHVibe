@@ -1,5 +1,6 @@
 import type {ModelProvider} from './ModelProvider.js';
 import type {AgentEvent, AgentImage, AgentInput, AgentTool} from './types.js';
+import {globalToolCache} from '../utils/toolCache.js';
 
 const instructions = `You are PXHVibe, a coding agent working in the user's current project.
 Use the available tools to inspect and edit the project before answering.
@@ -19,6 +20,7 @@ OUTPUT FORMAT:
 
 export class AgentRuntime {
   private tools: readonly AgentTool[];
+  private toolCache = globalToolCache;
 
   constructor(
     private readonly model: ModelProvider,
@@ -129,9 +131,30 @@ export class AgentRuntime {
         onEvent({type: 'tool_start', toolName: tool.name});
         let output: string;
         try {
-          output = await tool.execute(parseArguments(call.arguments), cwd);
-          if (tool.name === 'apply_patch' && (output.startsWith('Đã tạo') || output.startsWith('Đã cập nhật'))) {
-            appliedChanges += 1;
+          const args = parseArguments(call.arguments);
+          
+          // Try cache first for read-only tools
+          const cached = isReadOnlyTool(tool.name) 
+            ? this.toolCache.get(tool.name, args)
+            : undefined;
+          
+          if (cached !== undefined) {
+            output = cached;
+            onEvent({type: 'tool_complete', toolName: tool.name, summary: '(cached)'});
+          } else {
+            output = await tool.execute(args, cwd);
+            
+            // Cache result for read-only tools
+            if (isReadOnlyTool(tool.name)) {
+              this.toolCache.set(tool.name, args, output);
+            }
+            
+            if (tool.name === 'apply_patch' && (output.startsWith('Đã tạo') || output.startsWith('Đã cập nhật'))) {
+              appliedChanges += 1;
+              // Invalidate cache for modified files
+              this.toolCache.invalidateTool('read_file');
+              this.toolCache.invalidateTool('list_files');
+            }
           }
         } catch (error: unknown) {
           output = `Lỗi: ${error instanceof Error ? error.message : 'Không xác định'}`;

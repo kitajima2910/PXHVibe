@@ -1,5 +1,56 @@
 # STATUS
 
+## FEATURE — Token Optimization Suite (v0.21.0)
+
+### Nguyên nhân gốc
+- PXHVibe cần tối ưu tokens/quota/request để giảm chi phí và tăng hiệu suất
+- Các vấn đề: token counting không chính xác, không cache tool results, không rate limiting, không batch requests
+
+### Đã thay đổi
+
+**1. Token Counting Thực Tế** (`src/utils/tokenCounter.ts`)
+- Thay thế ước lượng `characters/4` bằng tokenizer chính xác hơn
+- Phân tích text theo loại: English (4 chars/token), Code (3 chars/token), Vietnamese (2.5 chars/token), Structured (3.5 chars/token)
+- Tích hợp vào `contextManager.ts` với `actualTokens` field
+- Thêm `conversationContextTokenBudget = 8_000` tokens
+
+**2. Tool Result Cache** (`src/utils/toolCache.ts`)
+- Cache tool results cho read-only tools (read_file, list_files, grep, glob)
+- TTL 60 giây, max 100 entries
+- Tự động invalidate khi file thay đổi (apply_patch)
+- Tích hợp vào `AgentRuntime.ts`
+
+**3. Rate Limiting** (`src/utils/rateLimiter.ts`)
+- Token bucket algorithm
+- Pre-configured limits: OpenAI Free (3/min), OpenAI Paid (500/min), Anthropic (50/min), Gemini (60/min)
+- Exponential backoff khi bị rate limit
+- Tích hợp vào `OpenAIModelProvider.ts`
+
+**4. Request Batching** (`src/utils/requestBatcher.ts`)
+- Batch multiple tool calls cùng loại
+- Configurable batch size và wait time
+- FileOperationBatcher cho read/write operations
+- Utility function `batchToolCalls()`
+
+### Tích hợp
+- `AgentRuntime.ts`: Sử dụng tool cache cho read-only tools
+- `OpenAIModelProvider.ts`: Wraps API calls với rate limiter
+- `contextManager.ts`: Sử dụng token counter thực tế
+
+### Kết quả kiểm tra
+- `npm run build` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- Token counting chính xác hơn cho mixed content (English/Vietnamese/Code)
+- Tool cache giảm số lần đọc file trùng lặp
+- Rate limiter tránh bị block bởi API providers
+
+### Vấn đề còn lại
+- Request batching chưa được tích hợp sâu vào AgentRuntime (chỉ có utility functions)
+- Cần thêm tests cho token counter, tool cache, rate limiter
+- Cần monitor hiệu suất thực tế để tune parameters
+
+---
+
 ## v0.20.0 — MCP OAuth + Input History + UI Improvements
 
 ### Nguyên nhân gốc

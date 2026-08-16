@@ -29,7 +29,7 @@ export function Banner(): React.JSX.Element {
       <Box marginTop={1}>
         <Text dimColor>Version {appVersion}</Text>
         <Text dimColor> · </Text>
-        <Text color="yellow">Phạm Xuân Hoài</Text>
+        <Text color="yellow">Error404-Labs.Info.VN · Phạm Xuân Hoài</Text>
       </Box>
     </Box>
   );
