@@ -10,7 +10,9 @@ import {sanitizeOutputBranding} from '../utils/outputBranding.js';
 import {loadMCPConfig, toOpenCodeMCPConfig} from '../mcp/MCPManager.js';
 
 const missingCliMessage =
-  'Không tìm thấy PXHVibe Free runtime. Hãy cài đặt lại PXHVibe.';
+  'Không tìm thấy PXHVibe Free runtime (opencode-ai). ' +
+  'Để sử dụng Free mode, cài đặt: npm install -g opencode-ai. ' +
+  'Hoặc sử dụng Custom API với /models.';
 export const defaultOpenCodeModel = 'opencode/big-pickle';
 const defaultRequestTimeoutMs = 600_000;
 
@@ -367,8 +369,13 @@ function formatModelName(model: string): string {
 export function resolveOpenCodeExecutable(): string {
   const configuredPath = process.env.PXH_OPENCODE_PATH;
   if (configuredPath !== undefined && configuredPath.length > 0) return configuredPath;
-  if (process.platform !== 'win32') return 'opencode';
-
+  
+  // Non-Windows platforms: use 'opencode' from PATH
+  if (process.platform !== 'win32') {
+    return 'opencode';
+  }
+  
+  // Windows: try bundled executable first
   try {
     const bundledExecutable = createRequire(import.meta.url).resolve(
       'opencode-ai/bin/opencode.exe',
@@ -378,11 +385,13 @@ export function resolveOpenCodeExecutable(): string {
     // Fall through to PATH and legacy global npm locations.
   }
 
+  // Try PATH
   for (const directory of (process.env.PATH ?? '').split(path.delimiter)) {
     const candidate = path.join(directory, 'opencode.exe');
     if (existsSync(candidate)) return candidate;
   }
 
+  // Try legacy global npm location
   const appData = process.env.APPDATA;
   if (appData !== undefined) {
     const npmExecutable = path.join(
@@ -396,5 +405,6 @@ export function resolveOpenCodeExecutable(): string {
     if (existsSync(npmExecutable)) return npmExecutable;
   }
 
+  // Fallback to 'opencode' and let spawn fail with clear error
   return 'opencode';
 }

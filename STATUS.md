@@ -1,5 +1,59 @@
 # STATUS
 
+## FIX — macOS/Linux Compatibility (v0.21.1)
+
+### Nguyên nhân gốc
+- PXHVibe không cài đặt được trên MacBook vì `opencode-ai` là required dependency
+- `opencode-ai` package có thể không tự động cài đặt đúng trên macOS/Linux
+- Error message không rõ ràng khi `opencode` binary không có sẵn
+
+### Đã thay đổi
+
+**1. Package.json**
+- Di chuyển `opencode-ai` từ `dependencies` sang `optionalDependencies`
+- Giúp PXHVibe cài đặt được trên mọi platform, kể cả khi `opencode-ai` fail
+
+**2. OpenCodeProvider.ts**
+- Cải thiện error message khi không tìm thấy `opencode` binary
+- Hướng dẫn user cài đặt `opencode-ai` thủ công hoặc dùng Custom API
+- Cải thiện `resolveOpenCodeExecutable()` với comments rõ ràng hơn
+
+**3. README.md**
+- Thêm hướng dẫn install riêng cho macOS/Linux
+- Giải thích rõ về `opencode-ai` là optional
+- Thêm lưu ý về Free mode trên macOS/Linux
+
+### Cách sử dụng trên macOS/Linux
+
+**Install PXHVibe:**
+```bash
+npm install --global pxhvibe
+```
+
+**Nếu muốn dùng Free mode:**
+```bash
+npm install --global opencode-ai
+```
+
+**Hoặc dùng Custom API (không cần opencode-ai):**
+- Chạy `pxh`
+- Gõ `/models`
+- Chọn Custom API và cấu hình OpenAI/Anthropic/Gemini
+
+### Kết quả kiểm tra
+- `npm run build` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- PXHVibe giờ cài đặt được trên macOS/Linux
+- Free mode vẫn hoạt động trên Windows (có `opencode.exe` bundled)
+- Custom API hoạt động trên mọi platform
+
+### Vấn đề còn lại
+- Free mode trên macOS/Linux yêu cầu user cài `opencode-ai` thủ công
+- Tính năng paste image từ clipboard (`imageClipboard.ts`) chỉ hỗ trợ Windows
+- Cần test thực tế trên macOS để xác nhận mọi thứ hoạt động
+
+---
+
 ## FEATURE — Suggestion System với Mouse Click Support
 
 ### Nguyên nhân gốc

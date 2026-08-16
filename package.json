@@ -1,6 +1,6 @@
 {
   "name": "pxhvibe",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Terminal coding team with Free and Custom API modes, native MCP, skills, agents, and workflows.",
   "license": "MIT",
   "author": "Phạm Xuân Hoài",
@@ -77,8 +77,10 @@
     "ink": "^7.1.1",
     "open": "^11.0.1",
     "openai": "^7.4.0",
-    "opencode-ai": "^1.18.18",
     "react": "^19.2.8"
+  },
+  "optionalDependencies": {
+    "opencode-ai": "^1.18.18"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

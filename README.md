@@ -11,7 +11,7 @@ pipeline nhiều phase, giao cho các specialist phù hợp, lưu checkpoint và
 tiếp trong terminal. Bạn có thể dùng Free mode đi kèm hoặc kết nối Custom API hỗ trợ OpenAI,
 Anthropic và Google Gemini, đồng thời mở rộng khả năng bằng MCP, skills, agents và workflows của project.
 
-Bản phát hành hiện tại: **v0.21.0**.
+Bản phát hành hiện tại: **v0.21.1**.
 
 ## Điểm nổi bật
 
@@ -26,13 +26,32 @@ Bản phát hành hiện tại: **v0.21.0**.
 
 Yêu cầu Node.js 22 trở lên.
 
+### Windows
+
 ```bash
 npm install --global pxhvibe
 cd path/to/your-project
 pxh
 ```
 
-Hoặc chạy không cần cài global:
+### macOS / Linux
+
+```bash
+npm install --global pxhvibe
+
+# Nếu muốn sử dụng Free mode, cài thêm opencode-ai:
+npm install --global opencode-ai
+
+cd path/to/your-project
+pxh
+```
+
+**Lưu ý cho macOS/Linux:**
+- `opencode-ai` là optional dependency, có thể không tự động cài đặt trên một số hệ thống
+- Nếu gặp lỗi "Không tìm thấy PXHVibe Free runtime", chạy: `npm install -g opencode-ai`
+- Hoặc sử dụng Custom API (OpenAI/Anthropic/Gemini) với `/models` - không cần `opencode-ai`
+
+### Chạy không cần cài global
 
 ```bash
 npx pxhvibe
@@ -59,8 +78,14 @@ pxh --help
 
 | Mode | Thiết lập | Phù hợp khi |
 | --- | --- | --- |
-| Free | Chọn model trong `/models` | Muốn bắt đầu nhanh với runtime được bundle sẵn |
-| Custom API | Base URL, model ID, API key và provider | OpenAI Responses, Anthropic Messages, Google Gemini |
+| Free | Chọn model trong `/models` | Muốn bắt đầu nhanh với runtime được bundle sẵn (Windows mặc định, macOS/Linux cần cài thêm `opencode-ai`) |
+| Custom API | Base URL, model ID, API key và provider | OpenAI Responses, Anthropic Messages, Google Gemini (hoạt động trên mọi platform) |
+
+**Lưu ý:** Trên macOS/Linux, nếu Free mode báo lỗi "Không tìm thấy PXHVibe Free runtime", chạy:
+```bash
+npm install -g opencode-ai
+```
+Hoặc sử dụng Custom API với `/models` - không cần `opencode-ai`.
 
 ### Custom API
 
