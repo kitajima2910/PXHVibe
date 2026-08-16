@@ -777,6 +777,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     } finally {
       await Promise.all(requestImages.map(removeTemporaryImage));
       setIsBusy(false);
+      // Phát terminal bell để thông báo pipeline đã hoàn tất
+      if (process.stdout.isTTY === true) {
+        process.stdout.write('\x07');
+      }
     }
   };
 

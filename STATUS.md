@@ -1,6 +1,31 @@
 # STATUS
 
-## FIX — Terminal window title hiển thị "PXHVibe" khi chạy TUI
+## FEATURE — Terminal bell notification khi pipeline hoàn tất
+
+### Nguyên nhân gốc
+- Khi vibe coding xong (pipeline hoàn tất), user không nhận được thông báo rõ ràng.
+- Cần thêm sound notification để user biết khi nào có thể quay lại kiểm tra kết quả.
+
+### Đã thay đổi
+- **app.tsx**: Thêm terminal bell (`\x07`) trong `finally` block sau khi pipeline kết thúc. Bell được phát khi:
+  - Pipeline thành công (status = Ready)
+  - Pipeline lỗi (status = Error)
+  - User cancel (status = Ready)
+- Bell chỉ phát khi stdout là TTTY (terminal tương tác), không phát khi redirect output.
+
+### File đã sửa
+- `src/app.tsx` (line 779-782)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+- Terminal bell hoạt động trên hầu hết terminal (Windows Terminal, iTerm2, GNOME Terminal, etc.)
+- Nếu terminal có âm thanh system bell enabled, user sẽ nghe thấy tiếng "bip" khi pipeline xong.
+
+
 
 ### Nguyên nhân gốc
 - `setTerminalTitle('PXHVibe')` được gọi TRƯỚC `enterTerminalScreen()` — tức là trước khi terminal vào alternate screen mode.
