@@ -15,7 +15,6 @@ import {createCustomProvider} from './providers/createProvider.js';
 import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {Banner} from './components/Banner.js';
-import {SuggestionStrip, type Suggestion as SuggestionType} from './components/SuggestionStrip.js';
 import {agents, getAgent, mergeAgentCatalog, routeAgent, type PXHAgent} from './agents.js';
 import {AgentPicker} from './components/AgentPicker.js';
 import {CatalogPicker, type CatalogPickerItem} from './components/CatalogPicker.js';
@@ -38,7 +37,7 @@ import {
 } from './runtime/commands.js';
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
-import {generateSuggestions, formatSuggestions, parseSuggestionSelection, createResumeSuggestion, type Suggestion} from './utils/suggestions.js';
+import {generateSuggestions, formatSuggestions, parseSuggestionSelection, type Suggestion} from './utils/suggestions.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -825,26 +824,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         }
       }
       
-      // Generate suggestions for next improvements
-      const filesChanged = diffResult.ok && diffResult.content
-        ? extractChangedFiles(diffResult.content)
-        : [];
-      const suggestionContext = {
-        target: contextualTarget,
-        lastOutput: lastOutput,
-        filesChanged,
-        pipelinePhases: pipeline.tasks.map(t => t.phase),
-      };
-      // Lưu target vừa hoàn thành vào lịch sử để vòng lặp gợi ý
-      // không lặp lại ý tưởng cũ, luôn ra tính năng mới phù hợp.
-      suggestionHistoryRef.current.push(contextualTarget);
-      lastChangedFilesRef.current = filesChanged;
-      const newSuggestions = generateSuggestions({
-        ...suggestionContext,
-        history: suggestionHistoryRef.current,
-      });
-      setSuggestions(newSuggestions);
-      
       setStatus('Ready');
     } catch (error: unknown) {
       const storedSession = await new SessionStore(workingDirectory).load();
@@ -860,18 +839,26 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           createdAt: new Date(),
         }]);
         setStatus('Ready');
-        // Gợi ý tiếp tục/resume khi một giai đoạn bị dừng lại.
-        if (storedSession !== undefined && storedSession.status !== 'pass') {
-          setSuggestions([createResumeSuggestion()]);
-        }
       } else {
+        const errorMessage = sanitizeOutputBranding(getErrorMessage(error, requestImages.length > 0));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
           tone: 'error',
-          content: sanitizeOutputBranding(getErrorMessage(error, requestImages.length > 0)),
+          content: errorMessage,
           createdAt: new Date(),
         }]);
+        // Gợi ý tiếp tục/resume khi giai đoạn bị dừng (timeout >Xs / hết lượt / lặp)
+        // và vẫn còn checkpoint để chạy tiếp.
+        const isStoppedResumable = /không có hoạt động trong \d+ giây|vượt quá giới hạn \d+ lượt|lặp tool call/i.test(errorMessage);
+        if (isStoppedResumable && storedSession !== undefined && storedSession.status !== 'pass') {
+          setMessages((currentMessages) => [...currentMessages, {
+            id: createMessageId(),
+            role: 'system',
+            content: 'Gợi ý: gõ "tiếp tục task", "tiếp tục", "continue" hoặc "/resume" để chạy tiếp từ checkpoint.',
+            createdAt: new Date(),
+          }]);
+        }
         setStatus('Error');
       }
     } finally {
@@ -998,39 +985,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         />
       ) : (
         <Box flexDirection="column">
-          {suggestions.length > 0 && !isBusy && (
-            <SuggestionStrip
-              suggestions={suggestions}
-              onSelect={(suggestion) => {
-                if (suggestion.action === 'resume') {
-                  void (async () => {
-                    const stored = await new SessionStore(workingDirectory).load();
-                    if (stored === undefined || stored.status === 'pass') {
-                      setMessages((currentMessages) => [...currentMessages, {
-                        id: createMessageId(),
-                        role: 'system',
-                        content: stored === undefined ? 'Không có checkpoint để resume.' : 'Session gần nhất đã hoàn tất.',
-                        createdAt: new Date(),
-                      }]);
-                      setSuggestions([]);
-                      return;
-                    }
-                    resumeSessionRef.current = makeSessionResumable(stored);
-                    setSuggestions([]);
-                    await handleSubmit(stored.target);
-                  })();
-                  return;
-                }
-                suggestionHistoryRef.current.push(suggestion.text);
-                setSuggestions([]);
-                const changed = lastChangedFilesRef.current;
-                const patchTarget = changed.length > 0
-                  ? `${suggestion.text}. Chỉ bổ sung/thay đổi tối thiểu vào file hiện có, không viết lại code.`
-                  : `${suggestion.text}. Tiếp tục mở rộng trên kết quả vừa có, không viết lại từ đầu.`;
-                void handleSubmit(patchTarget);
-              }}
-            />
-          )}
           <PromptInput
             onSubmit={(content, preservedDraft) => {
               promptDraftRef.current = preservedDraft;

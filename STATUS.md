@@ -24,68 +24,29 @@
 - `npm run dev` là TUI tương tác — cần chạy trong terminal thật (không phải pipe/redirect) để thấy giao diện.
 
 ---
-
-## FEATURE — Gợi ý tiếp tục/resume khi giai đoạn vibe coding bị dừng
+## FEATURE/REMOVE — Bỏ gợi ý 1/2/3 sau vibe code; gợi ý tiếp tục/resume khi giai đoạn bị dừng
 
 ### Nguyên nhân gốc
-- Khi đang vibe coding mà một giai đoạn bị dừng (user cancel / Esc), app chỉ hiện thông báo "Đã dừng lượt chạy" nhưng không gợi ý người dùng tiếp tục.
-- Đã có sẵn `/resume` command và keyword "tiếp tục/continue" để resume từ checkpoint, nhưng user không được nhắc nhở khi vừa dừng → dễ bỏ quên session dang dở.
+- Sau mỗi lần vibe code xong, app tự động sinh 3 gợi ý 'tiếp theo' (1/2/3) để user chọn hướng phát triển. User không cần nữa → muốn bỏ hoàn toàn.
+- Khi một giai đoạn trong task list bị dừng do timeout (thông báo 'không có hoạt động trong X giây / chọn model khác bằng /models', >300s) hoặc hết lượt/lặp tool, user không được nhắc có thể chạy tiếp → dễ bỏ quên session dang dở dù đã có `/resume` và keyword 'tiếp tục/continue'.
 
 ### Đã thay đổi
-- `src/utils/suggestions.ts`:
-  - `Suggestion` interface thêm `action?: 'resume'`.
-  - Thêm `createResumeSuggestion()` trả về gợi ý "Tiếp tục vibe coding từ checkpoint (dùng lệnh /resume)".
-- `src/components/SuggestionStrip.tsx`: `Suggestion` interface thêm `action?: 'resume'` (giữ tương thích).
-- `src/app.tsx`:
-  - Nhánh `isCancellationError`: nếu có session chưa hoàn tất (`storedSession.status !== 'pass'`) thì `setSuggestions([createResumeSuggestion()])` để hiển thị gợi ý tiếp tục.
-  - `SuggestionStrip` `onSelect`: nếu `suggestion.action === 'resume'` thì load checkpoint và resume (giống `/resume`), ngược lại giữ hành vi patch tiếp nối cũ.
+- `src/app.tsx` (success path): xóa khối sinh `generateSuggestions(...)` + `setSuggestions(newSuggestions)` sau khi pipeline hoàn tất → không còn gợi ý 1/2/3 'next' sau mỗi lần vibe code.
+- `src/app.tsx` (render): xóa block `<SuggestionStrip>` (và import `SuggestionStrip`). `SuggestionStrip.tsx` giờ thành dead code (không render, không xóa file để tránh phá vỡ).
+- `src/app.tsx` (error branch): khi lỗi khớp pattern dừng giai đoạn (`không có hoạt động trong \d+ giây` | `vượt quá giới hạn \d+ lượt` | `lặp tool call`) và còn checkpoint (`storedSession.status !== 'pass'`), append system message gợi ý:
+  `Gợi ý: gõ 'tiếp tục task', 'tiếp tục', 'continue' hoặc '/resume' để chạy tiếp từ checkpoint.`
+- `src/utils/suggestions.ts` & `src/components/SuggestionStrip.tsx`: revert các thay đổi đợt trước (bỏ `action?: 'resume'` và `createResumeSuggestion()`) vì chuyển sang gợi ý dạng text thay vì item click được.
 
 ### Kết quả kiểm tra
 - `npm run typecheck` → exit 0 ✓
 - `npm test` → 24/24 test groups pass ✓
 
 ### Vấn đề còn lại
-- Gợi ý resume chỉ hiện khi có checkpoint lưu (session chưa `pass`); nếu user dừng trước khi có checkpoint thì không hiện (đúng hành vi).
-- Chọn gợi ý resume sẽ resume luôn, không qua bước xác nhận; nếu muốn an toàn hơn có thể thêm confirm sau.
+- `src/components/SuggestionStrip.tsx` và hàm `generateSuggestions`/`formatSuggestions` trong `suggestions.ts` giờ unused (compiled nhưng không render) — có thể dọn sau nếu muốn, hiện giữ nguyên để không phá vỡ.
+- Gợi ý text chỉ hiện khi lỗi thuộc nhóm 'dừng giai đoạn' và có checkpoint; các lỗi khác (vd 429/quota) không hiện (đúng hành vi).
 
 ---
 
-## REMOVE — Bỏ label "Gợi ý tiếp theo (click hoặc gõ 1/2/3)"
-
-### Nguyên nhân gốc
-- TARGET yêu cầu bỏ dòng tiêu đề `💡 Gợi ý tiếp theo (click hoặc gõ 1/2/3):` ở đầu SuggestionStrip. Các gợi ý vẫn hiển thị bình thường, chỉ bỏ phần label.
-
-### Đã thay đổi
-- `src/components/SuggestionStrip.tsx`: xóa `<Text bold color="magenta">💡 Gợi ý tiếp theo (click hoặc gõ 1/2/3):</Text>` khỏi JSX. Giữ nguyên danh sách 3 gợi ý (click/1/2/3 vẫn hoạt động).
-
-### Kết quả kiểm tra
-- `npm run typecheck` → exit 0 ✓
-- `npm test` → 24/24 test groups pass ✓
-
-### Vấn đề còn lại
-- Không có vấn đề còn lại.
-
----
-
-## RELEASE — v0.22.2 (sync version docs với package.json)
-
-### Nguyên nhân gốc
-- `npm version patch` chạy 2 lần (tạo tag `v0.22.1`, `v0.22.2`) → `package.json`/`package-lock.json` lên `0.22.2`.
-- Nhưng `README.md` (v0.22.0) và `STATUS.md` (v0.22.0) không được cập nhật → version docs lệch với version package thực tế.
-- Khi `npm publish`, npm lấy version từ `package.json` (0.22.2) nên trang npm hiện đúng 0.22.2, nhưng README hiển thị v0.22.0 → không khớp.
-
-### Đã thay đổi
-- `README.md`: `v0.22.0` → `v0.22.2`.
-- `STATUS.md`: cập nhật header release lên `v0.22.2` (release-check yêu cầu STATUS chứa `v0.22.2`).
-
-### Kết quả kiểm tra
-- `npm run release:check` → `[OK] Release integrity v0.22.2` (README + STATUS đều chứa `v0.22.2`).
-
-### Vấn đề còn lại
-- `v0.22.1` và `v0.22.2` đã có tag git + commit nhưng chưa chắc đã `npm publish` (npm registry hiện tại đang ở `0.22.0`).
-- Nếu muốn 0.22.2 lên npm, cần chạy `npm publish --otp=<code>` (đã pass release-check).
-
----
 
 ## RELEASE — v0.22.0 (bump version + GitHub release + npm publish)
 
