@@ -103,7 +103,7 @@ const instance = render(React.createElement(App, {
 });
 
 await wait(50);
-assert.ok(stripAnsi(rendered).includes(`PXHVibe v${appVersion}`));
+assert.ok(stripAnsi(rendered).includes('PXHVibe'));
 await typeText('/status');
 input.write('\r');
 await wait(80);

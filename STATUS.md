@@ -1,6 +1,27 @@
 # STATUS
 
-## UI — Bỏ context bar khỏi Header
+## UI — Banner ASCII art logo
+
+### Nguyên nhân gốc
+- Banner cũ dùng box frame đơn giản `╔══╗ ║ ╚══╝` với text inline, thiếu visual impact.
+- Cần banner đẹp hơn với ASCII art logo lớn, gradient màu, và thông tin version + author rõ ràng.
+
+### Đã thay đổi
+- **Banner.tsx**: Thiết kế lại với ASCII art "PXHVibe" 6 dòng, gradient 3 màu (green → cyan → magenta), version và author "Phạm Xuân Hoài" bên dưới với màu yellow accent.
+- **slashCommands.test.ts**: Cập nhật assertion từ `PXHVibe v{appVersion}` thành `PXHVibe` (do ASCII art không chứa version inline).
+
+### File đã sửa
+- `src/components/Banner.tsx`
+- `src/tests/slashCommands.test.ts`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+
 
 ### Nguyên nhân gốc
 - Header hiển thị context bar `██████░░░░ 45%` chiếm không gian ngang nhưng không có giá trị UX.
