@@ -76,6 +76,13 @@ export class AgentRuntime {
       const repeatCount = (seenCalls.get(callsKey) ?? 0) + 1;
       seenCalls.set(callsKey, repeatCount);
       if (repeatCount >= 3) {
+        // Thay vì throw, trả về content đã có kèm ghi chú
+        if (content.trim().length > 0 || appliedChanges > 0) {
+          const summary = appliedChanges > 0
+            ? `Đã thực hiện ${appliedChanges} thay đổi file (apply_patch) trong lượt chạy này.`
+            : 'Agent đã xử lý nhưng chưa tổng kết trước khi bị phát hiện lặp.';
+          return `${content.trim()}\n\n> Ghi chú: phát hiện lặp tool call (cùng lệnh ${repeatCount} lần). ${summary} Kết quả chi tiết nằm trong git diff sau lượt chạy.`.trim();
+        }
         throw new Error('Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.');
       }
 
@@ -87,6 +94,13 @@ export class AgentRuntime {
         recentToolNames.push(turn.toolCalls.map((call) => call.name).join(','));
         if (recentToolNames.length > 5) recentToolNames.shift();
         if (recentToolNames.length === 5 && recentToolNames.every((names) => names === recentToolNames[0])) {
+          // Thay vì throw, trả về content đã có kèm ghi chú
+          if (content.trim().length > 0 || appliedChanges > 0) {
+            const summary = appliedChanges > 0
+              ? `Đã thực hiện ${appliedChanges} thay đổi file (apply_patch) trong lượt chạy này.`
+              : 'Agent đã xử lý nhưng chưa tổng kết trước khi bị phát hiện lặp.';
+            return `${content.trim()}\n\n> Ghi chú: phát hiện lặp tool đọc liên tiếp (5 lượt). ${summary} Kết quả chi tiết nằm trong git diff sau lượt chạy.`.trim();
+          }
           throw new Error('Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.');
         }
       } else {

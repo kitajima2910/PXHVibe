@@ -1,5 +1,28 @@
 # STATUS
 
+## FIX — Loop detector trả về content thay vì fail cứng
+
+### Nguyên nhân gốc
+- Loop detector trong `AgentRuntime` throw error ngay khi phát hiện lặp tool call (cùng lệnh 3 lần hoặc tool đọc liên tiếp 5 lần).
+- REVIEW phase fail hoàn toàn dù agent có thể đã đọc file, phân tích code và tạo được content hữu ích trước khi bị kẹt loop.
+- Hành vi không nhất quán: "hết lượt" (maxTurns) trả về content kèm ghi chú, nhưng "lặp tool call" lại throw error.
+
+### Đã thay đổi
+- `AgentRuntime.ts`: Thay đổi loop detector (2 chỗ) để trả về content đã tích lũy kèm ghi chú thay vì throw error, chỉ throw khi không có content nào.
+- Ghi chú mới phân biệt rõ: "phát hiện lặp tool call (cùng lệnh N lần)" hoặc "phát hiện lặp tool đọc liên tiếp (5 lượt)".
+- Hành vi nhất quán với "hết lượt" — agent có thể đã hoàn thành công việc trước khi bị kẹt loop.
+
+### File đã sửa
+- `src/agent/AgentRuntime.ts` (lines 72-94)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Nếu agent lặp tool call ngay từ đầu (không có content nào), vẫn throw error như cũ.
+- Loop detection thresholds (3 lần cho exact repeat, 5 lần cho read-only) giữ nguyên — có thể điều chỉnh nếu cần.
+
 ## UI — Nâng cấp layout TUI xịn và đẹp hơn
 
 ### Nguyên nhân gốc
