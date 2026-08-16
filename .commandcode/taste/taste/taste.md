@@ -2,6 +2,7 @@
 - Communicates in Vietnamese and expects Vietnamese-language UI copy, docs, and agent replies. Confidence: 0.95
 - Wants STATUS.md read first and root-cause analysis performed before any edit. Confidence: 0.9
 - Prefers minimal patches that only touch files/features in the TARGET: no whole-project rewrites, no unrequested refactors or dependency upgrades, no breaking changes. Confidence: 0.9
+- Wants pre-existing changes checked before editing (e.g., git status/diff) and user/system-owned work not overwritten: changes made by other tools or previous sessions (e.g., lockfile syncs, tool-owned config files) should be identified, explained, and left intact — distinguished from the task's own changes. Confidence: 0.85
 - Wants STATUS.md updated after each task with what changed, files modified, test results, and remaining issues. Confidence: 0.9
 - Wants appropriate tests run after changes; when verification is not possible, expects the reason stated explicitly. Confidence: 0.85
 - Wants every release vetted before publishing: typecheck, full test suite, pack/tarball dry-run, LICENSE and package metadata, registry version/auth check. Confidence: 0.9
@@ -23,3 +24,4 @@
 - Prefers resilient/graceful failure behavior over hard errors: when the agent hits a turn limit but has already produced output or changed files, the runtime should return the partial result with a note instead of throwing and failing the whole phase — hard failure reserved for genuinely stuck runs (no output, no changes). Confidence: 0.8
 - Treats run-time constants (e.g., agent `maxTurns`) as tunable knobs: raises limits (12 → 24) when real tasks legitimately need more headroom rather than treating the limit as fixed. Confidence: 0.8
 - Wants a regression test added for each bug fix that verifies the new behavior (e.g., a mock provider that applies patches until the turn limit to assert the graceful-handling path). Confidence: 0.85
+- When an npm/CLI task fails, wants root cause traced to whether it is a source bug or an environment/dependency issue (e.g., missing devDependencies) before touching code; environment fixes are done with minimal commands (e.g., `npm install --include=dev`) and source code is left untouched. Confidence: 0.8

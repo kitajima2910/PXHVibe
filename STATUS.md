@@ -1,5 +1,30 @@
 # STATUS
 
+## VERIFY — npm install / npm run dev / build / typecheck chạy được trên source (Windows)
+
+### Nguyên nhân gốc
+- `node_modules` chỉ có `dependencies` (ink, react, MCP SDK, openai, opencode-ai...), **thiếu toàn bộ devDependencies** — không có `typescript`, `@types/node`, `@types/react` → `npm run typecheck` lỗi `'tsc' is not recognized`.
+- Lý do: trước đó node_modules được cài theo kiểu production (omit dev) hoặc bị dọn dev deps; `npm install` trần báo "up to date" vì lockfile đã khớp phần đã có, không tự bù dev deps.
+
+### Đã thay đổi
+- Không sửa source code. Chỉ chạy `npm install --include=dev` để cài bù 4 packages dev (`typescript`, `@types/node`, `@types/react`, ...).
+
+### Kết quả kiểm tra (chạy thật trên máy)
+- `npm install` → `up to date, audited 151 packages, found 0 vulnerabilities`.
+- `npm install --include=dev` → `added 4 packages, audited 155 packages, 0 vulnerabilities`.
+- `npm run typecheck` → exit 0 ✓ (tsc pass).
+- `npm run build` → exit 0 ✓ (dist được build đầy đủ).
+- `node dist/cli.js --version` → `PXHVibe v0.22.2` ✓.
+- `node dist/cli.js --help` → liệt kê đủ 4 nhóm slash command ✓.
+- `npm test` → toàn bộ **24/24 test groups pass** (mcp, free, agent, router, orchestration, pipeline, team, runtime-commands, format, title, modes, custom, providers, commands, branding, image, viewport, todo, picker, catalog-picker, streaming, chat-completions, diff-view) ✓.
+- `npm run dev` → build xong + TUI khởi động, process exit 0 (Ink thoát sạch khi stdout không phải TTY — hành vi bình thường khi chạy tự động, không phải lỗi) ✓.
+
+### Vấn đề còn lại
+- Nếu clone project mới hoặc sau khi xóa `node_modules`, phải chạy `npm install` (không dùng `--omit=dev`) để có đủ devDependencies cho `build`/`test`/`typecheck`.
+- `npm run dev` là TUI tương tác — cần chạy trong terminal thật (không phải pipe/redirect) để thấy giao diện.
+
+---
+
 ## RELEASE — v0.22.2 (sync version docs với package.json)
 
 ### Nguyên nhân gốc

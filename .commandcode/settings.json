@@ -38,7 +38,19 @@
       "Shell(npm run build > /dev/null 2>&1 && node scratch-banner-test.mjs)",
       "Shell(node scratch-banner-test.mjs)",
       "Shell(del:*)",
-      "Shell(node scratch-message-diff.mjs)"
+      "Shell(node scratch-message-diff.mjs)",
+      "Shell(node --version)",
+      "Shell(if:*)",
+      "Shell(else:*)",
+      "Shell(dir:*)",
+      "Shell(findstr:*)",
+      "Shell(node dist/cli.js --version)",
+      "Shell(node dist/cli.js --help 2 >& 1)",
+      "Shell(node dist/cli.js --help)",
+      "Shell(powershell -NoProfile -Command \"Get-Content 'C:\\Users\\Admin\\AppData\\Local\\Temp\\commandcode\\shellout\\2026-08-16T14-33-12-935Z-s0gldmyh.log' -Tail 30\")",
+      "Shell(powershell -NoProfile -Command \"Get-ChildItem 'C:\\Users\\Admin\\AppData\\Local\\Temp\\commandcode\\shellout\\2026-08-16T14-33-12-935Z-s0gldmyh.log' | Select-Object Length, LastWriteTime; Get-Content 'C:\\Users\\Admin\\AppData\\Local\\Temp\\commandcode\\shellout\\2026-08-16T14-33-12-935Z-s0gldmyh.log' -Raw\")",
+      "Shell(tasklist /FI \"PID eq 20284\" 2>nul | findstr 20284 && echo PROCESS_ALIVE || echo PROCESS_GONE)",
+      "Shell(more:*)"
     ],
     "deny": [],
     "defaultMode": "default"
