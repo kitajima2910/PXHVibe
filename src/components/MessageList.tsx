@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box, Text, measureElement, useInput, type DOMElement} from 'ink';
 import type {Message} from '../types/message.js';
 import {FormattedText} from './FormattedText.js';
+import {DiffView} from './DiffView.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
 
@@ -129,7 +130,7 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
     const isError = message.tone === 'error';
     return (
       <Box paddingX={1} flexShrink={0}>
-        <Text bold={isError} color={color}><Text color={isError ? 'red' : 'green'}>{isError ? '✖' : '↳'}</Text>{' '}{message.content}</Text>
+        <Text bold={isError} color={color}><Text color={isError ? 'red' : 'cyan'}>{isError ? '✖' : '↳'}</Text>{' '}{message.content}</Text>
       </Box>
     );
   }
@@ -157,6 +158,9 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
         <Box>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>
       )}
       <FormattedText content={message.content} accent={isUser ? 'yellow' : 'green'} />
+      {message.diff !== undefined && message.diff.length > 0 && (
+        <DiffView content={message.diff} />
+      )}
     </Box>
   );
 }

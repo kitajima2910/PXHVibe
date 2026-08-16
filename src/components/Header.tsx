@@ -18,7 +18,7 @@ const statusLabel: Record<HeaderProps['status'], {label: string; color: 'green' 
 
 export function Header({workingDirectory, providerName, agentLabel, status, contextPercent, contextCompacted}: HeaderProps): React.JSX.Element {
   const statusMeta = statusLabel[status];
-  const contextColor = contextPercent >= 90 ? 'yellow' : 'gray';
+  const contextColor = contextPercent >= 90 ? 'yellow' : contextPercent >= 70 ? 'gray' : 'gray';
   return (
     <Box
       borderStyle="round"
@@ -28,9 +28,9 @@ export function Header({workingDirectory, providerName, agentLabel, status, cont
       minHeight={1}
     >
       <Box gap={1} flexShrink={0}>
-        <Text bold color={statusMeta.color}>{statusMeta.label}</Text>
+        <Text inverse bold color={statusMeta.color}>{' '}{statusMeta.label}{' '}</Text>
         <Text color="gray">|</Text>
-        <Text bold>{providerName}</Text>
+        <Text bold color="white">{providerName}</Text>
       </Box>
       <Box flexShrink={0}>
         <Text color="gray">Agent · </Text>

@@ -31,7 +31,8 @@ export function FormattedBlocks({blocks, accent = 'green'}: FormattedBlocksProps
           );
         }
         if (block.type === 'heading') {
-          return <Text key={key} bold color={accent}>{'▰ '.repeat(block.level === 1 ? 1 : 0)}{block.content}</Text>;
+          const level = block.level === 1 ? '▰ ' : '▱ ';
+          return <Text key={key} bold color={accent}>{level}{block.content}</Text>;
         }
         if (block.type === 'bullet') {
           return <Text key={key}><Text color={accent}>◆</Text>{' '}<InlineText content={block.content} /></Text>;

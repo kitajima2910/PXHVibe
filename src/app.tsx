@@ -33,7 +33,7 @@ import {runTeamPipeline, type TeamRunnerEvent} from './runtime/teamRunner.js';
 import {makeSessionResumable, SessionStore, type RuntimeSession} from './runtime/sessionStore.js';
 import {
   commandDefinitions, detectProject, formatCommandList, formatHistoryDetails,
-  formatPipelineDetails, getGitDiffSummary,
+  formatPipelineDetails, getGitDiffFull, getGitDiffSummary,
 } from './runtime/commands.js';
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
@@ -94,6 +94,13 @@ export function getErrorMessage(error: unknown, hasImages = false): string {
     return 'Model không thể xử lý TARGET này. Hãy thử lại hoặc chọn model khác bằng /models.';
   }
   return message;
+}
+
+function formatDiffStatHeader(diff: string): string {
+  const fileCount = diff.split(/\n(?=diff --git )/).filter((part) => part.trim().length > 0).length;
+  const additions = (diff.match(/^\+(?!\+\+)/gm) ?? []).length;
+  const deletions = (diff.match(/^-(?!--)/gm) ?? []).length;
+  return `**GIT DIFF** · ${fileCount} file · +${additions} −${deletions}`;
 }
 
 export function isImageUnsupportedError(message: string, hasImages = false): boolean {
@@ -725,9 +732,19 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       if (lastOutput.length > 0 && !streamed.includes(lastOutput)) {
         appendAssistantContent(sanitizeOutputBranding(`\n\n${lastOutput}`));
       }
-      const diffSummary = getGitDiffSummary(workingDirectory);
-      if (!diffSummary.startsWith('Thư mục') && !diffSummary.startsWith('Không đọc được')) {
-        appendAssistantContent(sanitizeOutputBranding(`\n\n${diffSummary}`));
+      const diffResult = getGitDiffFull(workingDirectory);
+      if (diffResult.ok && diffResult.content !== undefined) {
+        // Gắn full diff vào response message để render kiểu git.
+        const diffContent = diffResult.content;
+        setMessages((currentMessages) => currentMessages.map((item) =>
+          item.id === responseMessageId ? {...item, diff: diffContent} : item,
+        ));
+        appendAssistantContent(sanitizeOutputBranding(`\n\n${formatDiffStatHeader(diffContent)}`));
+      } else if (!diffResult.ok) {
+        const message = diffResult.message ?? '';
+        if (!message.startsWith('Thư mục') && !message.startsWith('Không đọc được')) {
+          appendAssistantContent(sanitizeOutputBranding(`\n\n${message}`));
+        }
       }
       setStatus('Ready');
     } catch (error: unknown) {

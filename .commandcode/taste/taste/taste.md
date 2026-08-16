@@ -8,7 +8,8 @@
 - Wants npm publish after each completed update and verification of the published artifact (e.g., `npx pxhvibe@<ver> --version` against the registry). Confidence: 0.9
 - Wants version bumped in v0.0.0 style on each TUI/feature update rather than reusing the previous release number. Confidence: 0.85
 - Dislikes cluttered, information-dense screens; wants data grouped and compact (grouped command lists, pickers showing only the selected item's details, truncated diff/status output). Confidence: 0.85
-- Wants the TUI to look beautiful and polished, not just functional: rounded borders, color-coded status indicators (green/yellow/red), a clean single-line banner, and consistent visual styling across components. Confidence: 0.8
+- Wants the TUI to look beautiful and polished, not just functional: rounded borders, color-coded status indicators (green/yellow/red), a clean single-line banner, and consistent visual styling across components. Confidence: 0.9
+- Wants file-edit output rendered as a git-style unified diff — colored +/- lines, file headers, hunk headers, truncation with a "còn N dòng" indicator — rather than a bare `git diff --stat` text summary. Confidence: 0.85
 - Wants user-facing labels to be accurate and non-misleading (e.g., "dừng lượt" instead of "hủy an toàn"; correct "~X dòng" line counts for pasted text). Confidence: 0.8
 - Wants the product's own branding (PXHVibe) visible and underlying tooling (opencode) hidden from end-user output. Confidence: 0.85
 - Wants the terminal window title set to the product name (PXHVibe). Confidence: 0.7

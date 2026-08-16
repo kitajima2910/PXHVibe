@@ -46,7 +46,7 @@
     "clean": "node --input-type=module -e \"import {rm} from 'node:fs/promises'; await rm('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc -p tsconfig.json",
     "start": "node dist/cli.js",
-    "test": "npm run build && npm run test:mcp && npm run test:free && npm run test:agent && npm run test:router && npm run test:orchestration && npm run test:pipeline && npm run test:team && npm run test:runtime-commands && npm run test:format && npm run test:title && npm run test:modes && npm run test:custom && npm run test:providers && npm run test:commands && npm run test:branding && npm run test:image && npm run test:viewport && npm run test:todo && npm run test:picker && npm run test:catalog-picker && npm run test:streaming && npm run test:chat-completions",
+    "test": "npm run build && npm run test:mcp && npm run test:free && npm run test:agent && npm run test:router && npm run test:orchestration && npm run test:pipeline && npm run test:team && npm run test:runtime-commands && npm run test:format && npm run test:title && npm run test:modes && npm run test:custom && npm run test:providers && npm run test:commands && npm run test:branding && npm run test:image && npm run test:viewport && npm run test:todo && npm run test:picker && npm run test:catalog-picker && npm run test:streaming && npm run test:chat-completions && npm run test:diff-view",
     "test:mcp": "node dist/tests/mcpManager.test.js",
     "test:agent": "node dist/tests/nativeAgent.test.js",
     "test:router": "node dist/tests/agents.test.js",
@@ -69,6 +69,7 @@
     "test:catalog-picker": "node dist/tests/catalogPicker.test.js",
     "test:streaming": "node dist/tests/outputStreaming.test.js",
     "test:chat-completions": "node dist/tests/chatCompletionsProvider.test.js",
+    "test:diff-view": "node dist/tests/diffView.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

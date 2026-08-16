@@ -9,5 +9,6 @@ export interface Message {
   contextContent?: string;
   tone?: 'error';
   attachments?: readonly ImageAttachment[];
+  diff?: string;
   createdAt: Date;
 }

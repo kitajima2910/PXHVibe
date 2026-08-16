@@ -73,6 +73,22 @@ export function getGitDiffSummary(cwd: string): string {
   return formatDiffStat(output);
 }
 
+export interface GitDiffResult {
+  ok: boolean;
+  message?: string;
+  content?: string;
+}
+
+/** Lấy toàn bộ unified diff (`git diff` không có --stat) để render kiểu git. */
+export function getGitDiffFull(cwd: string): GitDiffResult {
+  const result = spawnSync('git', ['diff'], {cwd, encoding: 'utf8', windowsHide: true, timeout: 10_000});
+  if (result.error !== undefined) return {ok: false, message: `Không đọc được git diff: ${result.error.message}`};
+  if (result.status !== 0) return {ok: false, message: 'Thư mục hiện tại không phải Git repository hoặc git diff thất bại.'};
+  const content = result.stdout.trim();
+  if (content.length === 0) return {ok: true};
+  return {ok: true, content};
+}
+
 export function formatDiffStat(output: string, maxLines = 8): string {
   if (output.length === 0) return 'Git diff sạch.';
   const lines = output.split(/\r?\n/);

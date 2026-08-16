@@ -1,5 +1,27 @@
 # STATUS
 
+## FIX — Diff view kiểu git + thiết kế lại TUI
+
+### Nguyên nhân gốc
+- Sau mỗi lượt chạy pipeline, app chỉ hiển thị `git diff --stat` dạng text tĩnh (`GIT DIFF\n file.ts | 5 +++--`) qua `getGitDiffSummary` — không thấy nội dung thay đổi, khó review.
+- TUI dùng border thô, Header/banner đơn giản, chưa có phân cấp màu rõ.
+
+### Đã thay đổi
+- Thêm `src/components/DiffView.tsx`: render unified diff kiểu git — header file `📄 path` trắng đậm, hunk header `@@` cyan, dòng `+` nền xanh, dòng `-` nền đỏ, meta (index/---/+++) mờ. Có giới hạn 200 dòng + chỉ báo cắt.
+- Thêm `getGitDiffFull(cwd)` trong `runtime/commands.ts` chạy `git diff` (không `--stat`) trả toàn bộ nội dung; `Message` mở rộng field `diff`.
+- `app.tsx`: sau pipeline, gắn full diff vào response message để render qua `DiffView`, kèm header `**GIT DIFF** · N file · +X −Y`.
+- `MessageList.tsx`: message có `diff` sẽ render `DiffView` dưới nội dung.
+- Thiết kế lại TUI: Banner dạng badge inverse ` PXHVibe`, Header status dạng badge inverse, system event màu cyan, TodoStrip counter `N/M ✓`, scrollbar/điểm nhấn giữ nguyên.
+- Test mới `diffView.test.ts` (parse + render màu) + `test:diff-view` trong chain; cập nhật `todoStrip.test.ts` cho counter mới.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Diff chỉ gắn vào response khi pipeline kết thúc thành công; phase bị fail giữa chừng không có diff riêng.
+- DiffView giới hạn 200 dòng; diff lớn sẽ bị cắt (có chỉ báo).
+
 ## FIX — Agent lặp tool call hết 12 lượt (Custom API DeepSeek)
 
 ### Nguyên nhân gốc

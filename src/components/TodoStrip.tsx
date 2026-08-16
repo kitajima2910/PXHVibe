@@ -20,7 +20,7 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
     <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
       <Box justifyContent="space-between">
         <Text bold color="cyan">TASKS</Text>
-        <Text color="gray">{completed}/{tasks.length} hoàn tất</Text>
+        <Text color="gray">{completed}/{tasks.length} ✓</Text>
       </Box>
       <Box flexDirection="column">
         {tasks.length === 0 && <Text dimColor>○ Chưa có pipeline</Text>}

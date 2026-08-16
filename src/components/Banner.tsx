@@ -4,8 +4,8 @@ import {appVersion} from '../version.js';
 
 export function Banner(): React.JSX.Element {
   return (
-    <Box justifyContent="center" paddingX={1}>
-      <Text bold color="green">PXHVibe</Text>
+    <Box justifyContent="center" paddingX={1} marginTop={1}>
+      <Text inverse bold color="green"> PXHVibe</Text>
       <Text color="gray"> v{appVersion} · Terminal Coding Agent</Text>
     </Box>
   );
