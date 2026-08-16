@@ -6,22 +6,25 @@ export function Banner(): React.JSX.Element {
   return (
     <Box flexDirection="column" alignItems="center" marginTop={1} marginBottom={1}>
       <Text bold color="green">
-        {`  ██████╗ ██╗  ██╗██╗  ██╗   ██╗██╗   ██╗██╗██████╗ ███████╗`}
+        {'████  █   █ █   █ █   █ ███ ████  █████   '}
       </Text>
       <Text bold color="green">
-        {`  ██╔══██╗██║  ██║██║  ╚██╗ ██╔╝██║   ██║██║██╔══██╗██╔════╝`}
+        {'█░░░█  █ █ ░█░  █░█░  █░ █░░█░░░█ █░░░░░  '}
       </Text>
       <Text bold color="cyan">
-        {`  ██████╔╝███████║██║   ╚████╔╝ ██║   ██║██║██████╔╝█████╗  `}
+        {'████░░  █ ░ █████░█░░ █░░█░░████░░████░░░ '}
       </Text>
       <Text bold color="cyan">
-        {`  ██╔═══╝ ██╔══██║██║    ╚██╔╝  ╚██╗ ██╔╝██║██╔══██╗██╔══╝  `}
+        {'█░░░░ ░█ █ ░█░░░█░░█░█ ░░█░░█░░░█ █░░░░   '}
       </Text>
       <Text bold color="magenta">
-        {`  ██║     ██║  ██║███████╗██║███████╗╚████╔╝ ██║██║  ██║███████╗`}
+        {'█░░░░░█ ░ █ █░░░█░░ █ ░ ███░████░░█████░  '}
       </Text>
-      <Text bold color="magenta">
-        {`  ╚═╝     ╚═╝  ╚═╝╚══════╝╚═╝╚══════╝ ╚═══╝  ╚═╝╚═╝  ╚═╝╚══════╝`}
+      <Text dimColor>
+        {' ░░    ░ ░ ░ ░░  ░░  ░ ░ ░░░ ░░░░ ░░░░░░  '}
+      </Text>
+      <Text dimColor>
+        {'  ░     ░   ░ ░   ░   ░   ░░░ ░░░░  ░░░░░ '}
       </Text>
       <Box marginTop={1}>
         <Text dimColor>Version {appVersion}</Text>

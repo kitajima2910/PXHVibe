@@ -1,18 +1,16 @@
 # STATUS
 
-## UI — Banner ASCII art logo
+## UI — Banner ASCII art với hiệu ứng shadow 3D
 
 ### Nguyên nhân gốc
-- Banner cũ dùng box frame đơn giản `╔══╗ ║ ╚══╝` với text inline, thiếu visual impact.
-- Cần banner đẹp hơn với ASCII art logo lớn, gradient màu, và thông tin version + author rõ ràng.
+- ASCII art "PXHVibe" cần có hiệu ứng shadow/3D để đẹp và nổi bật hơn.
+- Thiết kế mới sử dụng ký tự ░ để tạo shadow effect, gradient 3 màu (green → cyan → magenta).
 
 ### Đã thay đổi
-- **Banner.tsx**: Thiết kế lại với ASCII art "PXHVibe" 6 dòng, gradient 3 màu (green → cyan → magenta), version và author "Phạm Xuân Hoài" bên dưới với màu yellow accent.
-- **slashCommands.test.ts**: Cập nhật assertion từ `PXHVibe v{appVersion}` thành `PXHVibe` (do ASCII art không chứa version inline).
+- **Banner.tsx**: Thay thế ASCII art 5 dòng bằng thiết kế 7 dòng mới với shadow effect (2 dòng shadow dimColor), giữ nguyên gradient 3 màu và thông tin version + author bên dưới.
 
 ### File đã sửa
 - `src/components/Banner.tsx`
-- `src/tests/slashCommands.test.ts`
 
 ### Kết quả kiểm tra
 - `npm run typecheck` → exit 0.
