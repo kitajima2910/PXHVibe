@@ -21,7 +21,7 @@ assert.equal(
 assert.equal(defaultOpenCodeModel, 'opencode/big-pickle');
 assert.equal(new OpenCodeProvider().name, 'Free · Big Pickle');
 delete process.env.PXH_REQUEST_TIMEOUT_MS;
-assert.equal(getRequestTimeoutMs(), 300_000);
+assert.equal(getRequestTimeoutMs(), 600_000);
 let inactivityExpired = 0;
 let cancelledTimers = 0;
 const scheduledCallbacks: Array<() => void> = [];

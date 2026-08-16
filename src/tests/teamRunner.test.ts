@@ -48,6 +48,16 @@ class LoopErrorProvider implements AIProvider {
   cancel(): void {}
 }
 
+class InactivityTimeoutProvider implements AIProvider {
+  readonly name = 'InactivityTimeout';
+  calls = 0;
+  async sendMessage(): Promise<ProviderResponse> {
+    this.calls += 1;
+    throw new Error('Free mode không có hoạt động trong 600 giây. Hãy thử lại hoặc chọn model khác bằng /models.');
+  }
+  cancel(): void {}
+}
+
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-team-'));
 try {
   const target = 'sửa lỗi đăng nhập bị crash';
@@ -157,6 +167,18 @@ try {
     assert.equal(loopErrorProvider.calls, 1);
   } finally {
     await rm(loopErrorRoot, {recursive: true, force: true});
+  }
+
+  const inactivityRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-team-inactivity-'));
+  try {
+    const inactivityProvider = new InactivityTimeoutProvider();
+    await assert.rejects(runTeamPipeline({
+      provider: inactivityProvider, cwd: inactivityRoot, target, route, catalog: emptyCatalog,
+      pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
+    }), /không có hoạt động trong \d+ giây/);
+    assert.equal(inactivityProvider.calls, 1);
+  } finally {
+    await rm(inactivityRoot, {recursive: true, force: true});
   }
 } finally {
   await rm(root, {recursive: true, force: true});

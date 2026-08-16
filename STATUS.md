@@ -1,5 +1,31 @@
 # STATUS
 
+## FIX — Free mode inactivity timeout retry quá lâu (300 giây × 3 lần)
+
+### Nguyên nhân gốc
+- `OpenCodeProvider` dùng inactivity timer300 giây — nếu `opencode run` không output gì trong300 giây thì bị kill.
+- Lỗi `"Free mode không có hoạt động trong 300 giây"` không nằm trong danh sách non-retryable của `teamRunner.isRetryable()` → phase bị retry tới 3 lần, mỗi lần chờ300 giây → tổng thời gian chờ **900 giây (15 phút)** trước khi người dùng thấy lỗi cuối cùng.
+- Default timeout300 giây quá ngắn cho model miễn phí có thể chậm khi task phức tạp.
+
+### Đã thay đổi
+- `teamRunner.ts`: thêm `không có hoạt động trong \d+ giây` vào regex non-retryable trong `isRetryable()` → lỗi inactivity timeout chỉ hiện ngay lần đầu, không retry.
+- `OpenCodeProvider.ts`: tăng `defaultRequestTimeoutMs` từ 300_000 (5 phút) lên 600_000 (10 phút) — cho model miễn phí thêm thời gian phản hồi.
+- Test: `teamRunner.test.ts` thêm `InactivityTimeoutProvider` xác nhận inactivity error chỉ gọi provider 1 lần (không retry).
+- Test: `openCodeProvider.test.ts` cập nhật assertion `getRequestTimeoutMs()` từ 300_000 lên 600_000.
+
+### File đã sửa
+- `src/runtime/teamRunner.ts` (line 193)
+- `src/providers/OpenCodeProvider.ts` (line 15)
+- `src/tests/teamRunner.test.ts`
+- `src/tests/openCodeProvider.test.ts`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Nếu model miễn phí thực sự quá chậm (>10 phút không output), người dùng cần chọn model khác bằng `/models` hoặc đặt env `PXH_REQUEST_TIMEOUT_MS` để tăng timeout thủ công.
+
 ## FIX — Agent hết lượt không còn fail cứng (Custom API DeepSeek)
 
 ### Nguyên nhân gốc

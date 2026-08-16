@@ -12,7 +12,7 @@ import {loadMCPConfig, toOpenCodeMCPConfig} from '../mcp/MCPManager.js';
 const missingCliMessage =
   'Không tìm thấy PXHVibe Free runtime. Hãy cài đặt lại PXHVibe.';
 export const defaultOpenCodeModel = 'opencode/big-pickle';
-const defaultRequestTimeoutMs = 300_000;
+const defaultRequestTimeoutMs = 600_000;
 
 type TimeoutHandle = ReturnType<typeof setTimeout>;
 type TimeoutScheduler = (callback: () => void, delay: number) => TimeoutHandle;
