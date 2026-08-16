@@ -28,8 +28,11 @@ export function Header({workingDirectory, providerName, agentLabel, status, cont
       justifyContent="space-between"
       minHeight={1}
     >
-      <Box gap={1} flexShrink={0}>
-        <Text bold color={statusMeta.color}>{statusMeta.icon} {statusMeta.label}</Text>
+      <Box gap={2} flexShrink={0}>
+        <Box gap={1}>
+          <Text bold color={statusMeta.color}>{statusMeta.icon}</Text>
+          <Text bold color={statusMeta.color}>{statusMeta.label}</Text>
+        </Box>
         <Text dimColor>│</Text>
         <Text bold color="white">{providerName}</Text>
       </Box>
@@ -37,8 +40,11 @@ export function Header({workingDirectory, providerName, agentLabel, status, cont
         <Text dimColor>Agent:</Text>
         <Text bold color="cyan"> {agentLabel}</Text>
       </Box>
-      <Box gap={1} flexShrink={0}>
-        <Text color={contextColor}>{contextBar} {contextPercent}%{contextCompacted ? ' ↻' : ''}</Text>
+      <Box gap={2} flexShrink={0}>
+        <Box gap={1}>
+          <Text color={contextColor}>{contextBar}</Text>
+          <Text color={contextColor}>{contextPercent}%{contextCompacted ? ' ↻' : ''}</Text>
+        </Box>
         <Text dimColor>│</Text>
         <Text dimColor>{workingDirectory}</Text>
       </Box>

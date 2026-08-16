@@ -130,7 +130,10 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
     const isError = message.tone === 'error';
     return (
       <Box paddingX={1} flexShrink={0}>
-        <Text bold={isError} color={color}><Text color={isError ? 'red' : 'cyan'}>{isError ? '✖' : '↳'}</Text>{' '}{message.content}</Text>
+        <Box gap={1}>
+          <Text bold color={isError ? 'red' : 'cyan'}>{isError ? '✖' : '↳'}</Text>
+          <Text bold={isError} color={color}>{message.content}</Text>
+        </Box>
       </Box>
     );
   }
@@ -139,20 +142,19 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
-      borderTop={false}
-      borderRight={false}
-      borderBottom={false}
+      borderStyle="round"
       borderColor={isUser ? 'yellow' : 'green'}
-      paddingLeft={1}
+      paddingX={1}
       marginTop={1}
       flexShrink={0}
     >
-      <Box gap={1}>
+      <Box gap={2}>
         <Text bold inverse color={isUser ? 'yellow' : 'green'}>
           {' '}{isUser ? 'YOU' : 'PXH'}{' '}
         </Text>
-        <Text dimColor>{isUser ? 'target' : 'response'} · {formatTime(message.createdAt)}</Text>
+        <Text dimColor>{isUser ? 'target' : 'response'}</Text>
+        <Text dimColor>·</Text>
+        <Text dimColor>{formatTime(message.createdAt)}</Text>
       </Box>
       {message.attachments !== undefined && message.attachments.length > 0 && (
         <Box>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>

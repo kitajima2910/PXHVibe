@@ -240,9 +240,12 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
       <Box justifyContent="space-between">
-        <Text bold color={isBusy ? 'yellow' : 'green'}>
-          {isBusy ? `⠿ WORKING · ${formatElapsed(elapsedSeconds)}` : '❯ NEW TARGET'}
-        </Text>
+        <Box gap={1}>
+          <Text bold color={isBusy ? 'yellow' : 'green'}>
+            {isBusy ? `⠿ WORKING` : '❯ NEW TARGET'}
+          </Text>
+          {isBusy && <Text color="yellow">{formatElapsed(elapsedSeconds)}</Text>}
+        </Box>
         <Text dimColor>{isBusy ? (cancelArmed ? 'ESC lần nữa để dừng' : `${phaseLabel ?? 'khởi động'} · Esc×2 dừng lượt`) : 'Enter gửi · Shift+Enter xuống dòng'}</Text>
       </Box>
       {attachments.length > 0 && (

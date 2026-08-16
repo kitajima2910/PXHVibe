@@ -1,5 +1,55 @@
 # STATUS
 
+## UI — Thiết kế lại TUI đẹp hơn và hiện đại hơn
+
+### Nguyên nhân gốc
+- TUI mặc định functional nhưng thiếu visual polish: Banner đơn giản, Header dùng `inverse` blocks thô, TodoStrip không có progress bar, Footer dùng dấu `·` phân cách.
+- Cần cải thiện visual hierarchy, consistency và modern feel cho toàn bộ TUI.
+
+### Đã thay đổi
+
+- **Banner.tsx**: Thiết kế lại dạng box frame `╔══╗ ║ ╚══╝` với `inverse green` cho title, version nằm cùng dòng title, `gray` cho subtitle.
+- **Header.tsx**: 
+  - Status icon mới: `● READY` (green), `◆ WORKING` (yellow), `✖ ERROR` (red).
+  - Thêm `renderContextBar()` — thanh progress `████░░░░░░` 10 blocks hiển thị context usage trực quan.
+  - Context color: `green <70%`, `yellow 70-89%`, `red ≥90%` (sửa từ logic cũ `gray` cho cả 2 branch).
+  - Dùng `│` (box drawing) làm separator thay vì `|` thô.
+  - `Agent:` label thay vì `Agent ·` cho consistency.
+  - Tăng spacing giữa các section với `gap={2}`.
+- **TodoStrip.tsx**:
+  - Border `cyan` thay vì `gray` cho nổi bật.
+  - Header `◆ PIPELINE` thay vì `TASKS`.
+  - Thêm progress bar `renderProgressBar()` — `█████░░░░░`直观显示 pipeline progress.
+  - Task detail dùng `⸻` (em dash) thay vì `↳` cho cleaner look.
+  - Attempt format `#2` thay vì `lần 2`.
+  - MCP section thêm `tools` suffix.
+  - Cải thiện layout với `Box` components và `gap` spacing.
+- **Footer.tsx**: Dùng `│` separator, English labels (`send`, `newline`, `stop`, `image`, `exit`), `cyan` color cho shortcuts. Cải thiện spacing với `gap={2}` và `Box` components.
+- **PromptInput.tsx**: 
+  - Tách `WORKING` và elapsed time thành 2 Text components riêng biệt.
+  - Cải thiện layout với `Box` components và `gap` spacing.
+- **MessageList.tsx**: 
+  - Đổi border style từ `single` (chỉ left border) sang `round` (full border) cho message cards.
+  - Cải thiện spacing với `gap={2}` cho header.
+  - Tách timestamp thành Text component riêng.
+
+### File đã sửa
+- `src/components/Banner.tsx`
+- `src/components/Header.tsx`
+- `src/components/TodoStrip.tsx`
+- `src/components/Footer.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/MessageList.tsx`
+- `src/tests/slashCommands.test.ts` (cập nhật assertions cho format mới)
+- `src/tests/imageClipboard.test.ts` (cập nhật assertions cho format mới)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
 ## FIX — Loop detector trả về content thay vì fail cứng
 
 ### Nguyên nhân gốc

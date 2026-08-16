@@ -20,8 +20,11 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
   const progressBar = renderProgressBar(completed, total);
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
-      <Box justifyContent="space-between">
-        <Text bold color="cyan">◆ PIPELINE</Text>
+      <Box justifyContent="space-between" marginBottom={1}>
+        <Box gap={1}>
+          <Text bold color="cyan">◆</Text>
+          <Text bold color="cyan">PIPELINE</Text>
+        </Box>
         <Text color="gray">{completed}/{total}</Text>
       </Box>
       <Box marginBottom={1}>
@@ -31,20 +34,32 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
         {tasks.length === 0 && <Text dimColor>○ Chưa có pipeline</Text>}
         {tasks.map((task) => (
           <Box key={task.id} flexDirection="column" marginBottom={task.status === 'running' ? 1 : 0}>
-            <Text color={todoColor(task.status)} bold={task.status === 'running'} strikethrough={task.status === 'pass'}>
-              {todoSymbol(task.status)} {task.label}
-            </Text>
+            <Box gap={1}>
+              <Text color={todoColor(task.status)} bold={task.status === 'running'} strikethrough={task.status === 'pass'}>
+                {todoSymbol(task.status)}
+              </Text>
+              <Text color={todoColor(task.status)} bold={task.status === 'running'} strikethrough={task.status === 'pass'}>
+                {task.label}
+              </Text>
+            </Box>
             {task.status !== 'pass' && task.agentLabel !== undefined && (
-              <Text dimColor>  ↳ {task.agentLabel}{task.attempt === undefined ? '' : ` · #${task.attempt}`}</Text>
+              <Box paddingLeft={2}>
+                <Text dimColor>↳ {task.agentLabel}{task.attempt === undefined ? '' : ` · #${task.attempt}`}</Text>
+              </Box>
             )}
             {task.status === 'running' && task.detail !== undefined && (
-              <Text color="yellow">  ⸻ {compactTodoDetail(task.detail)}</Text>
+              <Box paddingLeft={2}>
+                <Text color="yellow">⸻ {compactTodoDetail(task.detail)}</Text>
+              </Box>
             )}
           </Box>
         ))}
       </Box>
       <Box flexDirection="column" marginTop={1}>
-        <Text bold color="cyan">◆ MCP</Text>
+        <Box gap={1} marginBottom={tasks.length > 0 ? 1 : 0}>
+          <Text bold color="cyan">◆</Text>
+          <Text bold color="cyan">MCP</Text>
+        </Box>
         {mcpServers.length === 0 && <Text dimColor>○ Chưa cấu hình</Text>}
         {mcpServers.map((server) => (
           <Text key={server.name} color={server.state === 'connected' ? 'green' : server.state === 'error' ? 'red' : 'gray'}>

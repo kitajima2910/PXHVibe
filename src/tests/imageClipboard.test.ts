@@ -202,7 +202,7 @@ const busyEditor = render(React.createElement(PromptInput, {
   exitOnCtrlC: false,
 });
 await new Promise((resolve) => setTimeout(resolve, 30));
-assert.match(stripAnsi(busyFrame), /WORKING · 03:12/);
+assert.match(stripAnsi(busyFrame), /WORKING 03:12/);
 assert.match(stripAnsi(busyFrame), /CODE 3\/8/);
 busyInput.write('\x1b');
 await new Promise((resolve) => setTimeout(resolve, 40));
