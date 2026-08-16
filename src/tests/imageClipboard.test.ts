@@ -204,7 +204,6 @@ const busyEditor = render(React.createElement(PromptInput, {
 await new Promise((resolve) => setTimeout(resolve, 30));
 assert.match(stripAnsi(busyFrame), /WORKING · 03:12/);
 assert.match(stripAnsi(busyFrame), /CODE 3\/8/);
-assert.match(stripAnsi(busyFrame), /Không có sự kiện mới 03:01/);
 busyInput.write('\x1b');
 await new Promise((resolve) => setTimeout(resolve, 40));
 assert.match(stripAnsi(busyFrame), /Nhấn ESC lần nữa để dừng lượt chạy/);

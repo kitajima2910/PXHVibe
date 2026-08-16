@@ -287,11 +287,6 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
           </Box>
         )}
         </Box>
-        {isBusy && isStalled && !cancelArmed && (
-          <Text color={isVeryStalled ? 'red' : 'yellow'}>
-            {isVeryStalled ? '⚠' : '·'} Không có sự kiện mới {formatElapsed(idleSeconds)} · đang chờ model/runtime; Esc×2 dừng lượt chạy (không hoàn tác file).
-          </Text>
-        )}
       </Box>
     </Box>
   );

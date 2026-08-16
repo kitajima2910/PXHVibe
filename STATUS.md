@@ -1,5 +1,26 @@
 # STATUS
 
+## REMOVE — Tính năng hiển thị "Không có sự kiện mới" khi chờ model/runtime
+
+### Nguyên nhân gốc
+- Tính năng hiển thị thông báo `"⚠ Không có sự kiện mới MM:SS · đang chờ model/runtime; Esc×2 dừng lượt chạy (không hoàn tác file)"` khi pipeline không có output trong 60+ giây.
+- Thông báo này gây thừa因为在大多数人使用场景中, việc chờ model là bình thường và không cần thông báo.
+
+### Đã thay đổi
+- `PromptInput.tsx`: Xóa block JSX render stalled message (lines 290-294). Giữ nguyên `isStalled`, `isVeryStalled` variables vì `isVeryStalled` vẫn được dùng cho màu spinner ở line 267.
+- `imageClipboard.test.ts`: Xóa assertion kiểm tra `Không có sự kiện mới` (line 207).
+
+### File đã sửa
+- `src/components/PromptInput.tsx`
+- `src/tests/imageClipboard.test.ts`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
 ## FIX — Audit lỗi runtime: 6 bugs across providers, MCP, TUI
 
 ### Nguyên nhân gốc
