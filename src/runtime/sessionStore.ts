@@ -63,5 +63,17 @@ export function makeSessionResumable(session: RuntimeSession): RuntimeSession {
     const {error: _error, ...rest} = step;
     return {...rest, status: 'pending' as const, attempts: 0};
   });
+  // Sau resume, thêm bước review cuối để kiểm tra TOÀN BỘ kết quả tích hợp.
+  // Các bước trước điểm resume đã 'pass' nhưng chưa được xác minh lại sau thay đổi,
+  // nên cần một review tổng thể trước khi kết thúc vibe coding.
+  if (steps[steps.length - 1]?.phase !== 'review') {
+    steps.push({
+      phase: 'review',
+      agentId: 'review-code',
+      agentLabel: 'PXH Reviewer',
+      status: 'pending',
+      attempts: 0,
+    });
+  }
   return {...session, status: 'running', steps};
 }

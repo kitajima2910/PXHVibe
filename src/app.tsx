@@ -600,6 +600,24 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       }
     }
 
+    // "tiếp tục/continue": nếu có session bị dừng (running/fail) thì resume từ
+    // checkpoint (bước dang dở), giống behaviour `continue` của opencode cli.
+    // Nếu không có session lưu, rớt xuống buildRoutingTarget để nối target cũ.
+    if (/^(?:tiếp tục|làm tiếp|sửa tiếp|triển khai tiếp|continue|go on)\b/iu.test(content.trim())) {
+      const stored = await new SessionStore(workingDirectory).load();
+      if (stored !== undefined && stored.status !== 'pass') {
+        resumeSessionRef.current = makeSessionResumable(stored);
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(),
+          role: 'user',
+          content: collapsePastedBlocksForDisplay(content, Math.max(20, (stdout.columns ?? 80) - 21)),
+          createdAt: new Date(),
+        }]);
+        await handleSubmit(stored.target);
+        return;
+      }
+    }
+
     await ensureMCPReady(currentProvider);
 
     const routingTarget = buildRoutingTarget(messages, content);
@@ -622,12 +640,22 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     const resumeSession = pendingResumeSession;
     resumeSessionRef.current = undefined;
     setLastPipeline(pipeline);
-    setStickyTasks(pipeline.tasks.map((task, index) => ({
-      id: `${index}-${task.phase}`,
-      label: phaseTodoLabel(task.phase, task.workflow),
-      status: 'pending',
-      agentLabel: task.agent,
-    })));
+    // Khi resume, hiển thị toàn bộ step của session (gồm bước review cuối)
+    // để task list phản ánh việc kiểm tra toàn bộ, không chỉ bước tiếp tục.
+    const stickyTasks = resumeSession === undefined
+      ? pipeline.tasks.map((task, index) => ({
+        id: `${index}-${task.phase}`,
+        label: phaseTodoLabel(task.phase, task.workflow),
+        status: 'pending' as const,
+        agentLabel: task.agent,
+      }))
+      : resumeSession.steps.map((step, index) => ({
+        id: `${index}-${step.phase}`,
+        label: phaseTodoLabel(step.phase, resumeSession.workflowId),
+        status: step.status === 'running' || step.status === 'partial' ? 'pending' : step.status,
+        agentLabel: step.agentLabel,
+      }));
+    setStickyTasks(stickyTasks);
     const requestImages = pendingImages;
     setPendingImages([]);
     const message: Message = {

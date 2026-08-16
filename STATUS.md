@@ -2997,3 +2997,59 @@ Không có bug code liên quan version. Phiên bản `0.18.0` nhất quán, rele
 - `npm run release:check`: [OK] Release integrity v0.22.3 (typecheck + 23 test groups + release-check).
 - Git: commit `efa40b1`, tag `v0.22.3` da push len origin (cung voi v0.22.1, v0.22.2).
 - npm: `pxhvibe@0.22.3` da publish (user chay `npm publish` thu cong voi OTP). Verify `npm view pxhvibe version` = 0.22.3.
+
+## CODE - Canh buc "tiep tuc/continue" giong opencode cli
+
+### Nguyen nhan goc
+- Keyword "tiep tuc/continue" chi xu ly o buildRoutingTarget (app.tsx:130): ghep previousTarget + note roi submit moi, KHONG dung checkpoint da luu. Nen sau khi mot phase bi dung, go "tiep tuc" chay lai toan bo pipeline tu dau thay vi resume tu buoc dang do. Khong giong opencode cli (continue resume tu checkpoint).
+
+### Da thay doi gi
+- `src/app.tsx` (handleSubmit): them xu ly keyword "tiep tuc|lam tiep|sua tiep|trien khai tiep|continue|go on". Khi co session bi dung (status running/fail) da luu thi resume tu checkpoint (set resumeSessionRef = makeSessionResumable(stored), submit stored.target) giong behaviour `continue` cua opencode. Khong co session luu thi giu nguyen behaviour cu (noi target).
+
+### File da sua
+- `src/app.tsx`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: thanh cong (pxhvibe@0.22.3).
+- `npm.cmd run test:runtime-commands`: passed.
+- `npm.cmd run test:commands`: passed.
+
+### Van de con lai
+- /resume cua PXHVibe chi resume 1 session da luu (single file); opencode /resume hien danh sach nhieu session de chon. Khong thuoc TARGET lan nay.
+- Auto-resume khi mo lai app da co san cho status fail/running; session 'pass' khong auto-resume (dung, vi hoan thanh thi khong nen chay lai).
+
+## CODE - Kiem tra toan bo sau resume (continue)
+
+### Nguyen nhan goc
+- Khi resume/continue, `makeSessionResumable` giu cac buoc truoc diem resume la 'pass' va chi chay lai tu currentIndex. Khong co buoc xac minh cuoi nen sau resume, ket qua tich hop khong duoc review lai -> task list chi thay buoc tai diem continue duoc check.
+
+### Da thay doi gi
+- `src/runtime/sessionStore.ts` (`makeSessionResumable`): sau resume them buoc `review` cuoi (agent `review-code`) de kiem tra TOAN BO ket qua tich hop truoc khi ket thuc vibe coding (bo qua neu buoc cuoi da la review).
+- `src/app.tsx` (handleSubmit): khi resume, hien thi sticky tasks tu `resumeSession.steps` (gom buoc review cuoi) thay vi chi `pipeline.tasks`, nen task list phan anh kiem tra toan bo.
+
+### File da sua
+- `src/runtime/sessionStore.ts`
+- `src/app.tsx`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: thanh cong (pxhvibe@0.22.3).
+- `npm.cmd test`: toan bo 23 nhom test qua (team, runtime-commands, commands, todo,...).
+
+### Van de con lai
+- Buoc review cuoi co the trung voi review co san trong pipeline neu no nam truoc diem resume (review chay 2 lan) - chap nhan de dam bao kiem tra toan bo.
+- Khong thu nghiem song song voi model that; verify bang typecheck + test.
+
+## RELEASE - v0.22.4 (resume check toan bo + version bump)
+
+### Nguyen nhan goc
+- Bump version len 0.22.4 (patch) sau khi sua resume de kiem tra toan bo. README va STATUS can chua `v0.22.4` de release-check qua.
+
+### Da thay doi gi
+- `package.json` + `package-lock.json`: 0.22.3 len 0.22.4.
+- `README.md`: ban phat hanh hien tai len v0.22.4.
+- `src/runtime/sessionStore.ts` + `src/app.tsx`: resume them buoc review cuoi, task list hien thi toan bo step.
+- `STATUS.md`: them phan nay (v0.22.4).
+
+### Ket qua kiem tra
+- `npm.cmd run release:check` (typecheck + test + release-check): se chay sau build.
+- Build + 23 nhom test: deu qua o phien CODE truoc.
