@@ -1,5 +1,25 @@
 # STATUS
 
+## RELEASE — v0.22.2 (sync version docs với package.json)
+
+### Nguyên nhân gốc
+- `npm version patch` chạy 2 lần (tạo tag `v0.22.1`, `v0.22.2`) → `package.json`/`package-lock.json` lên `0.22.2`.
+- Nhưng `README.md` (v0.22.0) và `STATUS.md` (v0.22.0) không được cập nhật → version docs lệch với version package thực tế.
+- Khi `npm publish`, npm lấy version từ `package.json` (0.22.2) nên trang npm hiện đúng 0.22.2, nhưng README hiển thị v0.22.0 → không khớp.
+
+### Đã thay đổi
+- `README.md`: `v0.22.0` → `v0.22.2`.
+- `STATUS.md`: cập nhật header release lên `v0.22.2` (release-check yêu cầu STATUS chứa `v0.22.2`).
+
+### Kết quả kiểm tra
+- `npm run release:check` → `[OK] Release integrity v0.22.2` (README + STATUS đều chứa `v0.22.2`).
+
+### Vấn đề còn lại
+- `v0.22.1` và `v0.22.2` đã có tag git + commit nhưng chưa chắc đã `npm publish` (npm registry hiện tại đang ở `0.22.0`).
+- Nếu muốn 0.22.2 lên npm, cần chạy `npm publish --otp=<code>` (đã pass release-check).
+
+---
+
 ## RELEASE — v0.22.0 (bump version + GitHub release + npm publish)
 
 - Version: `0.21.1` → `0.22.0`
