@@ -2992,3 +2992,8 @@ Không có bug code liên quan version. Phiên bản `0.18.0` nhất quán, rele
 ### Ket qua kiem tra
 - `npm.cmd run release:check` (typecheck + test + release-check): se chay sau build.
 - Build + 23 nhom test: deu qua o phien CODE truoc.
+
+### Ket qua release v0.22.3
+- `npm run release:check`: [OK] Release integrity v0.22.3 (typecheck + 23 test groups + release-check).
+- Git: commit `efa40b1`, tag `v0.22.3` da push len origin (cung voi v0.22.1, v0.22.2).
+- npm: `pxhvibe@0.22.3` da publish (user chay `npm publish` thu cong voi OTP). Verify `npm view pxhvibe version` = 0.22.3.
