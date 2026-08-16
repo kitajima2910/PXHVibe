@@ -23,26 +23,26 @@ export function AgentPicker({agents, onSelect, onCancel}: AgentPickerProps): Rea
   });
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor="green" paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor="magenta" paddingX={1}>
       <Box justifyContent="space-between">
-        <Text bold color="cyan">SPECIALISTS</Text>
+        <Text bold color="magenta">SPECIALISTS</Text>
         <Text dimColor>{agents.length === 0 ? '0/0' : `${selectedIndex + 1}/${agents.length}`}</Text>
       </Box>
       <Box flexDirection="column" marginTop={1}>
         {agents.map((agent, index) => (
-          <Text key={agent.id} bold={index === selectedIndex} color={index === selectedIndex ? 'green' : 'gray'}>
+          <Text key={agent.id} bold={index === selectedIndex} color={index === selectedIndex ? 'magenta' : 'gray'}>
             {index === selectedIndex ? '● ' : '  '}{agent.label}
           </Text>
         ))}
       </Box>
       {selectedAgent !== undefined ? (
         <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
-          <Text bold color="green">{selectedAgent.label}</Text>
+          <Text bold color="magenta">{selectedAgent.label}</Text>
           <FormattedText content={compactAgentDescription(selectedAgent.description)} />
         </Box>
       ) : null}
       <Box marginTop={1}>
-        <Text dimColor><Text color="green">↑↓</Text> chọn  ·  <Text color="green">Enter</Text> sử dụng  ·  <Text color="green">Esc</Text> đóng</Text>
+        <Text dimColor><Text color="magenta">↑↓</Text> chọn  ·  <Text color="magenta">Enter</Text> sử dụng  ·  <Text color="magenta">Esc</Text> đóng</Text>
       </Box>
     </Box>
   );

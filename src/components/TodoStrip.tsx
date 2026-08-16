@@ -19,16 +19,16 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
   const total = tasks.length;
   const progressBar = renderProgressBar(completed, total);
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
+    <Box flexDirection="column" borderStyle="round" borderColor="magenta" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
       <Box justifyContent="space-between" marginBottom={1}>
         <Box gap={1}>
-          <Text bold color="cyan">◆</Text>
-          <Text bold color="cyan">PIPELINE</Text>
+          <Text bold color="magenta">◆</Text>
+          <Text bold color="magenta">PIPELINE</Text>
         </Box>
         <Text color="gray">{completed}/{total}</Text>
       </Box>
       <Box marginBottom={1}>
-        <Text color="cyan">{progressBar}</Text>
+        <Text color="magenta">{progressBar}</Text>
       </Box>
       <Box flexDirection="column">
         {tasks.length === 0 && <Text dimColor>○ Chưa có pipeline</Text>}
@@ -57,8 +57,8 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
       </Box>
       <Box flexDirection="column" marginTop={1}>
         <Box gap={1} marginBottom={tasks.length > 0 ? 1 : 0}>
-          <Text bold color="cyan">◆</Text>
-          <Text bold color="cyan">MCP</Text>
+          <Text bold color="magenta">◆</Text>
+          <Text bold color="magenta">MCP</Text>
         </Box>
         {mcpServers.length === 0 && <Text dimColor>○ Chưa cấu hình</Text>}
         {mcpServers.map((server) => (

@@ -1,6 +1,55 @@
 # STATUS
 
-## UI — Banner ASCII art với hiệu ứng shadow 3D
+## UI — Đổi tông màu chính sang PINK
+
+### Nguyên nhân gốc
+- TUI đang dùng tông màu green/cyan làm chủ đạo, cần đổi sang tông PINK (magenta) cho đẹp và nổi bật hơn.
+- Cần phối lại các màu phụ (secondary, accent) cho phù hợp với tông pink.
+
+### Đã thay đổi
+- **Banner.tsx**: Đổi gradient từ green→cyan→magenta sang magenta→cyan (3 dòng đầu magenta, 2 dòng sau cyan).
+- **Header.tsx**: Đổi borderColor sang magenta, agent label color sang magenta.
+- **TodoStrip.tsx**: Đổi borderColor, header color, progress bar color sang magenta.
+- **PromptInput.tsx**: Đổi borderColor, cursor color, prompt indicator, pasted blocks color sang magenta.
+- **MessageList.tsx**: Đổi user color sang magenta, assistant color sang cyan, HISTORY indicator sang magenta.
+- **Footer.tsx**: Đổi shortcut colors sang magenta.
+- **FormattedText.tsx**: Đổi inline code color sang magenta, mở rộng accent type để hỗ trợ magenta/cyan.
+- **ModePicker.tsx**: Đổi borderColor, title color, selected item color, help text color sang magenta.
+- **AgentPicker.tsx**: Đổi borderColor, title color, selected item color, help text color sang magenta.
+- **CatalogPicker.tsx**: Đổi borderColor, title color, selected item color, help text color sang magenta.
+- **DiffView.tsx**: Đổi DIFF label color, hunk header color sang magenta.
+- **CustomApiSetup.tsx**: Đổi borderColor, title color sang magenta.
+
+### Bảng màu mới
+- **Primary**: magenta (pink) - màu chính cho UI elements
+- **Secondary**: cyan - màu phụ cho assistant messages, contrast
+- **Accent**: yellow - highlight cho warnings, elapsed time
+- **Success**: green - giữ nguyên cho semantic (online, connected)
+- **Error**: red - giữ nguyên cho semantic
+- **Warning**: yellow - giữ nguyên cho semantic
+
+### File đã sửa
+- `src/components/Banner.tsx`
+- `src/components/Header.tsx`
+- `src/components/TodoStrip.tsx`
+- `src/components/PromptInput.tsx`
+- `src/components/MessageList.tsx`
+- `src/components/Footer.tsx`
+- `src/components/FormattedText.tsx`
+- `src/components/ModePicker.tsx`
+- `src/components/AgentPicker.tsx`
+- `src/components/CatalogPicker.tsx`
+- `src/components/DiffView.tsx`
+- `src/components/CustomApiSetup.tsx`
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 24/24 test groups pass.
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại.
+
+
 
 ### Nguyên nhân gốc
 - ASCII art "PXHVibe" cần có hiệu ứng shadow/3D để đẹp và nổi bật hơn.

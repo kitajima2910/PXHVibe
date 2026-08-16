@@ -86,8 +86,8 @@ export function CustomApiSetup({onComplete, onCancel}: CustomApiSetupProps): Rea
       : values[field];
 
   return (
-    <Box flexDirection="column" borderStyle="double" borderColor="green" paddingX={1}>
-      <Text bold color="green">[ CUSTOM API UPLINK ]</Text>
+    <Box flexDirection="column" borderStyle="double" borderColor="magenta" paddingX={1}>
+      <Text bold color="magenta">[ CUSTOM API UPLINK ]</Text>
       <Text>{fieldLabels[field]}: {visibleValue}<Text inverse> </Text></Text>
       {field === 'provider' && (
         <Text dimColor>

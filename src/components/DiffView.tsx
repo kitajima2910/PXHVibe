@@ -22,7 +22,7 @@ export function DiffView({content, maxLines = 200}: DiffViewProps): React.JSX.El
 
   return (
     <Box flexDirection="column" marginY={1} flexShrink={0}>
-      <Text bold color="green">DIFF</Text>
+      <Text bold color="magenta">DIFF</Text>
       {visible.map((line, index) => (
         <DiffLineView key={index} line={line} />
       ))}
@@ -69,7 +69,7 @@ function DiffLineView({line}: {line: DiffLine}): React.JSX.Element {
     return <Text bold color="white">📄 {label}</Text>;
   }
   if (line.kind === 'hunk') {
-    return <Text color="cyan">{line.text}</Text>;
+    return <Text color="magenta">{line.text}</Text>;
   }
   if (line.kind === 'meta') {
     return <Text dimColor>{line.text}</Text>;

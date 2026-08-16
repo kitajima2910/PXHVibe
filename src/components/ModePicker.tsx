@@ -44,9 +44,9 @@ export function ModePicker({modes, healthReport, isCheckingHealth, onSelect, onC
   });
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor="green" paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor="magenta" paddingX={1}>
       <Box justifyContent="space-between">
-        <Text bold color="cyan">MODELS {isCheckingHealth ? '· đang kiểm tra...' : ''}</Text>
+        <Text bold color="magenta">MODELS {isCheckingHealth ? '· đang kiểm tra...' : ''}</Text>
         <Text dimColor>{modes.length === 0 ? '0/0' : `${selectedIndex + 1}/${modes.length}`}</Text>
       </Box>
       <Box flexDirection="column" marginTop={1}>
@@ -62,7 +62,7 @@ export function ModePicker({modes, healthReport, isCheckingHealth, onSelect, onC
                 : health.ok
                   ? `online ${(health.latencyMs / 1000).toFixed(1)}s`
                   : 'offline';
-          const color = index === selectedIndex ? 'green' : health?.ok === false ? 'red' : 'gray';
+          const color = index === selectedIndex ? 'magenta' : health?.ok === false ? 'red' : 'gray';
           return (
             <Box key={mode.id} justifyContent="space-between">
               <Text bold={index === selectedIndex || isRecommended} color={color}>
@@ -75,7 +75,7 @@ export function ModePicker({modes, healthReport, isCheckingHealth, onSelect, onC
       </Box>
       {selectedMode === undefined ? null : (
         <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
-          <Text bold color="green">{selectedMode.label}</Text>
+          <Text bold color="magenta">{selectedMode.label}</Text>
           <Text>{selectedMode.description}</Text>
           {selectedMode.provider === 'free' && selectedHealth !== undefined ? (
             <Text dimColor>{selectedHealth.ok ? `Phản hồi ${(selectedHealth.latencyMs / 1000).toFixed(1)}s` : 'Không phản hồi trong lần kiểm tra gần nhất'}</Text>
@@ -83,7 +83,7 @@ export function ModePicker({modes, healthReport, isCheckingHealth, onSelect, onC
         </Box>
       )}
       <Box marginTop={1}>
-        <Text dimColor><Text color="green">↑↓</Text> chọn  ·  <Text color="green">Enter</Text> sử dụng  ·  <Text color="green">Esc</Text> đóng</Text>
+        <Text dimColor><Text color="magenta">↑↓</Text> chọn  ·  <Text color="magenta">Enter</Text> sử dụng  ·  <Text color="magenta">Esc</Text> đóng</Text>
       </Box>
     </Box>
   );

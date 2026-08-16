@@ -71,25 +71,25 @@ export function CatalogPicker({title, items, onClose, pageSize = 8}: CatalogPick
   if (isDetailOpen && selectedItem !== undefined) {
     const detailEnd = Math.min(detailBlocks.length, detailOffset + visibleDetailBlocks.length);
     return (
-      <Box flexDirection="column" borderStyle="single" borderColor="green" paddingX={1}>
+      <Box flexDirection="column" borderStyle="single" borderColor="magenta" paddingX={1}>
         <Box justifyContent="space-between">
-          <Text bold color="cyan">{title} · {selectedItem.label}</Text>
+          <Text bold color="magenta">{title} · {selectedItem.label}</Text>
           <Text dimColor>{detailBlocks.length === 0 ? '0/0' : `${detailOffset + 1}–${detailEnd}/${detailBlocks.length}`}</Text>
         </Box>
         <Box flexDirection="column" marginTop={1}>
           <FormattedBlocks blocks={visibleDetailBlocks} />
         </Box>
         <Box marginTop={1}>
-          <Text dimColor><Text color="green">↑↓/PgUp/PgDn</Text> cuộn  ·  <Text color="green">Enter/Esc</Text> quay lại</Text>
+          <Text dimColor><Text color="magenta">↑↓/PgUp/PgDn</Text> cuộn  ·  <Text color="magenta">Enter/Esc</Text> quay lại</Text>
         </Box>
       </Box>
     );
   }
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor="green" paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor="magenta" paddingX={1}>
       <Box justifyContent="space-between">
-        <Text bold color="cyan">{title}</Text>
+        <Text bold color="magenta">{title}</Text>
         <Text dimColor>{items.length === 0 ? '0/0' : `${selectedIndex + 1}/${items.length}`}</Text>
       </Box>
       <Box flexDirection="column" marginTop={1}>
@@ -97,7 +97,7 @@ export function CatalogPicker({title, items, onClose, pageSize = 8}: CatalogPick
         {visibleItems.map((item, offset) => {
           const index = windowStart + offset;
           return (
-            <Text key={item.id} bold={index === selectedIndex} color={index === selectedIndex ? 'green' : 'gray'}>
+            <Text key={item.id} bold={index === selectedIndex} color={index === selectedIndex ? 'magenta' : 'gray'}>
               {index === selectedIndex ? '● ' : '  '}{item.label}
             </Text>
           );
@@ -108,13 +108,13 @@ export function CatalogPicker({title, items, onClose, pageSize = 8}: CatalogPick
       </Box>
       {selectedItem === undefined ? null : (
         <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
-          <Text bold color="green">{selectedItem.label}</Text>
+          <Text bold color="magenta">{selectedItem.label}</Text>
           <FormattedText content={compactCatalogText(selectedItem.description)} />
           {selectedItem.meta === undefined ? null : <Text dimColor>{compactCatalogText(selectedItem.meta, 120)}</Text>}
         </Box>
       )}
       <Box marginTop={1}>
-        <Text dimColor><Text color="green">↑↓/PgUp/PgDn</Text> chọn  ·  <Text color="green">Enter</Text> xem Markdown  ·  <Text color="green">Esc</Text> đóng</Text>
+        <Text dimColor><Text color="magenta">↑↓/PgUp/PgDn</Text> chọn  ·  <Text color="magenta">Enter</Text> xem Markdown  ·  <Text color="magenta">Esc</Text> đóng</Text>
       </Box>
     </Box>
   );

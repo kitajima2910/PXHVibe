@@ -19,7 +19,7 @@ export function Header({workingDirectory, providerName, agentLabel, status}: Hea
   return (
     <Box
       borderStyle="round"
-      borderColor={statusMeta.color}
+      borderColor="magenta"
       paddingX={1}
       justifyContent="space-between"
       minHeight={1}
@@ -34,7 +34,7 @@ export function Header({workingDirectory, providerName, agentLabel, status}: Hea
       </Box>
       <Box flexShrink={0}>
         <Text dimColor>Agent:</Text>
-        <Text bold color="cyan"> {agentLabel}</Text>
+        <Text bold color="magenta"> {agentLabel}</Text>
       </Box>
       <Box flexShrink={0}>
         <Text dimColor>{workingDirectory}</Text>

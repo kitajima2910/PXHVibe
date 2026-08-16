@@ -4,7 +4,7 @@ import {parseTerminalBlocks, type TerminalBlock} from '../utils/terminalFormat.j
 
 interface FormattedTextProps {
   content: string;
-  accent?: 'green' | 'yellow';
+  accent?: 'green' | 'yellow' | 'magenta' | 'cyan';
 }
 
 export function FormattedText({content, accent = 'green'}: FormattedTextProps): React.JSX.Element {
@@ -13,7 +13,7 @@ export function FormattedText({content, accent = 'green'}: FormattedTextProps): 
 
 interface FormattedBlocksProps {
   blocks: readonly TerminalBlock[];
-  accent?: 'green' | 'yellow';
+  accent?: 'green' | 'yellow' | 'magenta' | 'cyan';
 }
 
 export function FormattedBlocks({blocks, accent = 'green'}: FormattedBlocksProps): React.JSX.Element {
@@ -55,7 +55,7 @@ function InlineText({content}: {content: string}): React.JSX.Element {
     <Text>
       {parts.map((part, index) => {
         if (part.startsWith('`') && part.endsWith('`')) {
-          return <Text key={index} color="cyan">{part.slice(1, -1)}</Text>;
+          return <Text key={index} color="magenta">{part.slice(1, -1)}</Text>;
         }
         if (part.startsWith('**') && part.endsWith('**')) {
           return <Text key={index} bold>{part.slice(2, -2)}</Text>;

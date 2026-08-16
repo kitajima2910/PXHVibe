@@ -5,19 +5,19 @@ import {appVersion} from '../version.js';
 export function Banner(): React.JSX.Element {
   return (
     <Box flexDirection="column" alignItems="center" marginTop={1} marginBottom={1}>
-      <Text bold color="green">
+      <Text bold color="magenta">
         {'████  █   █ █   █ █   █ ███ ████  █████   '}
       </Text>
-      <Text bold color="green">
+      <Text bold color="magenta">
         {'█░░░█  █ █ ░█░  █░█░  █░ █░░█░░░█ █░░░░░  '}
       </Text>
-      <Text bold color="cyan">
+      <Text bold color="magenta">
         {'████░░  █ ░ █████░█░░ █░░█░░████░░████░░░ '}
       </Text>
       <Text bold color="cyan">
         {'█░░░░ ░█ █ ░█░░░█░░█░█ ░░█░░█░░░█ █░░░░   '}
       </Text>
-      <Text bold color="magenta">
+      <Text bold color="cyan">
         {'█░░░░░█ ░ █ █░░░█░░ █ ░ ███░████░░█████░  '}
       </Text>
       <Text dimColor>

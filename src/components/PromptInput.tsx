@@ -238,10 +238,10 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   const isVeryStalled = idleSeconds >= 180;
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isBusy ? 'yellow' : 'green'} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={isBusy ? 'yellow' : 'magenta'} paddingX={1}>
       <Box justifyContent="space-between">
         <Box gap={1}>
-          <Text bold color={isBusy ? 'yellow' : 'green'}>
+          <Text bold color={isBusy ? 'yellow' : 'magenta'}>
             {isBusy ? `⠿ WORKING` : '❯ NEW TARGET'}
           </Text>
           {isBusy && <Text color="yellow">{formatElapsed(elapsedSeconds)}</Text>}
@@ -257,7 +257,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         <Box flexDirection="column">
           {pastedBlocks.slice(-3).map((block, index) => (
             <Text key={`${block.length}-${index}`}>
-              <Text bold color="cyan">~{countDisplayLines(block, editorWidth)} dòng</Text>
+              <Text bold color="magenta">~{countDisplayLines(block, editorWidth)} dòng</Text>
             </Text>
           ))}
           {pastedBlocks.length > 3 && <Text dimColor>+{pastedBlocks.length - 3} clipboard cũ</Text>}
@@ -265,26 +265,26 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
       )}
       <Box flexDirection="column">
         <Box>
-        <Text bold color="cyan">❯ </Text>
+        <Text bold color="magenta">❯ </Text>
         {isBusy ? (
           <Text color={isVeryStalled ? 'red' : 'yellow'}>{cancelArmed ? 'Nhấn ESC lần nữa để dừng lượt chạy.' : `${processingFrames[spinnerIndex]} ${activityLabel ?? 'Đang khởi động worker...'}${busyStartedAt !== undefined ? ` · ${formatElapsed((clockNow - busyStartedAt) / 1000)}` : ''}`}</Text>
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (
-              <Box ref={editorRef}><Text><Text inverse color="green"> </Text><Text color="gray"> Nhập TARGET · /help · /models</Text></Text></Box>
+              <Box ref={editorRef}><Text><Text inverse color="magenta"> </Text><Text color="gray"> Nhập TARGET · /help · /models</Text></Text></Box>
             ) : (
               <>
-                {inputViewport.hiddenAbove > 0 && <Text color="cyan">↑ {inputViewport.hiddenAbove} lines</Text>}
+                {inputViewport.hiddenAbove > 0 && <Text color="magenta">↑ {inputViewport.hiddenAbove} lines</Text>}
                 <Box ref={editorRef} flexDirection="column" overflow="hidden">
                   <Text color="white">
                     {inputViewport.text.slice(0, inputViewport.cursorIndex)}
-                    <Text inverse color="green">{inputViewport.text[inputViewport.cursorIndex] ?? ' '}</Text>
+                    <Text inverse color="magenta">{inputViewport.text[inputViewport.cursorIndex] ?? ' '}</Text>
                     {inputViewport.cursorIndex < inputViewport.text.length
                       ? inputViewport.text.slice(inputViewport.cursorIndex + 1)
                       : ''}
                   </Text>
                 </Box>
-                {inputViewport.hiddenBelow > 0 && <Text color="cyan">↓ {inputViewport.hiddenBelow} lines</Text>}
+                {inputViewport.hiddenBelow > 0 && <Text color="magenta">↓ {inputViewport.hiddenBelow} lines</Text>}
               </>
             )}
           </Box>

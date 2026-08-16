@@ -101,7 +101,7 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
         </Box>
       </Box>
       {scrollOffset > 0 && (
-        <Text color="yellow">↑ HISTORY · PageDown để về hội thoại mới nhất</Text>
+        <Text color="magenta">↑ HISTORY · PageDown để về hội thoại mới nhất</Text>
       )}
     </Box>
   );
@@ -147,8 +147,8 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
       flexShrink={0}
     >
       <Box gap={1}>
-        <Text bold color={isUser ? 'yellow' : 'green'}>●</Text>
-        <Text bold color={isUser ? 'yellow' : 'green'}>{isUser ? 'YOU' : 'PXH'}</Text>
+        <Text bold color={isUser ? 'magenta' : 'cyan'}>●</Text>
+        <Text bold color={isUser ? 'magenta' : 'cyan'}>{isUser ? 'YOU' : 'PXH'}</Text>
         <Text dimColor>{isUser ? 'target' : 'response'}</Text>
         <Text dimColor>·</Text>
         <Text dimColor>{formatTime(message.createdAt)}</Text>
@@ -157,7 +157,7 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
         <Box paddingLeft={2}>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>
       )}
       <Box paddingLeft={2}>
-        <FormattedText content={message.content} accent={isUser ? 'yellow' : 'green'} />
+        <FormattedText content={message.content} accent={isUser ? 'magenta' : 'cyan'} />
       </Box>
       {message.diff !== undefined && message.diff.length > 0 && (
         <Box paddingLeft={2}>
