@@ -1,5 +1,61 @@
 # STATUS
 
+## FEATURE — Suggestion System for Next Improvements
+
+### Nguyên nhân gốc
+- Sau khi hoàn thành task vibe coding, user thường muốn tiếp tục cải thiện code
+- Cần có gợi ý thông minh dựa trên context để user dễ dàng chọn hướng phát triển tiếp theo
+- Giảm friction bằng cách cho phép chọn nhanh bằng số (1/2/3) hoặc click
+
+### Đã thay đổi
+
+**1. Suggestion Generator** (`src/utils/suggestions.ts`)
+- `generateSuggestions()`: Tạo 3 gợi ý dựa trên context (target, output, files changed)
+- 3 categories: improvement (🔧), idea (💭), upgrade (⚡)
+- Logic thông minh:
+  - Nếu có files changed và chưa test → gợi ý thêm test
+  - Nếu là fix/bug → gợi ý thêm error handling
+  - Nếu là feature mới → gợi ý thêm options/config
+- `formatSuggestions()`: Format đẹp với icons
+- `parseSuggestionSelection()`: Parse input 1/2/3
+
+**2. Integration** (`src/app.tsx`)
+- Thêm state `suggestions` để lưu 3 gợi ý
+- Sau khi pipeline hoàn tất:
+  - Extract changed files từ git diff
+  - Generate suggestions dựa trên context
+  - Append formatted suggestions vào output
+- Xử lý input:
+  - Nếu user gõ 1/2/3 và có suggestions → trigger vibe coding với suggestion đó
+  - Clear suggestions khi bắt đầu task mới
+- Helper function `extractChangedFiles()` để parse git diff
+
+### Cách hoạt động
+1. User hoàn thành task vibe coding
+2. PXHVibe hiển thị 3 gợi ý:
+   ```
+   💡 Gợi ý tiếp theo (gõ 1, 2, 3 hoặc click):
+   
+     1. 🔧 Thêm test cho src/app.tsx
+     2. 💭 Thêm documentation và comments cho code
+     3. ⚡ Mở rộng tính năng với options/config
+   ```
+3. User gõ `1`, `2`, hoặc `3` → PXHVibe tự động vibe coding với suggestion đó
+4. Cycle tiếp tục với 3 gợi ý mới
+
+### Kết quả kiểm tra
+- `npm run build` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- Suggestions được generate dựa trên context thực tế
+- Input handling hoạt động đúng cho 1/2/3
+
+### Vấn đề còn lại
+- Chưa hỗ trợ click bằng mouse (chỉ hỗ trợ gõ số)
+- Suggestions hiện tại rule-based, có thể upgrade bằng AI-generated suggestions
+- Chưa có option để disable suggestions
+
+---
+
 ## FEATURE — Token Optimization Suite (v0.21.0)
 
 ### Nguyên nhân gốc

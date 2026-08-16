@@ -37,6 +37,7 @@ import {
 } from './runtime/commands.js';
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
+import {generateSuggestions, formatSuggestions, parseSuggestionSelection, type Suggestion} from './utils/suggestions.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -155,6 +156,20 @@ export function formatPhaseSummary(entries: readonly PhaseSummaryEntry[], budget
   return lines.join('\n');
 }
 
+function extractChangedFiles(diffContent: string): string[] {
+  const files: string[] = [];
+  const lines = diffContent.split('\n');
+  for (const line of lines) {
+    if (line.startsWith('diff --git')) {
+      const match = line.match(/a\/(.+?) b\//);
+      if (match?.[1]) {
+        files.push(match[1]);
+      }
+    }
+  }
+  return files;
+}
+
 export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog, workingDirectory = process.cwd()}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
   const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(workingDirectory));
@@ -184,6 +199,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
   const [activityLabel, setActivityLabel] = useState('Đang khởi động worker...');
   const [phaseLabel, setPhaseLabel] = useState('khởi động');
   const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [mcpManager] = useState(() => new MCPManager(workingDirectory));
   const [mcpServers, setMcpServers] = useState<readonly MCPServerStatus[]>([]);
   const mcpReadyRef = useRef<Promise<readonly MCPServerStatus[]> | undefined>(undefined);
@@ -309,6 +325,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     if (isBusy) {
       return;
     }
+
+    // Clear suggestions when starting new task
+    setSuggestions([]);
 
     const command = content.toLowerCase();
     if (command === '/models') {
@@ -553,6 +572,24 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
+    // Check if input is a suggestion selection (1, 2, 3)
+    const suggestionIndex = parseSuggestionSelection(content);
+    if (suggestionIndex !== null && suggestions.length > 0) {
+      const selectedSuggestion = suggestions[suggestionIndex - 1];
+      if (selectedSuggestion) {
+        setSuggestions([]); // Clear suggestions
+        setMessages((currentMessages) => [...currentMessages, {
+          id: createMessageId(),
+          role: 'user',
+          content: `${suggestionIndex}. ${selectedSuggestion.text}`,
+          createdAt: new Date(),
+        }]);
+        // Trigger vibe coding with selected suggestion
+        await handleSubmit(selectedSuggestion.text);
+        return;
+      }
+    }
+
     await ensureMCPReady(currentProvider);
 
     const routingTarget = buildRoutingTarget(messages, content);
@@ -749,6 +786,21 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           appendAssistantContent(sanitizeOutputBranding(`\n\n${message}`));
         }
       }
+      
+      // Generate suggestions for next improvements
+      const filesChanged = diffResult.ok && diffResult.content
+        ? extractChangedFiles(diffResult.content)
+        : [];
+      const suggestionContext = {
+        target: contextualTarget,
+        lastOutput: lastOutput,
+        filesChanged,
+        pipelinePhases: pipeline.tasks.map(t => t.phase),
+      };
+      const newSuggestions = generateSuggestions(suggestionContext);
+      setSuggestions(newSuggestions);
+      appendAssistantContent(formatSuggestions(newSuggestions));
+      
       setStatus('Ready');
     } catch (error: unknown) {
       const storedSession = await new SessionStore(workingDirectory).load();
