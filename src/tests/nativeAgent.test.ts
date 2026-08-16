@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {AgentRuntime} from '../agent/AgentRuntime.js';
 import type {ModelProvider, ModelRequest} from '../agent/ModelProvider.js';
+import type {AgentModelTurn} from '../agent/types.js';
 import {createWorkspaceTools} from '../agent/tools/workspaceTools.js';
 
 class FakeModelProvider implements ModelProvider {
@@ -20,6 +21,17 @@ class FakeModelProvider implements ModelProvider {
     }
     request.onTextDelta('Đã đọc file.');
     return {id: 'response-2', text: 'Đã đọc file.', toolCalls: []};
+  }
+}
+
+// Model luôn trả về tool call giống hệt nhau → mô phỏng agent bị lặp.
+class LoopModelProvider implements ModelProvider {
+  async createTurn(): Promise<AgentModelTurn> {
+    return {
+      id: 'loop',
+      text: '',
+      toolCalls: [{callId: 'call-loop', name: 'list_files', arguments: '{"path":"."}'}],
+    };
   }
 }
 
@@ -45,6 +57,13 @@ try {
   assert.ok(secondInput !== undefined && 'type' in secondInput);
   assert.match(secondInput.output, /xin chào/);
   assert.deepEqual(events, ['tool_start', 'tool_complete', 'text_delta']);
+
+  // Agent bị lặp tool call phải dừng sớm thay vì chạy hết 12 lượt.
+  const loopRuntime = new AgentRuntime(new LoopModelProvider(), tools);
+  await assert.rejects(
+    loopRuntime.run('Liệt kê file', temporaryDirectory, new AbortController().signal, () => undefined),
+    /lặp tool call/,
+  );
 
   const patchTool = tools.find((tool) => tool.name === 'apply_patch');
   assert.ok(patchTool !== undefined);

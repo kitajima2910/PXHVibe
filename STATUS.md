@@ -1,5 +1,23 @@
 # STATUS
 
+## FIX — Agent lặp tool call hết 12 lượt (Custom API DeepSeek)
+
+### Nguyên nhân gốc
+- `AgentRuntime` chạy tối đa 12 lượt; khi model (vd DeepSeek qua Custom API) lặp lại tool call giống hệt không chịu dừng, hết 12 lượt thì ném `Agent đã vượt quá giới hạn 12 lượt xử lý.`
+- `teamRunner.isRetryable` không nhận diện lỗi này → retry tới 3 lần, mỗi lần đốt thêm 12 lượt; TUI hiện `✗ FIX · ... · Agent đã vượt quá giới hạn 12 lần xử lý` (đúng lỗi trong ảnh chụp).
+
+### Đã thay đổi
+- `AgentRuntime`: thêm phát hiện vòng lặp — cùng một tập tool call (name + arguments) lặp lại ≥3 lần thì dừng sớm với `Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.`; thêm dòng hướng dẫn vào instructions để model trả lời ngay sau khi hoàn thành, không gọi lại tool giống hệt.
+- `teamRunner`: `isRetryable` loại `lặp tool call` và `vượt quá giới hạn \d+ lượt` → lỗi loop/turn-limit không bị retry mù 3 lần.
+- Test: `nativeAgent.test.ts` thêm `LoopModelProvider` xác nhận runtime dừng sớm; `teamRunner.test.ts` thêm `LoopErrorProvider` xác nhận chỉ gọi provider 1 lần.
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0.
+- `npm test` → 23/23 test groups pass (agent + team + chat-completions đều pass).
+
+### Vấn đề còn lại
+- Nếu model vẫn lặp tool với arguments khác nhau từng lượt thì loop detector không bắt được (chỉ bắt tập call trùng lặp); trường hợp đó vẫn dừng ở giới hạn 12 lượt nhưng không retry thêm.
+
 ## v0.19.0 — TUI redesign + che branding runtime
 
 ### Đã thay đổi

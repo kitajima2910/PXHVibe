@@ -6,6 +6,7 @@ Use the available tools to inspect and edit the project before answering.
 Never claim a file was changed unless a tool result confirms it.
 Keep changes minimal and stay inside the workspace.
 There is no shell tool. If verification requires a command, explain that limitation.
+Trả lời ngay sau khi hoàn thành; không gọi lại tool call giống hệt lần trước và không lặp vòng tool.
 
 OUTPUT FORMAT:
 - Answer in structured Markdown that is easy to scan in a terminal.
@@ -40,6 +41,7 @@ export class AgentRuntime {
   ): Promise<string> {
     const history: AgentInput[] = [{role: 'user', content: prompt}];
     let content = '';
+    const seenCalls = new Map<string, number>();
 
     for (let turnIndex = 0; turnIndex < this.maxTurns; turnIndex += 1) {
       let streamedText = '';
@@ -63,6 +65,16 @@ export class AgentRuntime {
 
       if (turn.toolCalls.length === 0) {
         return content.trim();
+      }
+
+      const callsKey = turn.toolCalls
+        .map((call) => `${call.name}(${call.arguments})`)
+        .sort()
+        .join('|');
+      const repeatCount = (seenCalls.get(callsKey) ?? 0) + 1;
+      seenCalls.set(callsKey, repeatCount);
+      if (repeatCount >= 3) {
+        throw new Error('Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.');
       }
 
       // Giữ assistant turn (tool calls) trong history để provider nối đúng

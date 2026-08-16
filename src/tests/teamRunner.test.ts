@@ -38,6 +38,16 @@ class TooLongProvider implements AIProvider {
   cancel(): void {}
 }
 
+class LoopErrorProvider implements AIProvider {
+  readonly name = 'LoopError';
+  calls = 0;
+  async sendMessage(): Promise<ProviderResponse> {
+    this.calls += 1;
+    throw new Error('Agent bị lặp tool call. Dừng sớm để tránh tốn lượt.');
+  }
+  cancel(): void {}
+}
+
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-team-'));
 try {
   const target = 'sửa lỗi đăng nhập bị crash';
@@ -135,6 +145,18 @@ try {
     assert.equal(tooLongProvider.calls, 1);
   } finally {
     await rm(tooLongRoot, {recursive: true, force: true});
+  }
+
+  const loopErrorRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-team-loop-error-'));
+  try {
+    const loopErrorProvider = new LoopErrorProvider();
+    await assert.rejects(runTeamPipeline({
+      provider: loopErrorProvider, cwd: loopErrorRoot, target, route, catalog: emptyCatalog,
+      pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
+    }), /lặp tool call/);
+    assert.equal(loopErrorProvider.calls, 1);
+  } finally {
+    await rm(loopErrorRoot, {recursive: true, force: true});
   }
 } finally {
   await rm(root, {recursive: true, force: true});
