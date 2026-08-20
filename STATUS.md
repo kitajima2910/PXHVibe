@@ -1,5 +1,29 @@
 # STATUS
 
+## FIX — Scroll direction inverted (message text lost on scroll)
+
+### Nguyên nhân gốc
+`MessageList.tsx:72-74` used `messages.slice(0, messages.length - scrollOffset)` — when scrolling UP (increasing offset), this kept the **oldest** messages and dropped the **newest** ones from the end. For a chat interface, the newest messages should stay anchored at the bottom (via `justifyContent="flex-end"`) while scrolling UP reveals older messages from the top.
+
+Additionally, `scrollBy` clamped against `messages.length - 1` instead of `messages.length - 1 - viewportHeight`, so at max scroll the viewport could overflow with more messages than fit.
+
+### Đã thay đổi
+- `MessageList.tsx:29`: `maxOffset` changed from `messages.length - 1` to `messages.length - 1 - trackHeight` — prevents scroll offset from exceeding the number of hidden messages.
+- `MessageList.tsx:72`: Slice inverted from `messages.slice(0, messages.length - scrollOffset)` to `messages.slice(Math.max(0, messages.length - trackHeight - scrollOffset))` — now drops oldest messages (from start) when scrolling UP, keeping newest visible.
+
+### File đã sửa
+- `src/components/MessageList.tsx` (2 lines changed)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0
+- `npm test` → 24/24 test groups pass (including viewport test)
+- Scroll behavior: offset 0 → newest messages visible at bottom; offset > 0 → older messages appear from top; auto-scroll reset on new messages
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại
+
+---
+
 ## REVIEW — PXHVibe v0.22.5
 
 ### Trạng thái

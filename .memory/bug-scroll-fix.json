@@ -1,0 +1,32 @@
+{
+  "version": "v0.22.5",
+  "type": "bug",
+  "timestamp": "2026-08-20T00:00:00Z",
+  "phase": "FIX",
+  "status": "resolved",
+  "category": "UI",
+  "severity": "HIGH",
+  "root_cause": "MessageList.tsx:72-74 used messages.slice(0, messages.length - scrollOffset) — scrolling UP kept oldest messages and dropped newest ones. For a chat app, newest messages should stay anchored at bottom.",
+  "fix": {
+    "file": "src/components/MessageList.tsx",
+    "changes": [
+      {
+        "line": 29,
+        "old": "messages.length - 1",
+        "new": "messages.length - 1 - trackHeight",
+        "purpose": "Prevent scroll offset from exceeding number of hidden messages"
+      },
+      {
+        "line": 72,
+        "old": "messages.slice(0, messages.length - scrollOffset)",
+        "new": "messages.slice(Math.max(0, messages.length - trackHeight - scrollOffset))",
+        "purpose": "Drop oldest messages from start, keep newest anchored at bottom"
+      }
+    ]
+  },
+  "verification": {
+    "typecheck": "pass",
+    "tests": "24/24 pass",
+    "git": "clean"
+  }
+}
