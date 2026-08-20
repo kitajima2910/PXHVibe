@@ -18,27 +18,29 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
   const completed = tasks.filter((task) => task.status === 'pass').length;
   const total = tasks.length;
   const progressBar = renderProgressBar(completed, total);
+  const progressPercent = total === 0 ? 0 : Math.round(completed / total * 100);
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="magenta" paddingX={1} flexGrow={1} minHeight={0} overflow="hidden">
-      <Box justifyContent="space-between" marginBottom={1}>
+      <Box justifyContent="space-between">
         <Box gap={1}>
           <Text bold color="magenta">◆</Text>
           <Text bold color="magenta">PIPELINE</Text>
         </Box>
-        <Text color="gray">{completed}/{total}</Text>
+        <Text bold color={completed === total && total > 0 ? 'green' : 'yellow'}>{completed}/{total}</Text>
       </Box>
-      <Box marginBottom={1}>
-        <Text color="magenta">{progressBar}</Text>
+      <Box gap={1} marginBottom={1}>
+        <Text color={completed === total && total > 0 ? 'green' : 'magenta'}>{progressBar}</Text>
+        <Text dimColor>{progressPercent}%</Text>
       </Box>
       <Box flexDirection="column">
         {tasks.length === 0 && <Text dimColor>○ Chưa có pipeline</Text>}
         {tasks.map((task) => (
           <Box key={task.id} flexDirection="column" marginBottom={task.status === 'running' ? 1 : 0}>
             <Box gap={1}>
-              <Text color={todoColor(task.status)} bold={task.status === 'running'} strikethrough={task.status === 'pass'}>
+              <Text color={todoColor(task.status)} bold={task.status === 'running'}>
                 {todoSymbol(task.status)}
               </Text>
-              <Text color={todoColor(task.status)} bold={task.status === 'running'} strikethrough={task.status === 'pass'}>
+              <Text color={todoColor(task.status)} bold={task.status === 'running'} dimColor={task.status === 'pass'}>
                 {task.label}
               </Text>
             </Box>
@@ -49,13 +51,14 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
             )}
             {task.status === 'running' && task.detail !== undefined && (
               <Box paddingLeft={2}>
-                <Text color="yellow">⸻ {compactTodoDetail(task.detail)}</Text>
+                <Text color="cyan">└─ {compactTodoDetail(task.detail)}</Text>
               </Box>
             )}
           </Box>
         ))}
       </Box>
       <Box flexDirection="column" marginTop={1}>
+        <Text dimColor>────────────────</Text>
         <Box gap={1} marginBottom={tasks.length > 0 ? 1 : 0}>
           <Text bold color="magenta">◆</Text>
           <Text bold color="magenta">MCP</Text>

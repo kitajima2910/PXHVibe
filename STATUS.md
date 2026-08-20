@@ -1,5 +1,82 @@
 # STATUS
 
+## UI - Diff theo phong cach GitHub Dark
+
+### Nguyen nhan goc
+- `DiffView` dung ANSI `inverse` cho dong them/xoa, tao mang nen xanh/do choi va de lam Markdown trong terminal kho doc.
+- Diff cu khong co gutter so dong, thong ke thay doi hay phan cap file/hunk ro rang.
+
+### Da thay doi
+- Ap dung bang mau GitHub Dark cho text, border, hunk, dong them va dong xoa.
+- Them header `Files changed`, so file va thong ke `+N / -N`.
+- Parser unified diff theo doi dong cu/moi va render gutter hai cot nhu GitHub.
+- Header tung file co caret; hunk header co nen xanh duong tham; additions/deletions co nen xanh/do tham.
+- Bo `inverse` de khong con khoi mau choi nhu giao dien cu.
+- Them regression test cho line numbers, summary va dam bao khong phat ANSI inverse.
+
+### File da sua
+- `src/components/DiffView.tsx`
+- `src/tests/diffView.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:diff-view`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## FIX - Lam moi layout pipeline va bo loi gach ngang
+
+### Nguyen nhan goc
+- Task hoan tat dung ANSI `strikethrough`; mot so terminal render ma nay lech o va co the lam chu trang thai trong pipeline trong nhu bi gach ngang.
+- Dong activity dang chay dung ky tu gach dai `⸻` ngay truoc noi dung `Dang...`, de bi terminal hien thi nhu mot duong ke chong vao chu.
+
+### Da thay doi
+- Bo hoan toan `strikethrough`; task hoan tat dung dau check mau xanh va chu dim de phan biet trang thai.
+- Doi activity dang chay thanh nhanh `└─ Dang...` mau cyan.
+- Header pipeline hien counter noi bat, progress bar co phan tram va doi xanh khi hoan tat.
+- Them duong phan cach giua PIPELINE va MCP de sidebar de doc hon.
+- Them regression test dam bao output khong con ANSI strikethrough va layout moi duoc render.
+
+### File da sua
+- `src/components/TodoStrip.tsx`
+- `src/tests/todoStrip.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:todo`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## FIX - Thiet ke lai scroll lich su hoi thoai
+
+### Nguyen nhan goc
+- `MessageList.tsx` lay `trackHeight` (so dong terminal) tru truc tiep cho `messages.length` (so tin nhan). Hai dai luong khac don vi; mot tin nhan dai nhieu dong co the tran viewport nhung `maxOffset` van bang 0, lam con lan va thanh keo bi khoa.
+- Cua so hien thi cung cat theo `trackHeight` nhu so luong tin nhan nen hanh vi cuon khong on dinh voi noi dung dai/ngan khac nhau.
+
+### Da thay doi
+- Cuon theo don vi tin nhan, voi pham vi `0..messages.length - 1`, doc lap chieu cao noi dung.
+- Khi cuon len, loai dan tin moi o cuoi va giu message duoc chon neo o day viewport de lo lich su cu.
+- Chi bat dau keo scrollbar khi con tro thuc su nam trong viewport.
+- Bo sung regression test xac nhan PageUp loai tin moi, hien tin cu va PageDown quay lai hoi thoai moi nhat.
+
+### File da sua
+- `src/components/MessageList.tsx`
+- `src/tests/messageViewport.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd test`: toan bo 24/24 nhom test pass, gom viewport regression test sau fresh build.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
 ## PERSIST — Project Review (ANALYZE phase)
 
 ### Tóm tắt

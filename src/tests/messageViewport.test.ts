@@ -42,9 +42,20 @@ const visible = stripAnsi(frame);
 assert.match(visible, /message-9/);
 assert.doesNotMatch(visible, /message-0/);
 
+frame = '';
 input.write('\x1b[5~');
 await new Promise((resolve) => setTimeout(resolve, 40));
-assert.match(stripAnsi(frame), /HISTORY/);
+const historyFrame = stripAnsi(frame);
+assert.match(historyFrame, /HISTORY/);
+assert.match(historyFrame, /message-5/);
+assert.doesNotMatch(historyFrame, /message-9/);
+
+frame = '';
+input.write('\x1b[6~');
+await new Promise((resolve) => setTimeout(resolve, 40));
+const newestFrame = stripAnsi(frame);
+assert.match(newestFrame, /message-9/);
+assert.doesNotMatch(newestFrame, /HISTORY/);
 instance.unmount();
 
 console.log('Message viewport tests passed.');

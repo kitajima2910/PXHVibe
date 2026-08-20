@@ -33,12 +33,15 @@ const instance = render(React.createElement(TodoStrip, {tasks}), {
 });
 await new Promise((resolve) => setTimeout(resolve, 30));
 const visible = stripAnsi(frame);
+assert.doesNotMatch(frame, /\x1b\[9m/);
 assert.match(visible, /PIPELINE/);
 assert.match(visible, /1\/3/);
+assert.match(visible, /33%/);
 assert.match(visible, /✓ Phân tích yêu cầu/);
 assert.match(visible, /● Xây dựng gameplay/);
 assert.match(visible, /PXH Expert · #2/);
 assert.match(visible, /Đang đọc file index\.html/);
+assert.match(visible, /└─ Đang đọc file index\.html/);
 assert.match(visible, /○ Chạy kiểm thử/);
 assert.match(visible, /PXH QA/);
 assert.match(visible, /MCP/);

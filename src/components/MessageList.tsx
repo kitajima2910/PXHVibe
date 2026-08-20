@@ -26,7 +26,10 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
     setTrackHeight((current) => current === measuredHeight ? current : measuredHeight);
   }, [messages.length, scrollOffset]);
 
-  const maxOffset = Math.max(0, messages.length - trackHeight);
+  // Scroll in message units. Terminal rows and message counts are different
+  // units (one message can span many rows), so trackHeight must not clamp the
+  // history range.
+  const maxOffset = Math.max(0, messages.length - 1);
   const scrollBy = (amount: number): void => {
     setScrollOffset((current) => Math.max(0, Math.min(maxOffset, current + amount)));
   };
@@ -48,7 +51,7 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
           && mouse.y >= metrics.y && mouse.y < metrics.y + metrics.height;
         if (insideViewport && mouse.button === 'wheel-up') scrollBy(1);
         if (insideViewport && mouse.button === 'wheel-down') scrollBy(-1);
-        const onScrollbar = mouse.x >= metrics.x + metrics.width - 1;
+        const onScrollbar = insideViewport && mouse.x >= metrics.x + metrics.width - 1;
         if (mouse.button === 'left' && mouse.action === 'press' && onScrollbar) {
           isDragging.current = true;
           scrollFromMouseY(mouse.y);
@@ -69,10 +72,11 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
     }
   });
 
-  const visibleMessages = messages.slice(
-    Math.max(0, messages.length - trackHeight - scrollOffset),
-    messages.length - scrollOffset,
-  );
+  // Keep all messages up to the current history position. The viewport clips
+  // excess content from the top while justifyContent="flex-end" anchors the
+  // selected message at the bottom. Increasing the offset therefore removes
+  // newer messages and reveals older history, regardless of message height.
+  const visibleMessages = messages.slice(0, messages.length - scrollOffset);
 
   return (
     <Box
