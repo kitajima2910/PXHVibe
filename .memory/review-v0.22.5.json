@@ -1,0 +1,85 @@
+{
+  "version": "v0.22.5",
+  "type": "review",
+  "timestamp": "2026-08-20",
+  "status": "completed",
+  "findings": {
+    "critical": 1,
+    "high": 3,
+    "medium": 4,
+    "low": 4,
+    "total": 12
+  },
+  "items": [
+    {
+      "severity": "CRITICAL",
+      "issue": "God component 1013 lines, 25+ useState",
+      "file": "src/app.tsx"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "Duplicate import same module",
+      "file": "src/app.tsx:13-14"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "readFileSync blocks event loop",
+      "file": "src/agent/ChatCompletionsModelProvider.ts:50"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "spawnSync 10s timeout blocks event loop",
+      "file": "src/runtime/commands.ts:69,84"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "XSS reflected in OAuth error callback",
+      "file": "src/mcp/OAuthProvider.ts:162"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "Race condition in close()",
+      "file": "src/mcp/MCPManager.ts:130"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "Hardcoded max_tokens: 4096",
+      "file": "AnthropicModelProvider.ts:96, GeminiModelProvider.ts:111"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "Trailing buffer text delta may be lost",
+      "file": "src/agent/GeminiModelProvider.ts:177-198"
+    },
+    {
+      "severity": "LOW",
+      "issue": "Variable shadow",
+      "file": "Various"
+    },
+    {
+      "severity": "LOW",
+      "issue": "console.log in prod",
+      "file": "Various"
+    },
+    {
+      "severity": "LOW",
+      "issue": "14 empty catches",
+      "file": "Various"
+    },
+    {
+      "severity": "LOW",
+      "issue": "Dead code SuggestionStrip.tsx",
+      "file": "src/components/SuggestionStrip.tsx"
+    }
+  ],
+  "verification": {
+    "typecheck": "pass",
+    "tests": "24/24 pass",
+    "git": "clean"
+  },
+  "priority_fix": [
+    "decompose app.tsx (god component)",
+    "convert sync reads to async",
+    "sanitize OAuth error output"
+  ]
+}

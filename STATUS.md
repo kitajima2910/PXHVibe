@@ -1,5 +1,38 @@
 # STATUS
 
+## REVIEW — PXHVibe v0.22.5
+
+### Trạng thái
+- Typecheck: pass | Tests: 24/24 pass | Git: clean
+
+### Architecture
+TUI (React/Ink) → Orchestration → Worker → Infrastructure. Contract system, atomic session persistence, tool cache, pipeline phân loại độ phức tạp tốt.
+
+### Phát hiện (12 items)
+
+| # | Severity | Issue | File |
+|---|----------|-------|------|
+| 1 | CRITICAL | God component 1013 lines, 25+ useState | `src/app.tsx` |
+| 2 | HIGH | Duplicate import same module | `src/app.tsx:13-14` |
+| 3 | HIGH | `readFileSync` blocks event loop | `src/agent/ChatCompletionsModelProvider.ts:50` |
+| 4 | HIGH | `spawnSync` 10s timeout blocks event loop | `src/runtime/commands.ts:69,84` |
+| 5 | MEDIUM | XSS reflected in OAuth error callback | `src/mcp/OAuthProvider.ts:162` |
+| 6 | MEDIUM | Race condition in close() | `src/mcp/MCPManager.ts:130` |
+| 7 | MEDIUM | Hardcoded `max_tokens: 4096` | `AnthropicModelProvider.ts:96`, `GeminiModelProvider.ts:111` |
+| 8 | MEDIUM | Trailing buffer text delta may be lost | `src/agent/GeminiModelProvider.ts:177-198` |
+| 9 | LOW | Variable shadow | Various |
+| 10 | LOW | console.log in prod | Various |
+| 11 | LOW | 14 empty catches | Various |
+| 12 | LOW | Dead code `SuggestionStrip.tsx` | `src/components/SuggestionStrip.tsx` |
+
+### Kết quả kiểm tra
+- 24/24 tests pass, typecheck pass, git clean
+
+### Vấn đề còn lại
+Priority fix: decompose `app.tsx` (god component), convert sync reads to async, sanitize OAuth error output.
+
+---
+
 ## VERIFY — npm install / npm run dev / build / typecheck chạy được trên source (Windows)
 
 ### Nguyên nhân gốc
@@ -3078,3 +3111,82 @@ Không có bug code liên quan version. Phiên bản `0.18.0` nhất quán, rele
 ### Ket qua kiem tra
 - `npm.cmd run release:check` (typecheck + test + release-check): se chay sau build.
 - Build + 23 nhom test: deu qua o phien CODE truoc.
+
+---
+
+## REVIEW — Toan bo project PXHVibe v0.22.5
+
+### Pham vi
+Review architecture, code quality, security, va potential bugs cho toan bo codebase PXHVibe v0.22.5.
+
+### Ket qua kiem tra (chay that)
+- `npm install --include=dev` → added 4 packages, 0 vulnerabilities
+- `npm run typecheck` → exit 0 (pxhvibe@0.22.5)
+- `npm test` → **24/24 test groups pass** (mcp, free, agent, router, orchestration, pipeline, team, runtime-commands, format, title, modes, custom, providers, commands, branding, image, viewport, todo, picker, catalog-picker, streaming, chat-completions, diff-view)
+- `git status` → clean (0 uncommitted files)
+
+### Danh gia architecture
+
+**Strengths:**
+- Architecture lop ro rang: TUI (React/Ink) → Orchestration → Worker → Infrastructure
+- Contract system voi version validation tai module boundaries
+- Session persistence voi atomic write (temp file + rename)
+- Pipeline thong minh: phan loai do phuc tap (simple/standard/full) de rut ngon LLM calls
+- Tool cache voi TTL va invalidation khi file thay doi
+- Khong co hardcoded secrets hay API keys
+- Khong co TODO/FIXME markers — code sach
+
+**Weaknesses:**
+- `src/app.tsx` (1013 lines) la god component — 25+ useState, ~20 slash command handlers, JSX render tat ca trong 1 file
+- `src/components/PromptInput.tsx` (515 lines) phuc tap, can tach
+- `src/providers/OpenCodeProvider.ts` (411 lines) subprocess lifecycle phuc tap
+
+### Phat hien cu the
+
+**1. CRITICAL — God component `src/app.tsx`**
+- 1013 dong, 25+ useState hooks, ~20 slash command handlers, event handlers, va JSX render
+- Can decompose: state management (useReducer), command handlers (custom hook), presentational components
+
+**2. HIGH — Duplicate import `src/app.tsx:13-14`**
+```
+import {createProvider} from './providers/createProvider.js';
+import {createCustomProvider} from './providers/createProvider.js';
+```
+→ Nen gop thanh 1 import statement
+
+**3. HIGH — Sync file read blocking event loop `src/agent/ChatCompletionsModelProvider.ts:50`**
+`readFileSync(image.path)` — OpenAIModelProvider dung async `readFile` dung hon. Sync read co the freeze UI khi handle images.
+
+**4. HIGH — Sync spawnSync trong async context `src/runtime/commands.ts:69,84`**
+`getGitDiffSummary` va `getGitDiffFull` dung `spawnSync` voi timeout 10s — dong toan bo event loop.
+
+**5. MEDIUM — XSS trong OAuth error callback `src/mcp/OAuthProvider.ts:162`**
+`res.end('...<p>Error: ${error}</p>...')` — error param duoc reflect vao HTML ma khong sanitize. localhost-only nhung van la vulnerability.
+
+**6. MEDIUM — Race condition trong MCPManager.close() `src/mcp/MCPManager.ts:130-135`**
+Connections bi capture va array emptied truoc khi await close. Concurrent `refresh()` co the mat connection references.
+
+**7. MEDIUM — Hardcoded max_tokens `src/agent/AnthropicModelProvider.ts:96`, `src/agent/GeminiModelProvider.ts:111`**
+`max_tokens: 4096` hardcode — nen configurable hoac theo model.
+
+**8. MEDIUM — Trailing buffer text delta co the bi mat `src/agent/GeminiModelProvider.ts:177-198`**
+Post-loop buffer processing chi extract `functionCall` objects, khong process `text` parts — text delta cuoi cung co the bi drop.
+
+**9. LOW — Unused variable `stickyTasks` shadow `src/app.tsx:644`**
+State variable `stickyTasks` (line 201) bi shadow boi `const stickyTasks` (line 644).
+
+**10. LOW — console.log trong production code**
+`src/mcp/OAuthProvider.ts:88-91`, `src/mcp/MCPManager.ts:247` — nen dung logging abstraction.
+
+**11. LOW — Empty catch blocks (silent error swallowing)**
+14 instances trong codebase. Most concerning: `src/runtime/sessionStore.ts:39` va `src/utils/modelHealth.ts:31`.
+
+**12. LOW — Dead code `src/components/SuggestionStrip.tsx`**
+File nay da bi xoa khoi render (app.tsx khong con import) nhung file van ton tai. Compile nhung khong render.
+
+### Van de con lai
+- `app.tsx` god component la priority cao nhat de refactor — anh huong maintainability va testability
+- Sync file/spawn blocking event loop (items 3,4) co the cause UI freeze trong truong hop image parsing hoac git diff cham
+- OAuth XSS (item 5) — low risk vi localhost-only nhung nen sanitize
+- Gemini text delta loss (item 8) — can verify voi streaming test that
+- 24/24 tests pass, typecheck pass, git clean — trang thai on dinh cho release tiep theo
