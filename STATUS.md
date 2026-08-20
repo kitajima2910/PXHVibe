@@ -115,6 +115,26 @@ Priority: decompose `app.tsx`, convert sync→async, sanitize OAuth XSS, remove 
 
 ---
 
+## VERIFY — Scroll text test (ANALYZE phase)
+
+### Kết quả
+- **Scroll code** `MessageList.tsx:32,79`: logic đúng — `scrollOffset=0` → newest messages at bottom; offset>0 → drop newest, reveal older from top.
+- **Viewport test** (`test:viewport`): PASS — PageUp shows older messages + HISTORY indicator; PageDown returns to newest.
+- **Full suite** `npm test`: **24/24 test groups pass** (build clean + tsc clean).
+- No code changes needed — scroll behavior verified working.
+
+### File đã sửa
+- Không có (chỉ phân tích + chạy test)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có
+
+---
+
 ## FIX — Scroll message không hoạt động (MessageList.tsx)
 
 ### Nguyên nhân gốc
