@@ -1,5 +1,164 @@
 # STATUS
 
+## PERSIST — test scroll (ANALYZE confirmed)
+
+### Tóm tắt
+ANALYZE phase xác nhận scroll logic đúng. Không cần fix code. 24/24 tests pass, typecheck pass.
+
+### Kết quả các phase
+- **ANALYZE**: Scroll code (`src/components/MessageList.tsx`) logic correct — `scrollOffset=0` → newest messages at bottom; offset>0 → reveals older history from top. `maxOffset = messages.length - 1` (correct range). PageUp/PageDown ±4, mouse wheel ±1, scrollbar drag. History indicator shows `offset/max` when scrollOffset>0.
+- **TEST**: `test:viewport` PASS ✓ — PageUp shows older messages + HISTORY indicator; PageDown returns to newest.
+- **BUILD**: `npm test` → 24/24 test groups pass ✓. `npm run typecheck` → exit 0 ✓.
+
+### File đã sửa
+- Không có (chỉ phân tích + chạy test)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có
+
+---
+
+## PERSIST — test scroll
+
+### Tóm tắt
+Target "test scroll" — phân tích + chạy test scroll. Kết quả: scroll logic đúng, 24/24 tests pass. Không cần sửa code.
+
+### Kết quả các phase
+- **ANALYZE**: Scroll code (`MessageList.tsx`) logic correct — `scrollOffset=0` → newest messages at bottom; offset>0 → reveal older from top. MaxOffset = `messages.length - 1`. PageUp/PageDown ±4, mouse wheel ±1, scrollbar drag works. History indicator shows `offset/max` when scrollOffset>0.
+- **TEST**: `test:viewport` PASS — PageUp shows older messages + HISTORY indicator; PageDown returns to newest.
+- **BUILD**: `npm test` → 24/24 test groups pass. `npm run typecheck` → exit 0.
+
+### File đã sửa
+- Không có (chỉ phân tích + chạy test)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có
+
+---
+
+## PERSIST — test scroll new
+
+### Tóm tắt
+Target "test scroll new" — phân tích + chạy test scroll. Kết quả: scroll logic đúng, 24/24 tests pass. Không cần sửa code.
+
+### Kết quả các phase
+- **ANALYZE**: Scroll code (`MessageList.tsx`) logic correct — `scrollOffset=0` → newest messages at bottom; offset>0 → drop newest, reveal older from top. MaxOffset correct range.
+- **TEST**: `test:viewport` PASS — PageUp shows older messages + HISTORY indicator; PageDown returns to newest.
+- **BUILD**: `npm test` → 24/24 test groups pass. `npm run typecheck` → exit 0.
+
+### File đã sửa
+- Không có (chỉ phân tích + chạy test)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có
+
+---
+
+## UX - Scrollbar rong nhu website
+
+### Da thay doi
+- Tang rail scrollbar len 4 cot terminal.
+- Thumb hien thi thanh khoi tim rong 2 cot, can giua rail nhu scrollbar website.
+- Toan bo 4 cot deu la hit-area cho click va drag, de bat chuot hon.
+- Dua chieu rong thanh hang so `scrollbarWidth` va bo sung regression test.
+
+### File da sua
+- `src/components/MessageList.tsx`
+- `src/tests/messageViewport.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:viewport`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## UX - Tang hit-area va kich thuoc thumb de keo scrollbar
+
+### Nguyen nhan goc
+- Scrollbar chi rong 1 cot va thumb toi da 3 dong, qua nho de click-giu/move chinh xac trong terminal.
+
+### Da thay doi
+- Tang vung scrollbar len 2 cot; ca hai cot deu nhan click va drag.
+- Thumb chiem khoang 25% track, toi thieu 2 va toi da 8 dong.
+- Van giu track xam/thumb tim de tranh cot mau dac.
+- Cap nhat regression test cho kich thuoc thumb tren viewport nho va thuong.
+
+### File da sua
+- `src/components/MessageList.tsx`
+- `src/tests/messageViewport.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:viewport`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## PERSIST — Scroll test PXHVibe
+
+### Tóm tắt
+Phân tích + chạy test scroll. Kết quả: scroll logic đúng, 24/24 tests pass. Không cần sửa code.
+
+### Kết quả các phase
+- **ANALYZE**: Scroll code (`MessageList.tsx`) logic correct — `scrollOffset=0` → newest messages at bottom; offset>0 → drop newest, reveal older from top. MaxOffset correct range.
+- **TEST**: `test:viewport` PASS — PageUp shows older messages + HISTORY indicator; PageDown returns to newest.
+- **BUILD**: `npm test` → 24/24 test groups pass. `npm run typecheck` → exit 0.
+
+### File đã sửa
+- Không có (chỉ phân tích + chạy test)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có
+
+---
+
+## UI - Scrollbar gon, de nhan biet va than thien hon
+
+### Nguyen nhan goc
+- Thumb scrollbar dung block `█` mau xanh; voi it message hoac noi dung dai, thumb co the phu gan/nguyen chieu cao va tao cam giac mot cot xanh dac.
+- Chi bao history cu khong cho nguoi dung biet vi tri hien tai trong lich su.
+
+### Da thay doi
+- Doi track sang net cham xam `┊` va thumb sang net tim `┃`, phu hop accent chung cua PXHVibe.
+- Gioi han thumb toi da 3 dong de khong con cot mau dac, ke ca khi chi co vai message dai.
+- Khi khong co lich su de cuon, chi hien track xam trung tinh.
+- History footer hien vi tri `offset/max` va huong dan cuon xuong/PageDown.
+- Bo sung test cho thumb compact va trang thai khong scroll.
+
+### File da sua
+- `src/components/MessageList.tsx`
+- `src/tests/messageViewport.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:viewport`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
 ## UI - Diff theo phong cach GitHub Dark
 
 ### Nguyen nhan goc

@@ -10,6 +10,8 @@ interface MessageListProps {
   messages: readonly Message[];
 }
 
+export const scrollbarWidth = 4;
+
 export function MessageList({messages}: MessageListProps): React.JSX.Element {
   const [scrollOffset, setScrollOffset] = useState(0);
   const [trackHeight, setTrackHeight] = useState(1);
@@ -51,7 +53,7 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
           && mouse.y >= metrics.y && mouse.y < metrics.y + metrics.height;
         if (insideViewport && mouse.button === 'wheel-up') scrollBy(1);
         if (insideViewport && mouse.button === 'wheel-down') scrollBy(-1);
-        const onScrollbar = insideViewport && mouse.x >= metrics.x + metrics.width - 1;
+        const onScrollbar = insideViewport && mouse.x >= metrics.x + metrics.width - scrollbarWidth;
         if (mouse.button === 'left' && mouse.action === 'press' && onScrollbar) {
           isDragging.current = true;
           scrollFromMouseY(mouse.y);
@@ -99,14 +101,20 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
             <MessageCard key={message.id} message={message} />
           ))}
         </Box>
-        <Box width={1} flexDirection="column" flexShrink={0}>
+        <Box width={scrollbarWidth} flexDirection="column" flexShrink={0}>
           {buildScrollbar(trackHeight, messages.length, scrollOffset).map((character, index) => (
-            <Text key={index} color={character === '█' ? 'green' : 'gray'}>{character}</Text>
+            <Text key={index} color={character === '┃' ? 'magenta' : '#484f58'} dimColor={character !== '┃'}>
+              {character === '┃' ? ' ██ ' : ' ┊┊ '}
+            </Text>
           ))}
         </Box>
       </Box>
       {scrollOffset > 0 && (
-        <Text color="magenta">↑ HISTORY · PageDown để về hội thoại mới nhất</Text>
+        <Box gap={1}>
+          <Text bold color="magenta">HISTORY</Text>
+          <Text dimColor>{scrollOffset}/{maxOffset}</Text>
+          <Text color="gray">· cuộn xuống hoặc PageDown để về mới nhất</Text>
+        </Box>
       )}
     </Box>
   );
@@ -114,18 +122,16 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
 
 export function buildScrollbar(height: number, messageCount: number, scrollOffset: number): string[] {
   const safeHeight = Math.max(1, height);
-  if (messageCount <= 1) return Array.from({length: safeHeight}, () => '│');
-  const visibleEstimate = Math.max(1, Math.floor(safeHeight / 3));
-  const thumbSize = Math.max(1, Math.min(
-    safeHeight,
-    Math.round(safeHeight * Math.min(1, visibleEstimate / messageCount)),
-  ));
+  if (messageCount <= 1) return Array.from({length: safeHeight}, () => '┊');
+  // Keep the handle large enough to grab while avoiding a full-height color
+  // column. About 25% of the track works well across common terminal sizes.
+  const thumbSize = Math.min(safeHeight, Math.max(2, Math.min(8, Math.round(safeHeight * 0.25))));
   const maxTop = safeHeight - thumbSize;
   const maxOffset = messageCount - 1;
   const thumbTop = maxTop - Math.round(Math.min(maxOffset, scrollOffset) / maxOffset * maxTop);
   return Array.from(
     {length: safeHeight},
-    (_, index) => index >= thumbTop && index < thumbTop + thumbSize ? '█' : '│',
+    (_, index) => index >= thumbTop && index < thumbTop + thumbSize ? '┃' : '┊',
   );
 }
 
