@@ -1,5 +1,116 @@
 # STATUS
 
+## PERSIST — Kết quả test PXHVibe
+
+### Tóm tắt
+User muốn test PXHVibe. Đã chạy typecheck, build, 24/24 test groups — tất cả PASS.
+
+### Cách test PXHVibe
+
+```bash
+# Toàn bộ (build + 24 test suites)
+npm test
+
+# Chỉ typecheck
+npm run typecheck
+
+# Chỉ build
+npm run build
+
+# Từng suite riêng
+npm run test:mcp
+npm run test:agent
+npm run test:router
+# ... 24 suites khác
+
+# TUI tương tác (cần terminal thật)
+npm run dev
+```
+
+### Kiểm tra thực tế
+- `npm run typecheck` → exit 0 ✓
+- `npm run build` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### File đã sửa
+- `STATUS.md` — cập nhật section PERSIST
+
+### Kết quả kiểm tra
+- Typecheck: pass
+- Build: pass
+- 24/24 test groups: all pass
+
+### Vấn đề còn lại
+- `npm run dev` là TUI tương tác — cần chạy trong terminal thật (không pipe/redirect)
+
+---
+
+## QA — Kiểm thử PXHVibe
+
+### Kết quả
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- Build: clean + tsc → OK ✓
+
+### Test suites (24/24 PASS)
+mcp, free, agent, router, orchestration, pipeline, team, runtime-commands, format, title, modes, custom, providers, commands, branding, image, viewport, todo, picker, catalog-picker, streaming, chat-completions, diff-view
+
+### File đã sửa
+- Không có (chỉ chạy kiểm tra)
+
+### Kết quả kiểm tra
+- Typecheck: pass
+- Build: pass
+- 24/24 test groups: all pass
+
+### Vấn đề còn lại
+- Không có bug cần fix
+
+---
+
+## FIX — Test PXHVibe
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+- Build: clean + tsc → OK
+- Không có bug cần fix
+
+### Cách test PXHVibe
+
+```bash
+# Chạy toàn bộ (build + 24 test suites)
+npm test
+
+# Chỉ typecheck
+npm run typecheck
+
+# Chỉ build
+npm run build
+
+# Chạy từng suite riêng
+npm run test:mcp
+npm run test:agent
+npm run test:router
+# ... (24 suites khác)
+
+# Chạy TUI (cần terminal thật, không pipe)
+npm run dev
+```
+
+### File đã sửa
+- Không có (chỉ chạy kiểm tra)
+
+### Kết quả kiểm tra
+- 24/24 test groups pass
+- Typecheck pass
+- Build pass
+
+### Vấn đề còn lại
+- Không có vấn đề còn lại
+
+---
+
 ## FIX — Scroll direction inverted (message text lost on scroll)
 
 ### Nguyên nhân gốc
