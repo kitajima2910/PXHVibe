@@ -26,7 +26,7 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
     setTrackHeight((current) => current === measuredHeight ? current : measuredHeight);
   }, [messages.length, scrollOffset]);
 
-  const maxOffset = Math.max(0, messages.length - 1 - trackHeight);
+  const maxOffset = Math.max(0, messages.length - trackHeight);
   const scrollBy = (amount: number): void => {
     setScrollOffset((current) => Math.max(0, Math.min(maxOffset, current + amount)));
   };
@@ -69,7 +69,10 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
     }
   });
 
-  const visibleMessages = messages.slice(Math.max(0, messages.length - trackHeight - scrollOffset));
+  const visibleMessages = messages.slice(
+    Math.max(0, messages.length - trackHeight - scrollOffset),
+    messages.length - scrollOffset,
+  );
 
   return (
     <Box

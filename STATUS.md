@@ -1,5 +1,99 @@
 # STATUS
 
+## PERSIST — Project Review (ANALYZE phase)
+
+### Tóm tắt
+PXHVibe v0.22.5 — TUI terminal coding agent. 84 source files, ~8,900 LOC. 4-tier architecture: TUI → Orchestration → Workers → Infrastructure. 23 test suites, 24/24 test groups PASS.
+
+### Phát hiện (15 issues)
+
+| # | Severity | Issue | File:Line |
+|---|----------|-------|-----------|
+| 1 | CRITICAL | God component 942 lines, 25+ useState | `src/app.tsx` |
+| 2 | HIGH | Duplicate import same module (2 lines) | `src/app.tsx:13-14` |
+| 3 | HIGH | `readFileSync` blocks event loop in async | `ChatCompletionsModelProvider.ts:50` |
+| 4 | HIGH | `spawnSync` 10s timeout blocks TUI | `commands.ts:69,84` |
+| 5 | MEDIUM | XSS reflected — error param into HTML | `OAuthProvider.ts:162` |
+| 6 | MEDIUM | Race condition in close() | `MCPManager.ts:130` |
+| 7 | MEDIUM | Hardcoded `max_tokens: 4096` | `Anthropic:96, Gemini:111` |
+| 8 | MEDIUM | Trailing buffer text delta lost | `GeminiModelProvider.ts:177-198` |
+| 9 | LOW | `require('fs')` in ESM | `OAuthProvider.ts:245` |
+| 10 | LOW | Variable shadow (selectedProvider) | `CustomApiSetup.tsx:81` |
+| 11 | LOW | `console.log` in prod OAuth | `OAuthProvider.ts:88,247` |
+| 12 | LOW | 14 empty catch blocks | Various |
+| 13 | DEAD | `SuggestionStrip.tsx` unused 84 lines | `src/components/SuggestionStrip.tsx` |
+| 14 | DEAD | `OpenAIModelProvider.ts` test-only | `src/agent/OpenAIModelProvider.ts` |
+| 15 | DEAD | 6 orphan exported functions | Various |
+
+### File đã sửa
+- `STATUS.md` — added this ANALYZE section
+- `.memory/snapshot-2026-08-20.json` — updated metrics
+- `.memory/review-v0.22.5.json` — updated findings (15 items)
+
+### Kết quả kiểm tra
+- Typecheck: pass | Tests: 24/24 pass | Git: clean
+
+### Vấn đề còn lại
+Priority: decompose `app.tsx`, convert sync→async, sanitize OAuth XSS, remove dead code.
+
+---
+
+## FIX — Scroll message không hoạt động (MessageList.tsx)
+
+### Nguyên nhân gốc
+- `messages.slice(start)` chỉ clip từ đầu mảng — với `justifyContent="flex-end"` + `overflow="hidden"`, messages neo ở đáy viewport. Khi `scrollOffset > 0`, thêm message ở đầu slice nhưng chúng overflow bị clip, tin nhắn ở cuối (visible) không đổi → scroll vô dụng.
+- `maxOffset = messages.length - 1 - trackHeight` thiếu 1 — không scroll được đến tin nhắn đầu tiên.
+
+### Đã thay đổi
+- `MessageList.tsx:29`: `maxOffset` từ `messages.length - 1 - trackHeight` → `messages.length - trackHeight` (off-by-one fix).
+- `MessageList.tsx:72`: Slice cả hai đầu — thêm upper bound `messages.length - scrollOffset` để loại tin nhắn mới khi cuộn lên.
+
+### File đã sửa
+- `src/components/MessageList.tsx` (2 dòng)
+
+### Kết quả kiểm tra
+- `npm run typecheck` → exit 0 ✓
+- `npm test` → 24/24 test groups pass ✓
+
+### Vấn đề còn lại
+- Không có
+
+### UI-UX Verification (phase UI-UX)
+- Slice cả hai đầu xác nhận đúng: `scrollOffset=0` → newest messages; `scrollOffset>0` → older messages appear from top
+- Mouse wheel: wheel-up → scrollBy(1), wheel-down → scrollBy(-1)
+- Keyboard: PageUp/PageDown ±4
+- Scrollbar drag hoạt động
+- Reset scrollOffset=0 khi có tin nhắn mới
+- Visual indicator "↑ HISTORY" hiển thị khi scrollOffset>0
+- Typecheck: pass | 24/24 tests: pass
+
+---
+
+## PERSIST — Task sáng tạo: "Làm cho tôi một bài thơ hay"
+
+### Tóm tắt
+Task sáng tạo, không涉及 code. Bài thơ "Chiều Nhớ" đã được viết nhưng QA phát hiện bug: lẫn 3 ký tự tiếng Trung (`如`, `凉`, `值得`) trong bài thơ tiếng Việt.
+
+### Kết quả các phase
+- **ANALYZE**: Task thuộc loại sáng tạo, không cần sửa code
+- **FIX**: Viết trực tiếp bài thơ "Chiều Nhớ" (12 câu, 4 đoạn)
+- **TEST**: Phát hiện bug — 3 ký tự tiếng Trung lẫn vào bài thơ Việt
+  - `如 mây` → cần `như mây`
+  - `凉 trong` → cần `mát trong`
+  - `值得 mong chờ` → cần `đáng mong chờ`
+
+### File đã sửa
+- Không có (task sáng tạo, không修改 codebase)
+
+### Kết quả kiểm tra
+- QA: FAIL — bài thơ có lẫn ký tự tiếng Trung (3 chỗ)
+
+### Vấn đề còn lại
+- Bài thơ "Chiều Nhớ" cần fix 3 ký tự tiếng Trung → chuyển sang tiếng Việt thuần túy
+- Task này chưa hoàn thành do bug ở phase TEST, cần quay lại FIX
+
+---
+
 ## PERSIST — Kết quả test PXHVibe
 
 ### Tóm tắt

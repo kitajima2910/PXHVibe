@@ -2,74 +2,106 @@
   "version": "v0.22.5",
   "type": "review",
   "timestamp": "2026-08-20",
+  "phase": "ANALYZE",
   "status": "completed",
   "findings": {
     "critical": 1,
     "high": 3,
     "medium": 4,
-    "low": 4,
-    "total": 12
+    "low": 3,
+    "dead_code": 3,
+    "total": 15
   },
   "items": [
     {
       "severity": "CRITICAL",
-      "issue": "God component 1013 lines, 25+ useState",
+      "id": 1,
+      "issue": "God component 942 lines, 25+ useState",
       "file": "src/app.tsx"
     },
     {
       "severity": "HIGH",
-      "issue": "Duplicate import same module",
+      "id": 2,
+      "issue": "Duplicate import same module (2 separate lines)",
       "file": "src/app.tsx:13-14"
     },
     {
       "severity": "HIGH",
-      "issue": "readFileSync blocks event loop",
+      "id": 3,
+      "issue": "readFileSync blocks event loop in async method",
       "file": "src/agent/ChatCompletionsModelProvider.ts:50"
     },
     {
       "severity": "HIGH",
-      "issue": "spawnSync 10s timeout blocks event loop",
+      "id": 4,
+      "issue": "spawnSync 10s timeout blocks TUI event loop",
       "file": "src/runtime/commands.ts:69,84"
     },
     {
       "severity": "MEDIUM",
-      "issue": "XSS reflected in OAuth error callback",
+      "id": 5,
+      "issue": "XSS reflected — error param injected into HTML",
       "file": "src/mcp/OAuthProvider.ts:162"
     },
     {
       "severity": "MEDIUM",
+      "id": 6,
       "issue": "Race condition in close()",
       "file": "src/mcp/MCPManager.ts:130"
     },
     {
       "severity": "MEDIUM",
-      "issue": "Hardcoded max_tokens: 4096",
+      "id": 7,
+      "issue": "Hardcoded max_tokens: 4096 not configurable",
       "file": "AnthropicModelProvider.ts:96, GeminiModelProvider.ts:111"
     },
     {
       "severity": "MEDIUM",
+      "id": 8,
       "issue": "Trailing buffer text delta may be lost",
       "file": "src/agent/GeminiModelProvider.ts:177-198"
     },
     {
       "severity": "LOW",
-      "issue": "Variable shadow",
-      "file": "Various"
+      "id": 9,
+      "issue": "require('fs') in ESM — use unlinkSync via import",
+      "file": "src/mcp/OAuthProvider.ts:245"
     },
     {
       "severity": "LOW",
-      "issue": "console.log in prod",
-      "file": "Various"
+      "id": 10,
+      "issue": "Variable shadow (selectedProvider)",
+      "file": "src/components/CustomApiSetup.tsx:81"
     },
     {
       "severity": "LOW",
-      "issue": "14 empty catches",
-      "file": "Various"
+      "id": 11,
+      "issue": "console.log in production OAuth code",
+      "file": "src/mcp/OAuthProvider.ts:88,247"
     },
     {
       "severity": "LOW",
-      "issue": "Dead code SuggestionStrip.tsx",
+      "id": 12,
+      "issue": "14 empty catch blocks swallowing errors silently",
+      "file": "Various (discovery.ts + others)"
+    },
+    {
+      "severity": "DEAD_CODE",
+      "id": 13,
+      "issue": "SuggestionStrip.tsx — 84 lines, not rendered, not imported",
       "file": "src/components/SuggestionStrip.tsx"
+    },
+    {
+      "severity": "DEAD_CODE",
+      "id": 14,
+      "issue": "OpenAIModelProvider.ts — only used in tests, prod uses ChatCompletions",
+      "file": "src/agent/OpenAIModelProvider.ts"
+    },
+    {
+      "severity": "DEAD_CODE",
+      "id": 15,
+      "issue": "Exported functions never imported: countConversationTokens, estimateTokenBudget, batchToolCalls, executeWithCache, summarizeSession, formatCharacterCount",
+      "file": "Various"
     }
   ],
   "verification": {
@@ -78,8 +110,9 @@
     "git": "clean"
   },
   "priority_fix": [
-    "decompose app.tsx (god component)",
-    "convert sync reads to async",
-    "sanitize OAuth error output"
+    "decompose app.tsx (god component 942 lines)",
+    "convert sync reads to async (readFileSync, spawnSync)",
+    "sanitize OAuth error output (XSS reflected)",
+    "remove dead code (SuggestionStrip.tsx, OpenAIModelProvider.ts, orphan exports)"
   ]
 }
