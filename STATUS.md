@@ -1,5 +1,58 @@
 # STATUS
 
+## PERF - Quick answer cho cau hoi va noi dung ngoai vibe coding
+
+### Nguyen nhan goc
+- `classifyComplexity(...)=simple` van tao pipeline `analyze -> persist`.
+- Prompt simple van ep coding rules: doc STATUS, verify, liet ke file va cap nhat STATUS.
+- Vi vay cau hoi kien thuc/tro chuyen van ton nhieu provider request va checkpoint khong can thiet.
+
+### Da thay doi
+- Them `classifyInteractionMode`: phan biet `quick` va `vibe` truoc khi route pipeline.
+- Quick mode goi provider dung mot lan, khong MCP/tool workflow, pipeline, checkpoint hay coding rules.
+- Prompt quick van giu context hoi thoai gan day va ho tro streaming/anh/cancel.
+- Cac action len project (fix/build/update/review/test/commit/deploy/continue...) van dung vibe pipeline.
+- Them unit test classifier/prompt va integration test xac nhan quick=1 call, vibe giu 5 phase.
+- Cap nhat README mo ta Quick answer.
+
+### File da sua
+- `src/orchestration/pipeline.ts`
+- `src/utils/agentPrompt.ts`
+- `src/app.tsx`
+- `src/tests/pipeline.test.ts`
+- `src/tests/slashCommands.test.ts`
+- `README.md`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run test:pipeline`: pass.
+- `npm.cmd run test:commands`: pass.
+
+### Van de con lai
+- Classifier la heuristic local de tranh them mot LLM routing call; se can bo sung keyword neu co false positive thuc te.
+
+## DOCS - Sync README voi PXHVibe CLI v0.22.6
+
+### Da thay doi
+- Cap nhat TUI hien tai: activity monitor, task rail + MCP, GitHub-style diff va scrollbar click/drag.
+- Sua Custom OpenAI tu Responses API thanh OpenAI-compatible Chat Completions dung nhu implementation.
+- Ghi ro 8 Free models trong `/models` va optional OpenCode runtime theo platform.
+- Dong bo keymap: newline shortcuts, input history, PageUp/PageDown, mouse wheel va scrollbar drag.
+- Bo `Alt+C` khong ton tai; giu `/copy` dung voi code hien tai.
+- Cap nhat resume bang `tiep tuc/continue`, final review phase va thong tin `/context`.
+
+### File da sua
+- `README.md`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `node resources/_shared/scripts/release-check.mjs`: `[OK] Release integrity v0.22.6`.
+- `git diff --check`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
 ## RELEASE - v0.22.6
 
 ### Da thay doi

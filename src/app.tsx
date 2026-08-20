@@ -27,7 +27,7 @@ import {checkFreeModelHealth, isModelHealthFresh, type ModelHealthReport} from '
 import {discoverOrchestration} from './orchestration/discovery.js';
 import {routeOrchestration} from './orchestration/router.js';
 import type {OrchestrationCatalog} from './orchestration/types.js';
-import {preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
+import {classifyInteractionMode, preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
 import {appVersion} from './version.js';
 import {runTeamPipeline, type TeamRunnerEvent} from './runtime/teamRunner.js';
 import {makeSessionResumable, SessionStore, type RuntimeSession} from './runtime/sessionStore.js';
@@ -38,6 +38,7 @@ import {
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
 import {generateSuggestions, formatSuggestions, parseSuggestionSelection, type Suggestion} from './utils/suggestions.js';
+import {buildQuickAnswerPrompt} from './utils/agentPrompt.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -615,6 +616,74 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         await handleSubmit(stored.target);
         return;
       }
+    }
+
+    if (classifyInteractionMode(content) === 'quick') {
+      const requestImages = pendingImages;
+      setPendingImages([]);
+      const responseMessageId = createMessageId();
+      const sanitizer = new StreamingBrandSanitizer();
+      let streamed = '';
+      const appendQuickContent = (nextContent: string): void => {
+        if (nextContent.length === 0) return;
+        streamed += nextContent;
+        setMessages((currentMessages) => {
+          const existing = currentMessages.find((item) => item.id === responseMessageId);
+          if (existing === undefined) return [...currentMessages, {
+            id: responseMessageId, role: 'assistant', content: nextContent, createdAt: new Date(),
+          }];
+          return currentMessages.map((item) => item.id === responseMessageId
+            ? {...item, content: item.content + nextContent}
+            : item);
+        });
+      };
+      setMessages((currentMessages) => [...currentMessages, {
+        id: createMessageId(), role: 'user',
+        content: collapsePastedBlocksForDisplay(content, Math.max(20, (stdout.columns ?? 80) - 21)),
+        contextContent: content,
+        ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
+        createdAt: new Date(),
+      }]);
+      setIsBusy(true);
+      setStatus('Thinking...');
+      const startedAt = Date.now();
+      setBusyStartedAt(startedAt);
+      setLastActivityAt(startedAt);
+      setActivityLabel('Đang trả lời nhanh...');
+      setPhaseLabel('QUICK');
+      try {
+        const prompt = buildQuickAnswerPrompt(content, selectConversationContext(messages));
+        const response = await currentProvider.sendMessage(prompt, {
+          cwd: workingDirectory,
+          ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
+          onEvent: (event) => {
+            setLastActivityAt(Date.now());
+            if (event.type === 'text_delta') appendQuickContent(sanitizer.push(event.content));
+            else if (event.type === 'activity') setActivityLabel(sanitizeOutputBranding(event.content));
+          },
+        });
+        appendQuickContent(sanitizer.flush());
+        const finalContent = sanitizeOutputBranding(response.content.trim());
+        if (finalContent.length > 0 && !streamed.includes(finalContent)) appendQuickContent(finalContent);
+        setStatus('Ready');
+      } catch (error: unknown) {
+        if (isCancellationError(error)) {
+          setMessages((currentMessages) => [...currentMessages, {
+            id: createMessageId(), role: 'system', content: 'Đã dừng trả lời nhanh.', createdAt: new Date(),
+          }]);
+          setStatus('Ready');
+        } else {
+          setMessages((currentMessages) => [...currentMessages, {
+            id: createMessageId(), role: 'system', tone: 'error',
+            content: sanitizeOutputBranding(getErrorMessage(error, requestImages.length > 0)), createdAt: new Date(),
+          }]);
+          setStatus('Error');
+        }
+      } finally {
+        await Promise.all(requestImages.map(removeTemporaryImage));
+        setIsBusy(false);
+      }
+      return;
     }
 
     await ensureMCPReady(currentProvider);

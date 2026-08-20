@@ -26,6 +26,22 @@ const outputFormatRules = `OUTPUT FORMAT:
 - Bắt buộc các mục: "File đã sửa" (đường dẫn tương đối), "Kết quả kiểm tra", "Vấn đề còn lại" (nếu có).
 - Mỗi dòng < 100 ký tự; không bảng rộng, emoji hay HTML.`;
 
+export function buildQuickAnswerPrompt(target: string, conversation: readonly string[] = []): string {
+  const context = conversation.length === 0 ? '' : `\n\nCONVERSATION:\n\n${conversation.join('\n\n')}`;
+  return `${identityRules}
+
+QUICK ANSWER MODE:
+
+- Trả lời trực tiếp câu hỏi hoặc trò chuyện của người dùng.
+- Không chạy tool, không đọc hay sửa file, không tạo pipeline/checkpoint và không cập nhật STATUS.md.
+- Không áp dụng quy trình vibe coding trừ khi người dùng yêu cầu rõ một thao tác lên project.
+- Ngắn gọn, hữu ích; dùng Markdown khi cần.${context}
+
+USER MESSAGE:
+
+${target}`;
+}
+
 export function buildAgentPrompt(
   target: string,
   agent: PXHAgent,

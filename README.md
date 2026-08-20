@@ -20,7 +20,8 @@ Bản phát hành hiện tại: **v0.22.6**.
 - **Team runtime thật:** 10 specialist, 8 workflow, 50 skill và pipeline có retry/checkpoint.
 - **MCP native:** local stdio và remote Streamable HTTP; hoạt động với cả Free và Custom API.
 - **Project-aware:** tự đọc `AGENTS.md`, skill, agent và workflow riêng của repository.
-- **TUI thực dụng:** streaming, activity log, task rail, context meter, ảnh clipboard và mouse scroll.
+- **Quick answer:** câu hỏi kiến thức/trò chuyện dùng một request trực tiếp, không chạy vibe pipeline.
+- **TUI thực dụng:** streaming, activity monitor, task rail + MCP, diff kiểu GitHub, ảnh clipboard và scrollbar kéo bằng chuột.
 
 ## Cài đặt nhanh
 
@@ -64,8 +65,12 @@ PXHVibe có thể tạo và chỉnh sửa file. Nên commit hoặc backup source
 1. Chạy `pxh` tại thư mục project.
 2. Gõ `/models` để chọn Free mode hoặc Custom API.
 3. Mô tả kết quả mong muốn, ví dụ: `sửa lỗi đăng nhập và thêm regression test`.
-4. Theo dõi agent, phase, tool call và checkpoint trong TUI.
-5. Dùng `/diff`, `/pipeline` hoặc `/history` để kiểm tra kết quả.
+4. Theo dõi agent, phase, activity và checkpoint trong task rail.
+5. Xem diff tự động sau pipeline; dùng `/diff`, `/pipeline`, `/history` hoặc `/context` để kiểm tra thêm.
+
+Câu hỏi như `React là gì?`, `giải thích hàm này` hoặc trò chuyện ngoài coding tự động dùng chế độ
+`QUICK`: một request, không chạy tool/pipeline/checkpoint. Yêu cầu có hành động lên project như sửa,
+build, test, review, cập nhật version, commit hoặc deploy vẫn dùng vibe-coding pipeline đầy đủ.
 
 Các tùy chọn CLI không mở TUI:
 
@@ -78,8 +83,8 @@ pxh --help
 
 | Mode | Thiết lập | Phù hợp khi |
 | --- | --- | --- |
-| Free | Chọn model trong `/models` | Muốn bắt đầu nhanh với runtime được bundle sẵn (Windows mặc định, macOS/Linux cần cài thêm `opencode-ai`) |
-| Custom API | Base URL, model ID, API key và provider | OpenAI Responses, Anthropic Messages, Google Gemini (hoạt động trên mọi platform) |
+| Free | Chọn một trong 8 model Free tại `/models` | Muốn bắt đầu nhanh với OpenCode runtime (Windows thường dùng optional dependency; macOS/Linux có thể cần cài `opencode-ai`) |
+| Custom API | Base URL, model ID, API key và provider | OpenAI-compatible Chat Completions, Anthropic Messages hoặc Google Gemini |
 
 **Lưu ý:** Trên macOS/Linux, nếu Free mode báo lỗi "Không tìm thấy PXHVibe Free runtime", chạy:
 ```bash
@@ -91,8 +96,8 @@ Hoặc sử dụng Custom API với `/models` - không cần `opencode-ai`.
 
 Chọn `Custom API` trong `/models`, chọn provider (OpenAI/Anthropic/Gemini) rồi nhập Base URL,
 model ID và API key. Key được che khi nhập, chỉ giữ trong memory của process và không được ghi
-vào message, log hoặc file. Endpoint cần hỗ trợ Responses API (OpenAI), Messages API (Anthropic)
-hoặc Generative Language API (Gemini) để workspace/MCP tools hoạt động.
+vào message, log hoặc file. Endpoint cần hỗ trợ Chat Completions (OpenAI-compatible), Messages API
+(Anthropic) hoặc Generative Language API (Gemini) để workspace/MCP tools hoạt động.
 
 Có thể cấu hình trước bằng environment:
 
@@ -232,12 +237,14 @@ Các biến thể MCP nâng cao là `/mcp refresh` và `/mcp doctor`.
 | Phím | Tác vụ |
 | --- | --- |
 | `Enter` | Gửi TARGET |
-| `Shift+Enter` | Xuống dòng |
+| `Shift+Enter`, `Ctrl+Enter` hoặc `Ctrl+J` | Xuống dòng |
 | `Esc` hai lần trong 1 giây | Dừng lượt hiện tại, giữ các thay đổi đã ghi |
-| `←` `→` `↑` `↓`, `Home`, `End` | Di chuyển con trỏ |
-| `PageUp` / `PageDown`, mouse wheel | Cuộn history |
+| `←` `→`, `Home`, `End` | Di chuyển con trỏ |
+| `↑` / `↓` | Di chuyển theo dòng; tại đầu/cuối composer sẽ duyệt lịch sử TARGET |
+| `PageUp` / `PageDown`, mouse wheel | Cuộn lịch sử hội thoại |
+| Click hoặc kéo scrollbar | Nhảy và kéo trong lịch sử hội thoại |
 | `Alt+V` hoặc `/paste` | Đính kèm ảnh clipboard, tối đa 4 ảnh |
-| `Alt+C` hoặc `/copy` | Copy response gần nhất trên Windows |
+| `/copy` | Copy response gần nhất trên Windows |
 | `Ctrl+C` | Thoát |
 
 Input hiển thị tối đa 5 dòng nhưng vẫn giữ nguyên nội dung đầy đủ. Pasted block dài được thu gọn
@@ -266,7 +273,9 @@ Capability pack được bundle trong npm package:
 - 6 runtime contracts và kiến trúc 4 tầng: Interface → Orchestration → Workers → Infrastructure.
 
 Checkpoint được ghi atomically tại `.pxhvibe/runtime-state.json`. Session `fail/running` tự resume
-khi mở lại PXHVibe; session bị người dùng chủ động hủy chỉ tiếp tục khi dùng `/resume`.
+khi mở lại PXHVibe; session bị người dùng chủ động hủy chỉ tiếp tục khi dùng `/resume`. Khi còn
+checkpoint chưa hoàn tất, nhập `tiếp tục` hoặc `continue` cũng resume từ phase đang dở và thêm một
+phase review cuối để kiểm tra toàn bộ kết quả tích hợp.
 
 ## Mở rộng theo project
 
@@ -285,14 +294,17 @@ sung hoặc override capability mặc định.
 Nếu không muốn commit checkpoint, MCP config hoặc capability riêng, thêm `.pxhvibe/` vào
 `.gitignore`.
 
-## Context và độ bền phiên
+## Giao diện, context và độ bền phiên
 
-Header hiển thị `CTX n%` theo cửa sổ hội thoại 24.000 ký tự. Khi đầy, PXHVibe giữ TARGET gốc cùng
-các lượt gần nhất và đánh dấu `CTX 100% ↻`. Prompt phase có budget riêng để bảo vệ model khỏi
-context quá dài; prompt Free mode được pipe qua stdin nên không chạm giới hạn command line Windows.
+Lệnh `/context` hiển thị phần trăm, token ước tính, số ký tự đang hoạt động và trạng thái auto-compact
+theo cửa sổ hội thoại 24.000 ký tự. Khi đầy, PXHVibe giữ TARGET gốc cùng các lượt gần nhất. Prompt
+phase có budget riêng để bảo vệ model khỏi context quá dài; prompt Free mode được pipe qua stdin nên
+không chạm giới hạn command line Windows.
 
-Task rail giữ trạng thái phase sau khi pipeline hoàn tất. Activity monitor cảnh báo khi worker im
-lặng lâu và provider watchdog kết thúc request bị treo thay vì chờ vô hạn.
+Task rail giữ trạng thái phase sau khi pipeline hoàn tất và hiển thị MCP bên cạnh. History có scrollbar
+rộng, hỗ trợ wheel, click/drag và PageUp/PageDown. Unified diff sau lượt chạy dùng bố cục GitHub Dark
+với tên file, thống kê thêm/xóa, hunk và số dòng cũ/mới. Activity monitor cảnh báo khi worker im lặng
+lâu và provider watchdog kết thúc request bị treo thay vì chờ vô hạn.
 
 ## Development
 

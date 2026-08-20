@@ -24,6 +24,30 @@ const workflowPhases: Readonly<Record<string, readonly TaskPhase[]>> = {
 };
 
 export type PipelineComplexity = 'simple' | 'standard' | 'full';
+export type InteractionMode = 'quick' | 'vibe';
+
+/**
+ * Separate conversational/knowledge requests from workspace-changing work.
+ * Quick mode is deliberately conservative: an explicit coding action or an
+ * imperative action still uses the full vibe pipeline.
+ */
+export function classifyInteractionMode(target: string): InteractionMode {
+  const value = target.toLocaleLowerCase('vi').trim();
+  if (value.length === 0) return 'quick';
+
+  const operational = /\b(?:commit|push|publish|deploy|release|rollback|merge|rebase|continue|go on)\b|\b(?:phát hành|đóng gói|tiếp tục|làm tiếp|sửa tiếp|triển khai tiếp)\b/u.test(value);
+  const action = /\b(?:fix|build|create|implement|update|upgrade|refactor|review|test|debug|check|run|install|remove|delete|design|edit|patch)\b|(?:sửa|tạo|thêm|xây dựng|triển khai|cập nhật|nâng cấp|kiểm tra|chạy|cài|xóa|đổi|thiết kế|chỉnh|cải thiện)/u.test(value);
+  const codingObject = /\b(?:code|file|project|repo|repository|website|web app|app|api|cli|ui|ux|bug|test|readme|package|version|database|component|function|class|git|npm|typescript|javascript|python|react|next\.js)\b|(?:mã nguồn|dự án|tệp|giao diện|chức năng|phiên bản|lỗi)/u.test(value);
+  const imperative = /^(?:hãy|vui lòng|giúp tôi|please)\b/u.test(value);
+
+  if (operational || (action && (codingObject || imperative))) return 'vibe';
+
+  const question = /\?\s*$/.test(value)
+    || /^(?:ai|gì|ở đâu|khi nào|tại sao|vì sao|thế nào|như thế nào|bao nhiêu|giải thích|cho tôi biết|what|why|how|when|where|who|explain|tell me)\b/u.test(value);
+  const social = /^(?:xin chào|chào|hello|hi|hey|cảm ơn|thanks|thank you|bạn là ai)\b/u.test(value);
+  if (question || social || !codingObject) return 'quick';
+  return 'vibe';
+}
 
 /**
  * Ước lượng độ phức tạp của TARGET để quyết định pipeline ngắn hay đầy đủ.
