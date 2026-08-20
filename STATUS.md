@@ -1,5 +1,28 @@
 # STATUS
 
+## RELEASE - v0.22.6
+
+### Da thay doi
+- Nang patch version tu `0.22.5` len `0.22.6`.
+- Dong bo version trong `package.json`, `package-lock.json` va `README.md`.
+- Ban phat hanh gom cac cai tien UI/UX gan day cho scroll, pipeline va diff.
+
+### File da sua
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- Typecheck: pass.
+- Toan bo 24/24 nhom test: pass.
+- Release integrity: `[OK] Release integrity v0.22.6`.
+- `npm pack --dry-run`: pass voi cache workspace; goi `pxhvibe-0.22.6.tgz`, 336 files.
+- Lenh `release:check` ban dau chi loi tai dry-run do npm cache mac dinh bi Windows chan `EPERM`; chay lai dry-run voi cache `.pxhvibe/npm-cache` da pass.
+
+### Van de con lai
+- Chua commit, tao tag hoac publish npm.
+
 ## PERSIST — test scroll (ANALYZE confirmed)
 
 ### Tóm tắt
