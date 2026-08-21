@@ -24,18 +24,17 @@ export function FormattedBlocks({blocks, accent = 'green'}: FormattedBlocksProps
         if (block.type === 'blank') return <Text key={key}> </Text>;
         if (block.type === 'code') {
           return (
-            <Box key={key} flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1} marginY={1}>
-              <Text bold color={accent}>[ CODE{block.language ? ` · ${block.language}` : ''} ]</Text>
+            <Box key={key} flexDirection="column" borderStyle="single" borderColor="#484f58" paddingX={1} marginY={1}>
+              {block.language && <Text color="gray" dimColor>{block.language}</Text>}
               <Text color="white">{block.content || ' '}</Text>
             </Box>
           );
         }
         if (block.type === 'heading') {
-          const level = block.level === 1 ? '▰ ' : '▱ ';
-          return <Text key={key} bold color={accent}>{level}{block.content}</Text>;
+          return <Text key={key} bold color={accent}>{block.content}</Text>;
         }
         if (block.type === 'bullet') {
-          return <Text key={key}><Text color={accent}>◆</Text>{' '}<InlineText content={block.content} /></Text>;
+          return <Text key={key}><Text color={accent}>•</Text>{' '}<InlineText content={block.content} /></Text>;
         }
         if (block.type === 'numbered') {
           return <Text key={key}><Text bold color={accent}>{block.marker}</Text>{' '}<InlineText content={block.content} /></Text>;

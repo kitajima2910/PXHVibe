@@ -15,23 +15,31 @@ export const scrollbarWidth = 4;
 export function MessageList({messages}: MessageListProps): React.JSX.Element {
   const [scrollOffset, setScrollOffset] = useState(0);
   const [trackHeight, setTrackHeight] = useState(1);
+  const [contentHeight, setContentHeight] = useState(1);
   const isDragging = useRef(false);
   const viewportRef = useRef<DOMElement>(null);
+  const contentRef = useRef<DOMElement>(null);
 
   useEffect(() => {
     setScrollOffset(0);
   }, [messages.length]);
 
   useEffect(() => {
-    if (viewportRef.current === null) return;
+    if (viewportRef.current === null || contentRef.current === null) return;
     const measuredHeight = Math.max(1, measureElement(viewportRef.current).height);
+    const measuredContentHeight = Math.max(1, measureElement(contentRef.current).height);
     setTrackHeight((current) => current === measuredHeight ? current : measuredHeight);
-  }, [messages.length, scrollOffset]);
+    setContentHeight((current) => current === measuredContentHeight ? current : measuredContentHeight);
+  });
 
-  // Scroll in message units. Terminal rows and message counts are different
-  // units (one message can span many rows), so trackHeight must not clamp the
-  // history range.
-  const maxOffset = Math.max(0, messages.length - 1);
+  // Scroll in rendered terminal rows. A single assistant message can be much
+  // taller than the viewport, so message-based slicing makes its clipped text
+  // impossible to recover.
+  const maxOffset = Math.max(0, contentHeight - trackHeight);
+  useEffect(() => {
+    setScrollOffset((current) => Math.min(current, maxOffset));
+  }, [maxOffset]);
+
   const scrollBy = (amount: number): void => {
     setScrollOffset((current) => Math.max(0, Math.min(maxOffset, current + amount)));
   };
@@ -74,11 +82,7 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
     }
   });
 
-  // Keep all messages up to the current history position. The viewport clips
-  // excess content from the top while justifyContent="flex-end" anchors the
-  // selected message at the bottom. Increasing the offset therefore removes
-  // newer messages and reveals older history, regardless of message height.
-  const visibleMessages = messages.slice(0, messages.length - scrollOffset);
+  const contentTop = -Math.max(0, maxOffset - scrollOffset);
 
   return (
     <Box
@@ -92,17 +96,23 @@ export function MessageList({messages}: MessageListProps): React.JSX.Element {
       <Box ref={viewportRef} flexDirection="row" flexBasis={0} flexGrow={1} overflow="hidden">
         <Box
           flexDirection="column"
-          justifyContent="flex-end"
           flexBasis={0}
           flexGrow={1}
           overflow="hidden"
         >
-          {visibleMessages.map((message) => (
-            <MessageCard key={message.id} message={message} />
-          ))}
+          <Box
+            ref={contentRef}
+            flexDirection="column"
+            flexShrink={0}
+            marginTop={contentTop}
+          >
+            {messages.map((message) => (
+              <MessageCard key={message.id} message={message} />
+            ))}
+          </Box>
         </Box>
         <Box width={scrollbarWidth} flexDirection="column" flexShrink={0}>
-          {buildScrollbar(trackHeight, messages.length, scrollOffset).map((character, index) => (
+          {buildScrollbar(trackHeight, maxOffset + 1, scrollOffset).map((character, index) => (
             <Text key={index} color={character === '┃' ? 'magenta' : '#484f58'} dimColor={character !== '┃'}>
               {character === '┃' ? ' ██ ' : ' ┊┊ '}
             </Text>
@@ -140,35 +150,42 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
     const color = getSystemMessageColor(message);
     const isError = message.tone === 'error';
     return (
-      <Box paddingLeft={2} marginTop={1} marginBottom={1} flexShrink={0}>
+      <Box paddingLeft={1} marginTop={1} flexShrink={0}>
         <Box gap={1}>
-          <Text bold color={isError ? 'red' : 'cyan'}>{isError ? '✖' : '↳'}</Text>
-          <Text bold={isError} color={color}>{message.content}</Text>
+          <Text bold color={isError ? 'red' : 'gray'}>{isError ? '×' : '│'}</Text>
+          <Text color={color}>{message.content}</Text>
         </Box>
       </Box>
     );
   }
 
   const isUser = message.role === 'user';
+  if (isUser) {
+    return (
+      <Box flexDirection="column" marginTop={1} flexShrink={0}>
+        <Box paddingX={1} backgroundColor="#2a2438">
+          <Text bold color="magenta">› </Text>
+          <Text bold>{message.content}</Text>
+        </Box>
+        {message.attachments !== undefined && message.attachments.length > 0 && (
+          <Box paddingLeft={2}>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box
       flexDirection="column"
       marginTop={1}
-      marginBottom={1}
       flexShrink={0}
     >
       <Box gap={1}>
-        <Text bold color={isUser ? 'magenta' : 'cyan'}>●</Text>
-        <Text bold color={isUser ? 'magenta' : 'cyan'}>{isUser ? 'YOU' : 'PXH'}</Text>
-        <Text dimColor>{isUser ? 'target' : 'response'}</Text>
-        <Text dimColor>·</Text>
-        <Text dimColor>{formatTime(message.createdAt)}</Text>
+        <Text bold color="cyan">◆</Text>
+        <Text bold color="cyan">PXHVibe</Text>
       </Box>
-      {message.attachments !== undefined && message.attachments.length > 0 && (
-        <Box paddingLeft={2}>{message.attachments.map((image) => <ImageThumbnail key={image.path} image={image} />)}</Box>
-      )}
-      <Box paddingLeft={2}>
-        <FormattedText content={message.content} accent={isUser ? 'magenta' : 'cyan'} />
+      <Box paddingLeft={2} borderStyle="single" borderTop={false} borderRight={false} borderBottom={false} borderColor="#484f58">
+        <FormattedText content={message.content} accent="cyan" />
       </Box>
       {message.diff !== undefined && message.diff.length > 0 && (
         <Box paddingLeft={2}>
@@ -181,8 +198,4 @@ function MessageCard({message}: {message: Message}): React.JSX.Element {
 
 export function getSystemMessageColor(message: Message): 'red' | 'gray' {
   return message.tone === 'error' ? 'red' : 'gray';
-}
-
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'});
 }

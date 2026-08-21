@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Box, Text, measureElement, useApp, useInput, usePaste, useStdout, type DOMElement} from 'ink';
+import {Box, Text, measureElement, useApp, useCursor, useInput, usePaste, useStdout, type DOMElement} from 'ink';
 import type {ImageAttachment} from '../types/attachment.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
 import {parseTerminalMouse} from '../utils/mouse.js';
@@ -37,12 +37,24 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [currentInput, setCurrentInput] = useState('');
   const {exit} = useApp();
+  const {setCursorPosition} = useCursor();
   const {stdout} = useStdout();
   const editorRef = useRef<DOMElement>(null);
   const lastEscapeAtRef = useRef(0);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const editorWidth = Math.max(20, (stdout.columns ?? 80) - 21);
   const inputViewport = createInputViewport(value, cursorIndex, editorWidth, 5);
+
+  useEffect(() => {
+    if (isBusy || editorRef.current === null) {
+      setCursorPosition(undefined);
+      return;
+    }
+    const metrics = measureElement(editorRef.current);
+    const position = getTerminalCursorPosition(inputViewport.text, inputViewport.cursorIndex);
+    setCursorPosition({x: metrics.x + position.x, y: metrics.y + position.y});
+    return () => setCursorPosition(undefined);
+  }, [isBusy, inputViewport.text, inputViewport.cursorIndex, setCursorPosition]);
 
   useEffect(() => {
     if (!isBusy) {
@@ -332,17 +344,14 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
         ) : (
           <Box flexDirection="column" flexGrow={1} flexBasis={0} width={editorWidth}>
             {value.length === 0 ? (
-              <Box ref={editorRef}><Text><Text inverse color="magenta"> </Text><Text color="gray"> Nhập TARGET · /help · /models</Text></Text></Box>
+              <Box ref={editorRef}><Text color="gray"> Nhập TARGET · /help · /models</Text></Box>
             ) : (
               <>
                 {inputViewport.hiddenAbove > 0 && <Text color="magenta">↑ {inputViewport.hiddenAbove} lines</Text>}
                 <Box ref={editorRef} flexDirection="column" overflow="hidden">
                   <Text color="white">
                     {inputViewport.text.slice(0, inputViewport.cursorIndex)}
-                    <Text inverse color="magenta">{inputViewport.text[inputViewport.cursorIndex] ?? ' '}</Text>
-                    {inputViewport.cursorIndex < inputViewport.text.length
-                      ? inputViewport.text.slice(inputViewport.cursorIndex + 1)
-                      : ''}
+                    {inputViewport.text.slice(inputViewport.cursorIndex)}
                   </Text>
                 </Box>
                 {inputViewport.hiddenBelow > 0 && <Text color="magenta">↓ {inputViewport.hiddenBelow} lines</Text>}
@@ -472,6 +481,17 @@ export function createInputViewport(
     hiddenAbove: firstLine,
     hiddenBelow: Math.max(0, lines.length - firstLine - visibleLines.length),
   };
+}
+
+export function getTerminalCursorPosition(
+  visibleText: string,
+  cursorIndex: number,
+): {x: number; y: number} {
+  const beforeCursor = visibleText.slice(0, Math.max(0, Math.min(visibleText.length, cursorIndex)));
+  const lines = beforeCursor.split('\n');
+  const currentLine = (lines[lines.length - 1] ?? '').normalize('NFC');
+  const x = Array.from(currentLine).filter((character) => !/^\p{Mark}$/u.test(character)).length;
+  return {x, y: Math.max(0, lines.length - 1)};
 }
 
 export function getCursorIndexFromViewportPoint(

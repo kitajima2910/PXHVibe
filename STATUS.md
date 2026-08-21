@@ -1,5 +1,200 @@
 # STATUS
 
+## RELEASE - v0.22.7
+
+### Da thay doi
+- Nang patch version tu `0.22.6` len `0.22.7`.
+- Dong bo version trong package metadata va README.
+- Them release notes cho layout output, scroll theo dong, IME tieng Viet va MCP connected green.
+
+### File da sua
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `release-notes-v0.22.7.md`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- Toan bo 24/24 nhom test: pass.
+- Release integrity: `[OK] Release integrity v0.22.7`.
+- `npm.cmd pack --dry-run --cache .pxhvibe/npm-cache`: pass, 336 files.
+- Dry-run voi cache npm mac dinh loi `EPERM` tren Windows; cache workspace khong gap loi.
+
+### Van de con lai
+- GitHub CLI dang bao token khong hop le; se thu credential Git khi push.
+
+## PERSIST - Text output cua pxhvibe cli (ANALYZE confirmed)
+
+### Tom tat
+Persist ket qua ANALYZE cho TARGET "text output cua pxhvibe cli". Pipeline hoat dong
+dung, khong co bug blocking, khong sua code. Snapshot da ghi vao `.memory/`.
+
+### Ket qua cac phase
+- **ANALYZE**: Map du 5 tang output: `src/cli.tsx` (entry) ->
+  `src/utils/outputBranding.ts` (sanitizer 4 lop + streaming buffer) ->
+  `src/app.tsx` (15 diem sanitize) -> `src/components/MessageList.tsx`
+  (transcript render) -> `src/utils/terminalFormat.ts` + `FormattedText.tsx`
+  (markdown-lite/diff). Khong phat hien bug blocking.
+- **PERSIST**: Ghi snapshot `.memory/snapshot-2026-08-21-text-output-analyze.json`.
+
+### File da sua
+- `.memory/snapshot-2026-08-21-text-output-analyze.json` (moi)
+- `STATUS.md` (them muc PERSIST nay)
+
+### Ket qua kiem tra
+- Snapshot JSON parse hop le (`node -e JSON.parse`) OK
+- Evidence tu ANALYZE: `--version`/`--help` OK; test:format, test:branding,
+  test:viewport, test:streaming PASS; typecheck pass.
+
+### Van de con lai (chuyen specialist neu can fix)
+- StreamingBrandSanitizer giu buffer khi <=2 tu: cau tra loi rat ngan chi hien sau flush().
+- Dedupe quick final bang `includes()` co the sai voi substring.
+- Scroll reset ve 0 khi `messages.length` doi: user dang cuon bi keo ve bottom khi stream.
+- `.opencode/runtime/bin/persist.mjs` khong ton tai trong repo -> persist thu cong vao `.memory/`.
+
+---
+
+## UI - MCP connected hien thi green ro rang
+
+### Nguyen nhan goc
+- Dong MCP connected da dung ten mau ANSI `green`, nhung mau phu thuoc palette terminal va khong co nhan trang thai nen co the trong nhu text thuong.
+
+### Da thay doi
+- Dung green truecolor `#3fb950` va bold cho server da ket noi.
+- Them nhan `CONNECTED` tren dong server; cac state error/connecting/disabled giu mau cu.
+- Them regression test cho noi dung va ma mau RGB.
+
+### File da sua
+- `src/components/TodoStrip.tsx`
+- `src/tests/todoStrip.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:todo`: pass.
+- `npm.cmd run test:mcp`: pass.
+- `git diff --check`: pass.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## FIX - Go dau tieng Viet tu do trong PromptInput
+
+### Nguyen nhan goc
+- PromptInput ve con tro bang ANSI inverse nhung khong dat con tro that cua terminal.
+- IME nhu UniKey/Telex/VNI can toa do con tro terminal de hien va commit chu dang composition.
+
+### Da thay doi
+- Dung `useCursor` cua Ink de dat con tro that dung dong/cot trong input viewport.
+- Bo ky tu inverse gia, tranh hai con tro va tranh ghi de chu dang composition.
+- Tinh cot dung cho tieng Viet NFC va Unicode dang combining marks.
+- An con tro khi CLI dang busy va khoi phuc khi input san sang.
+- Them unit test toa do con tro cho tieng Viet precomposed va decomposed.
+
+### File da sua
+- `src/components/PromptInput.tsx`
+- `src/tests/imageClipboard.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:image`: pass, gom test toa do IME tieng Viet.
+- `npm.cmd run test:commands`: pass, gom submit prompt tieng Viet.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## ANALYZE — Text output cua pxhvibe cli
+
+### Tom tat
+Pipeline text output hoat dong dung: provider stream -> brand sanitizer -> messages ->
+MessageList -> FormattedText -> Ink render. Khong phat hien bug blocking trong TARGET.
+
+### Pipeline da analyze
+- Entry `src/cli.tsx`: --version/--help in plain text; default render App qua Ink alternate screen.
+- Branding `src/utils/outputBranding.ts`: sanitizeOutputBranding 4 lop regex (URL/path/model/name);
+  StreamingBrandSanitizer giu 2 tu cuoi buffer de ten khong lo qua stream chunk.
+- Ghi message `src/app.tsx`: 15 diem goi sanitizeOutputBranding (quick stream, activity,
+  tool block, phase output, diff stat, error). Quick mode co dedupe final content.
+- Transcript `src/components/MessageList.tsx`: system=status line, user=`›` nen accent,
+  assistant=`◆ PXHVibe` cyan + rail doc; scroll theo dong terminal thuc, scrollbar 4 cot.
+- Markdown-lite `src/utils/terminalFormat.ts` + `src/components/FormattedText.tsx`:
+  code fence/heading/bullet/numbered/quote; inline `code` magenta, **bold**.
+- Diff `src/components/DiffView.tsx`: GitHub Dark, gutter so dong, stats +N/-N.
+
+### File da sua
+- `STATUS.md` (chi them muc analyze nay)
+
+### Ket qua kiem tra
+- `node dist/cli.js --version` -> `PXHVibe v0.22.6`.
+- `node dist/cli.js --help` -> version + 4 nhom TUI commands.
+- `npm.cmd run test:format`: pass.
+- `npm.cmd run test:branding`: pass.
+- `npm.cmd run test:viewport`: pass.
+- `npm.cmd run test:streaming`: pass.
+- `npm.cmd run typecheck`: pass.
+
+### Van de con lai (dang quan sat, chua fix)
+- StreamingBrandSanizer giu buffer khi <=2 tu: cau tra loi rat ngan chi hien sau flush().
+- Dedupe quick final bang `streamed.includes(finalContent)` co the sai voi substring.
+- Scroll reset ve 0 moi khi messages.length doi: user dang cuon len bi keo ve bottom khi stream.
+
+## FIX - Scroll lam mat text trong output dai
+
+### Nguyen nhan goc
+- Viewport cu tinh offset theo so message va loai ca message bang `slice(...)`.
+- Mot response dai nhieu dong van chi duoc tinh la mot don vi, nen phan dau bi viewport cat khong the cuon tro lai.
+
+### Da thay doi
+- Do chieu cao render thuc cua transcript va viewport.
+- Cuon theo tung dong terminal bang offset cua khoi noi dung, khong loai message khoi cay render.
+- Scrollbar va HISTORY dung pham vi dong thuc te.
+- Them regression test cho mot response duy nhat dai hon viewport.
+
+### File da sua
+- `src/components/MessageList.tsx`
+- `src/tests/messageViewport.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:viewport`: pass, gom case mot response 14 dong trong viewport 7 dong.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## UI - Output transcript theo phong cach OpenCode CLI
+
+### Nguyen nhan goc
+- Transcript cu dung card co nhan `YOU/PXH`, metadata `target/response`, timestamp va icon lon, lam output day va giong chat dashboard hon terminal coding agent.
+- Heading, bullet va code block cung them nhieu ky hieu trang tri, lam giam mat do noi dung.
+
+### Da thay doi
+- Prompt nguoi dung thanh thanh noi toi gian voi dau `›` va nen accent nhe.
+- Output assistant thanh luong phang co nhan PXHVibe gon va rail doc trung tinh.
+- System message doi thanh dong status nho; bo timestamp va metadata lap lai.
+- Toi gian heading, bullet va nhan ngon ngu cua code block.
+- Them regression test cho cau truc transcript moi va dam bao nhan cu khong quay lai.
+
+### File da sua
+- `src/components/MessageList.tsx`
+- `src/components/FormattedText.tsx`
+- `src/tests/messageViewport.test.ts`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:viewport`: pass.
+- `npm.cmd run test:format`: pass.
+
+### Van de con lai
+- Chua chay thu TUI tuong tac trong terminal that; layout da duoc verify bang Ink render regression test.
+
 ## PERF - Quick answer cho cau hoi va noi dung ngoai vibe coding
 
 ### Nguyen nhan goc
@@ -3751,3 +3946,50 @@ File nay da bi xoa khoi render (app.tsx khong con import) nhung file van ton tai
 - OAuth XSS (item 5) — low risk vi localhost-only nhung nen sanitize
 - Gemini text delta loss (item 8) — can verify voi streaming test that
 - 24/24 tests pass, typecheck pass, git clean — trang thai on dinh cho release tiep theo
+
+## ANALYZE — Test output cua pxhvibe cli (v0.22.6)
+
+### Pham vi
+Phase ANALYZE cho TARGET "test output cua pxhvibe cli" — chi phan tich va thu thap evidence, khong sua code.
+
+### Commands chay that
+- `npm run build` → exit 0 (dist/ duoc tao lai cho 0.22.6).
+- `node dist/cli.js --version` va `-v` → `PXHVibe v0.22.6`, exit 0.
+- `node dist/cli.js --help` va `-h` → version + "Chay: pxh" + bang TUI commands (AI/Phien/Project/Tien ich), exit 0.
+- Chay TUI non-TTY (stdin pipe) → Ink throw "Raw mode is not supported", exit 1; thong bao loi duoc in ca stdout/stderr — hanh vi dung cua Ink, khong phai bug.
+- `npm run test:branding` → passed (banner TUI render qua mock stream trong unit test).
+- `pxh --version` (global npm) → **v0.22.5**, exit 0.
+
+### Ket qua
+- CLI flags output chinh xac theo src/cli.tsx:12-17; error path non-TTY graceful (exit 1, co message).
+- Phat hien lech: global `pxh` = 0.22.5 (ban da publish) vs repo = 0.22.6 (chua publish/commit).
+- Khong test duoc TUI tuong tac that: moi truong chi co pipe, khong conpty/node-ty; them node-pty se la dependency moi ngoai pham vi patch nho nhat.
+
+### Van de con lai
+- v0.22.6 chua publish len npm va chua commit git (can user chay npm publish + commit/tag).
+- Khong co PTY trong moi truong de verify banner TUI thuc te; hien phu thuoc unit test branding/commands.
+
+---
+
+## PERSIST — Test output cua pxhvibe cli
+
+### Tom tat
+Persist ket qua ANALYZE cho TARGET "test output cua pxhvibe cli" vao .memory/ + STATUS.md. Khong sua code.
+
+### Event da persist
+- task_result: ANALYZE hoan thanh — CLI flags (--version/--help) output dung, exit 0; TUI non-TTY graceful error; test:branding pass.
+- checkpoint: `.memory/snapshot-2026-08-21-cli-output-test.json` (evidence day du: build, flags, TUI non-TTY, global pxh lech version).
+- alert: global `pxh` = v0.22.5 (npm) vs repo = v0.22.6 — can publish/commit de dong bo.
+
+### File da sua
+- `STATUS.md` (them section PERSIST nay)
+- `.memory/snapshot-2026-08-21-cli-output-test.json` (checkpoint moi)
+
+### Ket qua kiem tra
+- JSON checkpoint parse OK (format khop voi snapshot-2026-08-20.json).
+- Section PERSIST nam cuoi STATUS.md, sau section ANALYZE tuong ung.
+
+### Van de con lai
+- `.opencode/runtime/bin/persist.mjs` khong ton tai trong repo → persist thu cong bang JSON theo format snapshot hien co.
+- v0.22.6 chua commit git / chua publish npm (thuoc user).
+- Verify banner TUI thuc te can terminal that hoac node-pty (quyet dinh de phase sau).

@@ -6,6 +6,7 @@ import {ImageThumbnail} from '../components/ImageThumbnail.js';
 import {PromptInput} from '../components/PromptInput.js';
 import {
   getCursorIndexFromPoint,
+  getTerminalCursorPosition,
   isPasteShortcut,
   isNewlineShortcut,
   moveCursorVertically,
@@ -56,6 +57,9 @@ const inputViewport = createInputViewport('1234567890abcdefghijKLMNOP', 22, 10, 
 assert.equal(inputViewport.text, 'abcdefghij\nKLMNOP');
 assert.equal(inputViewport.hiddenAbove, 1);
 assert.equal(inputViewport.cursorIndex, 13);
+assert.deepEqual(getTerminalCursorPosition('gõ tiếng Việt', 13), {x: 13, y: 0});
+const decomposedVietnamese = 'dòng 1\nTiếng Việt';
+assert.deepEqual(getTerminalCursorPosition(decomposedVietnamese, decomposedVietnamese.length), {x: 10, y: 1});
 assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
 assert.equal(
   collapsePastedBlocksForDisplay('review this\n\n[PASTED BLOCK 1]\nline one\nline two'),

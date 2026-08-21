@@ -43,14 +43,13 @@ const instance = render(
 await new Promise((resolve) => setTimeout(resolve, 40));
 const visible = stripAnsi(frame);
 assert.match(visible, /message-9/);
-assert.doesNotMatch(visible, /message-0/);
 
 frame = '';
 input.write('\x1b[5~');
 await new Promise((resolve) => setTimeout(resolve, 40));
 const historyFrame = stripAnsi(frame);
 assert.match(historyFrame, /HISTORY/);
-assert.match(historyFrame, /message-5/);
+assert.match(historyFrame, /message-[0-8]/);
 assert.doesNotMatch(historyFrame, /message-9/);
 
 frame = '';
@@ -60,5 +59,57 @@ const newestFrame = stripAnsi(frame);
 assert.match(newestFrame, /message-9/);
 assert.doesNotMatch(newestFrame, /HISTORY/);
 instance.unmount();
+
+const layoutOutput = new PassThrough();
+Object.assign(layoutOutput, {columns: 80, rows: 20, isTTY: true});
+let layoutFrame = '';
+layoutOutput.on('data', (chunk) => { layoutFrame += chunk.toString('utf8'); });
+const layout = render(
+  React.createElement(Box, {height: 12}, React.createElement(MessageList, {messages: messages.slice(0, 2)})),
+  {
+    stdin: input as unknown as NodeJS.ReadStream,
+    stdout: layoutOutput as unknown as NodeJS.WriteStream,
+    stderr: layoutOutput as unknown as NodeJS.WriteStream,
+    debug: true,
+    exitOnCtrlC: false,
+  },
+);
+await new Promise((resolve) => setTimeout(resolve, 40));
+const openCodeStyleFrame = stripAnsi(layoutFrame);
+assert.match(openCodeStyleFrame, /› message-0/);
+assert.match(openCodeStyleFrame, /◆ PXHVibe/);
+assert.doesNotMatch(openCodeStyleFrame, /YOU|target|response|12:0/);
+layout.unmount();
+
+const longInput = new PassThrough();
+Object.assign(longInput, {isTTY: true, setRawMode: () => longInput, ref: () => longInput, unref: () => longInput});
+const longOutput = new PassThrough();
+Object.assign(longOutput, {columns: 80, rows: 10, isTTY: true});
+let longFrame = '';
+longOutput.on('data', (chunk) => { longFrame += chunk.toString('utf8'); });
+const longMessage: Message = {
+  id: 'long', role: 'assistant',
+  content: Array.from({length: 14}, (_, index) => `long-line-${index}`).join('\n'),
+  createdAt: new Date(),
+};
+const longLayout = render(
+  React.createElement(Box, {height: 7}, React.createElement(MessageList, {messages: [longMessage]})),
+  {
+    stdin: longInput as unknown as NodeJS.ReadStream,
+    stdout: longOutput as unknown as NodeJS.WriteStream,
+    stderr: longOutput as unknown as NodeJS.WriteStream,
+    debug: true,
+    exitOnCtrlC: false,
+  },
+);
+await new Promise((resolve) => setTimeout(resolve, 50));
+assert.match(stripAnsi(longFrame), /long-line-13/);
+longFrame = '';
+longInput.write('\x1b[5~');
+await new Promise((resolve) => setTimeout(resolve, 50));
+assert.match(stripAnsi(longFrame), /HISTORY/);
+assert.match(stripAnsi(longFrame), /long-line-[0-9]/);
+assert.doesNotMatch(stripAnsi(longFrame), /long-line-13/);
+longLayout.unmount();
 
 console.log('Message viewport tests passed.');

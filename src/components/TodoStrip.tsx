@@ -1,9 +1,10 @@
 import React from 'react';
 import {Box, Text} from 'ink';
 import type {TaskPhase} from '../orchestration/contracts.js';
-import {mcpStatusSymbol, type MCPServerStatus} from '../mcp/MCPManager.js';
+import {mcpStatusSymbol, type MCPServerState, type MCPServerStatus} from '../mcp/MCPManager.js';
 
 export type TodoStatus = 'pending' | 'running' | 'pass' | 'fail' | 'cancelled';
+export const mcpConnectedColor = '#3fb950';
 
 export interface TodoItem {
   id: string;
@@ -65,13 +66,25 @@ export function TodoStrip({tasks, mcpServers = []}: {tasks: readonly TodoItem[];
         </Box>
         {mcpServers.length === 0 && <Text dimColor>○ Chưa cấu hình</Text>}
         {mcpServers.map((server) => (
-          <Text key={server.name} color={server.state === 'connected' ? 'green' : server.state === 'error' ? 'red' : 'gray'}>
-            {mcpStatusSymbol(server.state)} {server.name}{server.toolCount === undefined ? '' : ` · ${server.toolCount} tools`}
+          <Text
+            key={server.name}
+            color={mcpServerColor(server.state)}
+            bold={server.state === 'connected'}
+          >
+            {mcpStatusSymbol(server.state)} {server.name}
+            {server.state === 'connected' ? ' · CONNECTED' : ''}
+            {server.toolCount === undefined ? '' : ` · ${server.toolCount} tools`}
           </Text>
         ))}
       </Box>
     </Box>
   );
+}
+
+export function mcpServerColor(state: MCPServerState): string {
+  if (state === 'connected') return mcpConnectedColor;
+  if (state === 'error') return 'red';
+  return 'gray';
 }
 
 function renderProgressBar(completed: number, total: number): string {
