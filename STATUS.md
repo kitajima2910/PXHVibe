@@ -20,9 +20,12 @@
 - Release integrity: `[OK] Release integrity v0.22.7`.
 - `npm.cmd pack --dry-run --cache .pxhvibe/npm-cache`: pass, 336 files.
 - Dry-run voi cache npm mac dinh loi `EPERM` tren Windows; cache workspace khong gap loi.
+- Commit release: `ecc1d37` (`release: v0.22.7`).
+- Remote `main` da fast-forward va tag `v0.22.7` da push.
+- GitHub Release: `https://github.com/kitajima2910/PXHVibe/releases/tag/v0.22.7`.
 
 ### Van de con lai
-- GitHub CLI dang bao token khong hop le; se thu credential Git khi push.
+- Chua publish `pxhvibe@0.22.7` len npm; khong nam trong yeu cau GitHub release nay.
 
 ## PERSIST - Text output cua pxhvibe cli (ANALYZE confirmed)
 
