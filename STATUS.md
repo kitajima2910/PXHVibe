@@ -1,5 +1,55 @@
 # STATUS
 
+## RELEASE - v0.22.8
+
+### Da thay doi
+- Nang patch version tu `0.22.7` len `0.22.8`.
+- Phat hanh ban sua con tro PromptInput bi lech len dong `NEW TARGET`.
+- Dong bo package metadata, README va release notes.
+
+### File da sua
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `release-notes-v0.22.8.md`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- Toan bo 24/24 nhom test: pass.
+- Release integrity: `[OK] Release integrity v0.22.8`.
+- `npm.cmd pack --dry-run --cache .pxhvibe/npm-cache`: pass, 336 files.
+
+### Van de con lai
+- Khong co trong TARGET nay.
+
+## FIX - Con tro PromptInput lech vi tri
+
+### Nguyen nhan goc
+- `setCursorPosition()` duoc goi trong `useEffect`, sau commit cua Ink.
+- `useCursor` chi chuyen toa do sang terminal trong `useInsertionEffect` cua pha commit, nen toa do bi tre mot render va co the nam tren dong `NEW TARGET` thay vi cuoi input.
+
+### Da thay doi
+- Do origin cua editor trong `useLayoutEffect` sau khi Yoga tinh layout.
+- Ap dung toa do con tro truc tiep trong render dung theo contract cua Ink.
+- Bu them mot hang cho live region co border; ANSI cursor tu `up 2` thanh `up 1`, dat vao dong input thay vi header.
+- Do lai origin khi input wrap, an/hien history indicator, attachment, pasted block hoac chieu rong terminal thay doi.
+- Giu ho tro IME tieng Viet va Unicode combining marks.
+
+### File da sua
+- `src/components/PromptInput.tsx`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- `npm.cmd run typecheck`: pass.
+- `npm.cmd run build`: pass.
+- `npm.cmd run test:image`: pass.
+- `npm.cmd run test:commands`: pass.
+- ANSI capture sau khi go `xin chao cac ban`: cursor suffix la `ESC[1A ESC[21G` (dong input), thay cho `ESC[2A ESC[21G` (dong header).
+
+### Van de con lai
+- Hinh dang block/bar cua con tro do cau hinh terminal quyet dinh; PXHVibe chi dieu khien dung vi tri va visibility.
+
 ## RELEASE - v0.22.7
 
 ### Da thay doi

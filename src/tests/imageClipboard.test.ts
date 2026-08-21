@@ -7,6 +7,7 @@ import {PromptInput} from '../components/PromptInput.js';
 import {
   getCursorIndexFromPoint,
   getTerminalCursorPosition,
+  resolvePromptCursorPosition,
   isPasteShortcut,
   isNewlineShortcut,
   moveCursorVertically,
@@ -60,6 +61,7 @@ assert.equal(inputViewport.cursorIndex, 13);
 assert.deepEqual(getTerminalCursorPosition('gõ tiếng Việt', 13), {x: 13, y: 0});
 const decomposedVietnamese = 'dòng 1\nTiếng Việt';
 assert.deepEqual(getTerminalCursorPosition(decomposedVietnamese, decomposedVietnamese.length), {x: 10, y: 1});
+assert.deepEqual(resolvePromptCursorPosition({x: 4, y: 1}, {x: 16, y: 0}), {x: 20, y: 2});
 assert.equal(composePromptInput('review this', ['line one\nline two']), 'review this\n\n[PASTED BLOCK 1]\nline one\nline two');
 assert.equal(
   collapsePastedBlocksForDisplay('review this\n\n[PASTED BLOCK 1]\nline one\nline two'),
@@ -116,10 +118,10 @@ const editor = render(React.createElement(PromptInput, {
   stdin: editorInput as unknown as NodeJS.ReadStream,
   stdout: editorOutput as unknown as NodeJS.WriteStream,
   stderr: editorOutput as unknown as NodeJS.WriteStream,
-  debug: true,
   exitOnCtrlC: false,
 });
-await new Promise((resolve) => setTimeout(resolve, 30));
+await new Promise((resolve) => setTimeout(resolve, 80));
+assert.match(editorFrame, /\x1b\[1A\x1b\[5G\x1b\[\?25h/);
 editorInput.write('\x1b[200~one\ntwo\nthree\nfour\x1b[201~');
 await new Promise((resolve) => setTimeout(resolve, 30));
 assert.match(stripAnsi(editorFrame), /~4 dòng/);

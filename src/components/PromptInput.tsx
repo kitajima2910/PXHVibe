@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {Box, Text, measureElement, useApp, useCursor, useInput, usePaste, useStdout, type DOMElement} from 'ink';
 import type {ImageAttachment} from '../types/attachment.js';
 import {ImageThumbnail} from './ImageThumbnail.js';
@@ -36,6 +36,7 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   const [inputHistory, setInputHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [currentInput, setCurrentInput] = useState('');
+  const [editorOrigin, setEditorOrigin] = useState<{x: number; y: number} | undefined>(undefined);
   const {exit} = useApp();
   const {setCursorPosition} = useCursor();
   const {stdout} = useStdout();
@@ -44,17 +45,28 @@ export function PromptInput({onSubmit, onCancel, onExit, isBusy, attachments, on
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const editorWidth = Math.max(20, (stdout.columns ?? 80) - 21);
   const inputViewport = createInputViewport(value, cursorIndex, editorWidth, 5);
+  const relativeCursor = getTerminalCursorPosition(inputViewport.text, inputViewport.cursorIndex);
+  setCursorPosition(isBusy || editorOrigin === undefined
+    ? undefined
+    : resolvePromptCursorPosition(editorOrigin, relativeCursor));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isBusy || editorRef.current === null) {
-      setCursorPosition(undefined);
+      setEditorOrigin((current) => current === undefined ? current : undefined);
       return;
     }
     const metrics = measureElement(editorRef.current);
-    const position = getTerminalCursorPosition(inputViewport.text, inputViewport.cursorIndex);
-    setCursorPosition({x: metrics.x + position.x, y: metrics.y + position.y});
-    return () => setCursorPosition(undefined);
-  }, [isBusy, inputViewport.text, inputViewport.cursorIndex, setCursorPosition]);
+    setEditorOrigin((current) => current?.x === metrics.x && current.y === metrics.y
+      ? current
+      : {x: metrics.x, y: metrics.y});
+  }, [
+    isBusy,
+    inputViewport.text,
+    inputViewport.hiddenAbove,
+    attachments.length,
+    pastedBlocks.length,
+    editorWidth,
+  ]);
 
   useEffect(() => {
     if (!isBusy) {
@@ -492,6 +504,16 @@ export function getTerminalCursorPosition(
   const currentLine = (lines[lines.length - 1] ?? '').normalize('NFC');
   const x = Array.from(currentLine).filter((character) => !/^\p{Mark}$/u.test(character)).length;
   return {x, y: Math.max(0, lines.length - 1)};
+}
+
+export function resolvePromptCursorPosition(
+  editorOrigin: {x: number; y: number},
+  relativeCursor: {x: number; y: number},
+): {x: number; y: number} {
+  // Ink's live-region cursor origin includes the bottom boundary row of this
+  // bordered prompt. Without the row correction the terminal lands on the
+  // NEW TARGET header even though measureElement points at the editor row.
+  return {x: editorOrigin.x + relativeCursor.x, y: editorOrigin.y + relativeCursor.y + 1};
 }
 
 export function getCursorIndexFromViewportPoint(
