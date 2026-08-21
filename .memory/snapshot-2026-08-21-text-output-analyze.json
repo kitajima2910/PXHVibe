@@ -1,0 +1,31 @@
+{
+  "ts": "2026-08-21T16:18:03Z",
+  "phase": "PERSIST",
+  "status": "completed",
+  "target": "text output cua pxhvibe cli",
+  "summary": "ANALYZE hoan thanh cho TARGET 'text output cua pxhvibe cli' (v0.22.6). Pipeline text output hoat dong dung, khong co bug blocking. Da map du 5 tang: entry CLI -> brand sanitizer -> message flow -> transcript render -> markdown-lite/diff.",
+  "pipeline": [
+    "src/cli.tsx: --version/--help in plain text; default render <App> qua Ink alternate screen",
+    "src/utils/outputBranding.ts: sanitizeOutputBranding 4 lop regex che runtime internals; StreamingBrandSanitizer giu 2 tu cuoi buffer chong lo ten cat giua chunk",
+    "src/app.tsx: 15 diem goi sanitize (quick stream, activity, tool block, phase output, diff, error); quick mode co dedupe final content",
+    "src/components/MessageList.tsx: system=status line, user prompt voi dau '›', assistant nhan 'PXHVibe' cyan; scroll theo dong terminal thuc, scrollbar 4 cot",
+    "src/utils/terminalFormat.ts + src/components/FormattedText.tsx: parse code fence/heading/bullet/numbered/quote; DiffView GitHub Dark"
+  ],
+  "evidence": {
+    "version_flag": "node dist/cli.js --version -> PXHVibe v0.22.6",
+    "help_flag": "node dist/cli.js --help -> version + 4 nhom TUI commands",
+    "tests": "test:format, test:branding, test:viewport, test:streaming -> all PASS",
+    "typecheck": "npm run typecheck -> pass"
+  },
+  "metrics": {
+    "code_changes": 0,
+    "sanitize_points_in_app": 15,
+    "output_layers_mapped": 5
+  },
+  "remaining": [
+    "StreamingBrandSanitizer giu buffer khi <=2 tu: cau tra loi rat ngan chi hien sau flush()",
+    "Dedupe quick final bang includes() co the sai voi substring",
+    "Scroll reset ve 0 khi messages.length doi: user dang cuon bi keo ve bottom khi stream"
+  ],
+  "persist_note": ".opencode/runtime/bin/persist.mjs khong ton tai trong repo; ghi JSON thu cong theo format snapshot-2026-08-21-cli-output-test.json"
+}
