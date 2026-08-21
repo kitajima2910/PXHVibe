@@ -19,6 +19,9 @@
 - Toan bo 24/24 nhom test: pass.
 - Release integrity: `[OK] Release integrity v0.22.8`.
 - `npm.cmd pack --dry-run --cache .pxhvibe/npm-cache`: pass, 336 files.
+- Commit release: `17d8c93` (`release: v0.22.8`).
+- Remote `main` da fast-forward va tag `v0.22.8` da push.
+- GitHub Release: `https://github.com/kitajima2910/PXHVibe/releases/tag/v0.22.8`.
 
 ### Van de con lai
 - Khong co trong TARGET nay.
