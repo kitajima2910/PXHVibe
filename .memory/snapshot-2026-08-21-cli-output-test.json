@@ -1,0 +1,25 @@
+{
+  "ts": "2026-08-21T16:06:39Z",
+  "phase": "PERSIST",
+  "status": "completed",
+  "target": "test output cua pxhvibe cli",
+  "summary": "ANALYZE hoan thanh cho TARGET 'test output cua pxhvibe cli' (v0.22.6). CLI flags --version/--help output dung, exit 0. TUI non-TTY throw Raw mode error (hanh vi dung cua Ink). Phat hien lech version: global pxh = 0.22.5 (da publish) vs repo = 0.22.6 (chua publish/commit). Khong sua code.",
+  "evidence": {
+    "build": "npm run build -> exit 0",
+    "version_flag": "node dist/cli.js --version -> PXHVibe v0.22.6, exit 0",
+    "help_flag": "node dist/cli.js --help -> version + bang TUI commands, exit 0",
+    "tui_nontty": "Ink throw 'Raw mode is not supported', exit 1, message ro rang",
+    "branding_test": "npm run test:branding -> passed",
+    "global_pxh": "pxh --version -> v0.22.5 (lech so voi repo 0.22.6)"
+  },
+  "metrics": {
+    "code_changes": 0,
+    "cli_flags_verified": 2,
+    "test_groups_relevant": "branding pass"
+  },
+  "remaining": [
+    "v0.22.6 chua commit git va chua publish npm (can user chay npm publish voi OTP)",
+    "Verify banner TUI thuc te can terminal that hoac node-pty (dependency moi, ngoai pham vi)"
+  ],
+  "persist_note": ".opencode/runtime/bin/persist.mjs khong ton tai trong repo; ghi JSON thu cong theo format snapshot-2026-08-20.json"
+}
