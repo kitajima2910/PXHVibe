@@ -1,11 +1,3 @@
-const codingRules = `RULES:
-
-- Đọc STATUS.md nếu tồn tại.
-- Phân tích root cause trước khi sửa; patch nhỏ nhất; không rewrite project.
-- Không refactor/upgrade ngoài TARGET; không xóa file hay thay đổi phá vỡ tương thích.
-- Sau khi sửa, chạy kiểm tra phù hợp; nếu không verify được, nói rõ lý do.
-- Cập nhật STATUS.md: đã thay đổi gì, file đã sửa, kết quả kiểm tra, vấn đề còn lại.`;
-
 const hmcRules = `RULE:
 
 - Tiếng Việt 100%.
@@ -79,5 +71,5 @@ export function buildAgentPrompt(
     .filter((id) => id !== agent.id)
     .flatMap((id) => catalog.agents.filter((candidate) => candidate.id === id));
   const handoffs = teamAgents.length === 0 ? '' : `\n\nTEAM: ${teamAgents.map((member) => `${member.label}: ${member.description}`).join('; ')}`;
-  return `${codingRules}\n\n${hmcRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
+  return `${hmcRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
 }
