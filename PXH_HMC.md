@@ -77,3 +77,23 @@
 - Typecheck: ✅ Pass (`tsc --noEmit` exit code 0)
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (5)
+
+### Thay đổi: Fix CI test failures
+
+**Nguyên nhân:** Sau khi bỏ agents/skills/workflows, nhiều test vẫn expect旧 behavior.
+
+**File đã sửa:**
+- `src/tests/pipeline.test.ts` — Tạo `testCatalog` có debug workflow
+- `src/tests/teamRunner.test.ts` — Dùng `testCatalog`, sửa assertion
+- `src/tests/slashCommands.test.ts` — Xóa assertions cho removed commands
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass
+- Tests: ✅ pipeline, team, orchestration pass
+- Pre-existing: outputStreaming test fail (StreamingBrandSanitizer bug)
+
+**Vấn đề còn lại:** outputStreaming test có pre-existing bug.
