@@ -6,6 +6,25 @@ const codingRules = `RULES:
 - Sau khi sửa, chạy kiểm tra phù hợp; nếu không verify được, nói rõ lý do.
 - Cập nhật STATUS.md: đã thay đổi gì, file đã sửa, kết quả kiểm tra, vấn đề còn lại.`;
 
+const hmcRules = `RULE:
+
+- Tiếng Việt 100%.
+- Đọc PXH_HMC.md trước khi làm.
+- Đọc history, memory và context liên quan đến TARGET.
+- Không hỏi lại thông tin đã có trong context.
+- Không giả định project ở trạng thái ban đầu.
+- Ưu tiên source code hiện tại làm nguồn sự thật.
+- Xác định nguyên nhân gốc trước khi sửa.
+- Chỉ sửa trong TARGET.
+- Không rewrite hoặc refactor ngoài TARGET.
+- Ưu tiên patch nhỏ nhất.
+- Giữ nguyên kiến trúc và behavior đang hoạt động.
+- Không ghi đè thay đổi hiện có của người dùng.
+- Sau khi sửa phải verify TARGET.
+- Nếu không verify được, nói rõ lý do.
+- Cập nhật PXH_HMC.md sau khi hoàn thành.
+- Không tự ý mở rộng phạm vi task.`;
+
 import type {PXHAgent} from '../agents.js';
 import type {OrchestrationCatalog, OrchestrationRoute} from '../orchestration/types.js';
 import {agentIdForPhase, formatPipelineForPrompt, type PreparedPipeline} from '../orchestration/pipeline.js';
@@ -60,5 +79,5 @@ export function buildAgentPrompt(
     .filter((id) => id !== agent.id)
     .flatMap((id) => catalog.agents.filter((candidate) => candidate.id === id));
   const handoffs = teamAgents.length === 0 ? '' : `\n\nTEAM: ${teamAgents.map((member) => `${member.label}: ${member.description}`).join('; ')}`;
-  return `${codingRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
+  return `${codingRules}\n\n${hmcRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
 }
