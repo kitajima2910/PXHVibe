@@ -52,7 +52,6 @@ export function buildAgentPrompt(
   const projectRules = catalog?.projectInstructions.length
     ? `\n\nPROJECT INSTRUCTIONS (AGENTS.md):\n\n${catalog.projectInstructions.join('\n\n---\n\n')}`
     : '';
-  const workflow = route?.workflow === undefined ? '' : `\n\nWORKFLOW: ${route.workflow.name} — ${route.workflow.instructions}`;
   const skills = route?.skills.length
     ? `\n\nACTIVE SKILLS: ${route.skills.map((skill) => `${skill.name}: ${skill.description}`).join('; ')}`
     : '';
@@ -61,5 +60,5 @@ export function buildAgentPrompt(
     .filter((id) => id !== agent.id)
     .flatMap((id) => catalog.agents.filter((candidate) => candidate.id === id));
   const handoffs = teamAgents.length === 0 ? '' : `\n\nTEAM: ${teamAgents.map((member) => `${member.label}: ${member.description}`).join('; ')}`;
-  return `${codingRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${workflow}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
+  return `${codingRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
 }

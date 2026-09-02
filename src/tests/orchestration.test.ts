@@ -92,7 +92,7 @@ Không chỉnh migration đã chạy production.
   const prompt = buildAgentPrompt('sửa migration', projectAgent, route, catalog);
   assert.match(prompt, /PROJECT INSTRUCTIONS \(AGENTS\.md\):/);
   assert.match(prompt, /Preserve database migrations/);
-  assert.match(prompt, /WORKFLOW: Database Recovery/);
+  assert.doesNotMatch(prompt, /WORKFLOW:/);
   assert.match(prompt, /ACTIVE SKILLS:/);
   assert.match(prompt, /database-debug: /);
   assert.match(prompt, /AGENT ROLE: PXH Database/);

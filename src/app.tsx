@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
-import {phaseTodoLabel, TodoStrip, type TodoItem} from './components/TodoStrip.js';
+import {TodoStrip, type TodoItem} from './components/TodoStrip.js';
 import {MessageList} from './components/MessageList.js';
 import {PromptInput, type PromptDraft} from './components/PromptInput.js';
 import type {AIProvider} from './providers/AIProvider.js';
@@ -27,9 +27,8 @@ import {checkFreeModelHealth, isModelHealthFresh, type ModelHealthReport} from '
 import {discoverOrchestration} from './orchestration/discovery.js';
 import {routeOrchestration} from './orchestration/router.js';
 import type {OrchestrationCatalog} from './orchestration/types.js';
-import {classifyInteractionMode, preparePipeline, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
+import {classifyInteractionMode, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
 import {appVersion} from './version.js';
-import {runTeamPipeline, type TeamRunnerEvent} from './runtime/teamRunner.js';
 import {makeSessionResumable, SessionStore, type RuntimeSession} from './runtime/sessionStore.js';
 import {
   commandDefinitions, detectProject, formatCommandList, formatHistoryDetails,
@@ -38,7 +37,7 @@ import {
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
 import {generateSuggestions, formatSuggestions, parseSuggestionSelection, type Suggestion} from './utils/suggestions.js';
-import {buildQuickAnswerPrompt} from './utils/agentPrompt.js';
+import {buildAgentPrompt, buildQuickAnswerPrompt} from './utils/agentPrompt.js';
 
 const initialMessage: Message = {
   id: 'welcome',
@@ -690,40 +689,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
     const routingTarget = buildRoutingTarget(messages, content);
     const orchestrationRoute = routeOrchestration(routingTarget, catalog);
-    const preferredAgentId = orchestrationRoute.workflow?.preferredAgentId;
-    const resolvedPreferredAgentId = preferredAgentId === undefined
-      ? undefined
-      : availableAgents.some((agent) => agent.id === preferredAgentId)
-        ? preferredAgentId
-        : availableAgents.some((agent) => agent.id === `project:${preferredAgentId}`)
-          ? `project:${preferredAgentId}`
-          : undefined;
-    const automaticAgentId = selectedAgentId === 'auto'
-      ? resolvedPreferredAgentId ?? 'auto'
-      : selectedAgentId;
+    const automaticAgentId = selectedAgentId === 'auto' ? 'auto' : selectedAgentId;
     const routedAgent = routeAgent(automaticAgentId, routingTarget, availableAgents);
-    const pendingResumeSession = resumeSessionRef.current;
-    const contextualTarget = pendingResumeSession?.target ?? buildContextualTarget(messages, content);
-    const pipeline = preparePipeline(contextualTarget, orchestrationRoute, routedAgent);
-    const resumeSession = pendingResumeSession;
-    resumeSessionRef.current = undefined;
-    setLastPipeline(pipeline);
-    // Khi resume, hiển thị toàn bộ step của session (gồm bước review cuối)
-    // để task list phản ánh việc kiểm tra toàn bộ, không chỉ bước tiếp tục.
-    const stickyTasks = resumeSession === undefined
-      ? pipeline.tasks.map((task, index) => ({
-        id: `${index}-${task.phase}`,
-        label: phaseTodoLabel(task.phase, task.workflow),
-        status: 'pending' as const,
-        agentLabel: task.agent,
-      }))
-      : resumeSession.steps.map((step, index) => ({
-        id: `${index}-${step.phase}`,
-        label: phaseTodoLabel(step.phase, resumeSession.workflowId),
-        status: step.status === 'running' || step.status === 'partial' ? 'pending' : step.status,
-        agentLabel: step.agentLabel,
-      }));
-    setStickyTasks(stickyTasks);
+    const contextualTarget = buildContextualTarget(messages, content);
     const requestImages = pendingImages;
     setPendingImages([]);
     const message: Message = {
@@ -737,9 +705,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
     const routeSummary = [
       `Agent → ${routedAgent.label}`,
-      orchestrationRoute.workflow === undefined ? undefined : `Workflow → ${orchestrationRoute.workflow.name}${orchestrationRoute.confidence === undefined ? '' : ` (${Math.round(orchestrationRoute.confidence * 100)}%)`}`,
       orchestrationRoute.skills.length === 0 ? undefined : `Skills → ${orchestrationRoute.skills.map((skill) => skill.name).join(', ')}`,
-      `Pipeline → ${pipeline.tasks.map((task) => task.phase).join('→')}`,
+      'Chế độ → agent trực tiếp (RULES)',
     ].filter((value): value is string => value !== undefined).join(' · ');
     setMessages((currentMessages) => [...currentMessages, message, {
       id: createMessageId(), role: 'system', content: routeSummary, createdAt: new Date(),
@@ -749,8 +716,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     const startedAt = Date.now();
     setBusyStartedAt(startedAt);
     setLastActivityAt(startedAt);
-    setActivityLabel('Đang chuẩn bị context và pipeline...');
-    setPhaseLabel(`phase 1/${pipeline.tasks.length}`);
+    setActivityLabel('Đang xử lý...');
+    setPhaseLabel('AGENT');
+    setStickyTasks([{id: '0-agent', label: routedAgent.label, status: 'running', agentLabel: routedAgent.label}]);
     const responseMessageId = createMessageId();
     responseMessageIdRef.current = responseMessageId;
     streamedContentRef.current = '';
@@ -784,6 +752,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       setLastActivityAt(Date.now());
       if (event.type === 'text_delta') {
         const visibleDelta = streamingSanitizerRef.current?.push(event.content) ?? '';
+        console.error('DEBUG-TEXTDELTA event=', JSON.stringify(event.content), 'visible=', JSON.stringify(visibleDelta));
         appendAssistantContent(visibleDelta);
         return;
       }
@@ -819,62 +788,17 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       appendAssistantContent(sanitizeOutputBranding(toolBlock));
     };
 
-    const handleTeamEvent = (event: TeamRunnerEvent): void => {
-      const phaseIndex = Math.max(0, pipeline.tasks.findIndex((task) => task.phase === event.phase));
-      setLastActivityAt(Date.now());
-      setPhaseLabel(`${event.phase.toUpperCase()} ${phaseIndex + 1}/${pipeline.tasks.length}`);
-      setActivityLabel(event.message);
-      setStickyTasks((current) => current.map((task, index) => {
-        if (index !== phaseIndex) return task;
-        const nextStatus = event.type === 'phase_pass' || event.type === 'checkpoint'
-          ? 'pass'
-          : event.type === 'phase_fail'
-            ? 'fail'
-            : 'running';
-        return {
-          ...task,
-          status: nextStatus,
-          agentLabel: event.agentLabel,
-          attempt: event.attempt,
-          detail: event.message,
-        };
-      }));
-      if (event.type === 'phase_pass' && event.output !== undefined && event.output.trim().length > 0) {
-        // Output phase hiện ngay trong luồng assistant, không tạo system message.
-        appendAssistantContent(sanitizeOutputBranding(`\n\n**${event.phase.toUpperCase()} · ${event.agentLabel}**\n${event.output.trim()}`));
-        return;
-      }
-      if (event.type === 'phase_fail') {
-        setMessages((currentMessages) => [...currentMessages, {
-          id: createMessageId(), role: 'system', tone: 'error',
-          content: `✖ ${event.phase.toUpperCase()} · ${event.agentLabel} · ${event.message}`,
-          createdAt: new Date(),
-        }]);
-      }
-    };
-
     try {
-      const result = await runTeamPipeline({
-        provider: currentProvider,
+      const prompt = buildAgentPrompt(contextualTarget, routedAgent, orchestrationRoute, catalog);
+      const response = await currentProvider.sendMessage(prompt, {
         cwd: workingDirectory,
-        target: contextualTarget,
-        route: orchestrationRoute,
-        catalog,
-        pipeline,
-        agents: availableAgents,
-        selectedAgent: routedAgent,
         ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
-        onAgentEvent: handleAgentEvent,
-        onEvent: handleTeamEvent,
-        ...(resumeSession === undefined ? {} : {resumeSession}),
+        onEvent: handleAgentEvent,
       });
-      setRuntimeSession(result.session);
       const flushed = streamingSanitizerRef.current?.flush() ?? '';
       appendAssistantContent(flushed);
       const streamed = streamedContentRef.current;
-      // Output phase cuối đã được stream qua text_delta (custom) hoặc đã hiện qua
-      // phase_pass (free); chỉ append lại khi chưa xuất hiện.
-      const lastOutput = result.content.trim();
+      const lastOutput = response.content.trim();
       if (lastOutput.length > 0 && !streamed.includes(lastOutput)) {
         appendAssistantContent(sanitizeOutputBranding(`\n\n${lastOutput}`));
       }
@@ -887,16 +811,15 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
         ));
         appendAssistantContent(sanitizeOutputBranding(`\n\n${formatDiffStatHeader(diffContent)}`));
       } else if (!diffResult.ok) {
-        const message = diffResult.message ?? '';
-        if (!message.startsWith('Thư mục') && !message.startsWith('Không đọc được')) {
-          appendAssistantContent(sanitizeOutputBranding(`\n\n${message}`));
+        const diffMessage = diffResult.message ?? '';
+        if (!diffMessage.startsWith('Thư mục') && !diffMessage.startsWith('Không đọc được')) {
+          appendAssistantContent(sanitizeOutputBranding(`\n\n${diffMessage}`));
         }
       }
-      
+
+      setStickyTasks((current) => current.map((task) => ({...task, status: 'pass'})));
       setStatus('Ready');
     } catch (error: unknown) {
-      const storedSession = await new SessionStore(workingDirectory).load();
-      if (storedSession !== undefined) setRuntimeSession(storedSession);
       if (isCancellationError(error)) {
         setStickyTasks((current) => current.map((task) => task.status === 'running'
           ? {...task, status: 'cancelled', detail: 'Đã dừng bởi người dùng.'}
@@ -917,23 +840,13 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           content: errorMessage,
           createdAt: new Date(),
         }]);
-        // Gợi ý tiếp tục/resume khi giai đoạn bị dừng (timeout >Xs / hết lượt / lặp)
-        // và vẫn còn checkpoint để chạy tiếp.
-        const isStoppedResumable = /không có hoạt động trong \d+ giây|vượt quá giới hạn \d+ lượt|lặp tool call/i.test(errorMessage);
-        if (isStoppedResumable && storedSession !== undefined && storedSession.status !== 'pass') {
-          setMessages((currentMessages) => [...currentMessages, {
-            id: createMessageId(),
-            role: 'system',
-            content: 'Gợi ý: gõ "tiếp tục task", "tiếp tục", "continue" hoặc "/resume" để chạy tiếp từ checkpoint.',
-            createdAt: new Date(),
-          }]);
-        }
+        setStickyTasks((current) => current.map((task) => ({...task, status: 'fail'})));
         setStatus('Error');
       }
     } finally {
       await Promise.all(requestImages.map(removeTemporaryImage));
       setIsBusy(false);
-      // Phát terminal bell để thông báo pipeline đã hoàn tất
+      // Phát terminal bell để thông báo đã xử lý xong
       if (process.stdout.isTTY === true) {
         process.stdout.write('\x07');
       }

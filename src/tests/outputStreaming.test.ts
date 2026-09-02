@@ -60,7 +60,7 @@ const appRoot = await mkdtemp(join(tmpdir(), 'pxhvibe-stream-'));
 const input = new PassThrough();
 Object.assign(input, {isTTY: true, setRawMode: () => input, ref: () => input, unref: () => input});
 const output = new PassThrough();
-Object.assign(output, {columns: 140, rows: 60, isTTY: true});
+Object.assign(output, {columns: 140, rows: 200, isTTY: true});
 let rendered = '';
 output.on('data', (chunk) => { rendered += chunk.toString('utf8'); });
 const instance = render(React.createElement(App, {
@@ -90,10 +90,20 @@ const typeText = async (value: string): Promise<void> => {
 await typeText('sửa lỗi đăng nhập');
 input.write('\r');
 const deadline = Date.now() + 5_000;
-while (provider.calls < 5 && Date.now() < deadline) await wait(25);
+while (provider.calls < 1 && Date.now() < deadline) await wait(25);
 await wait(300);
 
 const frame = stripAnsi(rendered);
+console.error('DEBUG-STREAMCALLS', provider.calls);
+console.error('DEBUG-CONTAINS text:', frame.includes('Đã sửa lỗi đăng nhập.'));
+console.error('DEBUG-CONTAINS Đã:', frame.includes('Đã sửa'));
+console.error('DEBUG-CONTAINS lỗi:', frame.includes('lỗi đăng nhập'));
+console.error('DEBUG-CONTAINS file:', frame.includes('File đã sửa: src/login.ts.'));
+console.error('DEBUG-CONTAINS tool:', frame.includes('[đọc file]'));
+console.error('DEBUG-CONTAINS lines:', frame.includes('12 dòng'));
+console.error('DEBUG-IDX đọc file:', frame.indexOf('đọc file'));
+console.error('DEBUG-FRAMELEN', frame.length);
+console.error('DEBUG-ASSIST-INDEX', frame.lastIndexOf('◆ PXHVibe'));console.error('DEBUG-LASTFRAME>>>'+frame.slice(Math.max(0, frame.length-3000)).replace(/\n/g,'\\n')+'<<<');
 // Text streamed live qua text_delta xuất hiện trong assistant message.
 assert.ok(frame.includes('Đã sửa lỗi đăng nhập.'));
 assert.ok(frame.includes('File đã sửa: src/login.ts.'));
@@ -104,12 +114,12 @@ assert.ok(frame.includes('12 dòng'));
 assert.ok(!frame.includes('Đang chạy đọc file...'));
 assert.ok(!frame.includes('✓ ANALYZE'));
 assert.ok(!frame.includes('Hoàn tất FIX'));
-// Output từng phase hiện ngay khi phase_pass (không đợi pipeline xong).
-assert.ok(frame.includes('FIX · PXH Bug Hunter'));
-assert.ok(frame.includes('PERSIST · PXH Historian'));
+// Bỏ pipeline nên không còn nội dung văn bản phase riêng từ team runner.
+assert.ok(!frame.includes('FIX · PXH Bug Hunter'));
 // Thư mục temp test không phải git repo nên git diff bị bỏ qua, không crash.
 assert.ok(!frame.includes('GIT DIFF'));
-assert.equal(provider.calls, 5);
+// Chỉ 1 lần gọi agent trực tiếp, không phải 5 phase.
+assert.equal(provider.calls, 1);
 
 instance.unmount();
 await rm(appRoot, {recursive: true, force: true});
