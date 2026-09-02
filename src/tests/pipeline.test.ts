@@ -2,6 +2,21 @@ import assert from 'node:assert/strict';
 import {agents, getAgent} from '../agents.js';
 import type {OrchestrationCatalog} from '../orchestration/types.js';
 const emptyCatalog: OrchestrationCatalog = {projectInstructions: [], agents: [], skills: [], workflows: []};
+const testCatalog: OrchestrationCatalog = {
+  projectInstructions: [],
+  agents: [],
+  skills: [
+    {id: 'game-development', name: 'Game Dev', description: 'Game dev', instructions: '', triggers: ['game', 'trò chơi', 'gameplay'], source: 'test', origin: 'fallback'},
+    {id: 'games-testing', name: 'Games Test', description: 'Game test', instructions: '', triggers: ['game test'], source: 'test', origin: 'fallback'},
+    {id: 'process-verification', name: 'Verify', description: 'Verify', instructions: '', triggers: ['verify', 'test', 'kiểm thử'], source: 'test', origin: 'fallback'},
+    {id: 'process-systematic-debugging', name: 'Debug', description: 'Debug', instructions: '', triggers: ['bug', 'fix', 'debug', 'error', 'lỗi', 'crash'], source: 'test', origin: 'fallback'},
+    {id: 'database-debug', name: 'DB Debug', description: 'DB debug', instructions: '', triggers: ['postgresql', 'migration', 'database'], source: 'test', origin: 'fallback'},
+  ],
+  workflows: [
+    {id: 'game', name: 'Game', description: 'Game workflow', instructions: '', triggers: ['game', 'trò chơi', 'phaser', 'three.js game'], preferredAgentId: 'expert', skillIds: ['game-development', 'games-testing', 'process-verification'], steps: ['Design', 'Build', 'Test'], source: 'test', origin: 'fallback'},
+    {id: 'debug', name: 'Debug', description: 'Debug workflow', instructions: '', triggers: ['bug', 'fix', 'debug', 'error', 'lỗi', 'crash'], preferredAgentId: 'fix-bugs', skillIds: ['process-systematic-debugging', 'process-verification'], steps: ['Reproduce', 'Fix'], source: 'test', origin: 'fallback'},
+  ],
+};
 import {contractVersion, validateContract} from '../orchestration/contracts.js';
 import {classifyComplexity, classifyInteractionMode, phasesForComplexity, preparePipeline, runtimeTiers, validateCapabilityPack} from '../orchestration/pipeline.js';
 import {classifyWorkflowIntent, routeOrchestration} from '../orchestration/router.js';
@@ -16,17 +31,17 @@ Use a responsive frontend UI and canvas rendering. The player fights enemies and
 Include gameplay movement, shooting, three levels, score, lives and game-over.`;
 const gameIntent = classifyWorkflowIntent(html5GameTarget);
 assert.equal(gameIntent?.workflowId, 'game');
-const gameRoute = routeOrchestration(html5GameTarget, emptyCatalog);
+const gameRoute = routeOrchestration(html5GameTarget, testCatalog);
 assert.equal(gameRoute.workflow?.id, 'game');
 assert.equal(gameRoute.workflow?.preferredAgentId, 'expert');
 assert.deepEqual(gameRoute.skills.slice(0, 2).map((skill) => skill.id), ['game-development', 'games-testing']);
 assert.ok((gameRoute.confidence ?? 0) >= 0.8);
 
-const gameBugRoute = routeOrchestration('Fix crash khi player chạm boss trong game', emptyCatalog);
+const gameBugRoute = routeOrchestration('Fix crash khi player chạm boss trong game', testCatalog);
 assert.equal(gameBugRoute.workflow?.id, 'debug');
 assert.ok(gameBugRoute.skills.some((skill) => skill.id === 'game-development'));
 
-const route = routeOrchestration('sửa lỗi đăng nhập bị crash', emptyCatalog);
+const route = routeOrchestration('sửa lỗi đăng nhập bị crash', testCatalog);
 assert.equal(route.workflow?.id, 'debug');
 const worker = getAgent('fix-bugs');
 const pipeline = preparePipeline('sửa lỗi đăng nhập bị crash', route, worker);
@@ -73,7 +88,7 @@ assert.deepEqual(phasesForComplexity(['analyze', 'architect', 'code', 'test', 'f
 assert.deepEqual(phasesForComplexity(['analyze', 'fix', 'test', 'review', 'persist'], 'standard'),
   ['analyze', 'fix', 'test', 'review', 'persist']);
 
-const simpleRoute = routeOrchestration('giải thích pipeline hoạt động ra sao', emptyCatalog);
+const simpleRoute = routeOrchestration('giải thích pipeline hoạt động ra sao', testCatalog);
 const simplePipeline = preparePipeline('giải thích pipeline hoạt động ra sao', simpleRoute, getAgent('help'));
 assert.deepEqual(simplePipeline.tasks.map((task) => task.phase), ['analyze', 'persist']);
 

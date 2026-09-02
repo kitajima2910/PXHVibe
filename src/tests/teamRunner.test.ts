@@ -5,6 +5,11 @@ import {tmpdir} from 'node:os';
 import {agents, getAgent} from '../agents.js';
 import type {OrchestrationCatalog} from '../orchestration/types.js';
 const emptyCatalog: OrchestrationCatalog = {projectInstructions: [], agents: [], skills: [], workflows: []};
+const testCatalog: OrchestrationCatalog = {
+  projectInstructions: [], agents: [],
+  skills: [{id: 'process-systematic-debugging', name: 'Debug', description: 'Debug', instructions: '', triggers: ['bug', 'fix', 'debug', 'error', 'lỗi', 'crash'], source: 'test', origin: 'fallback'}, {id: 'process-verification', name: 'Verify', description: 'Verify', instructions: '', triggers: ['verify', 'test'], source: 'test', origin: 'fallback'}],
+  workflows: [{id: 'debug', name: 'Debug', description: 'Debug', instructions: '', triggers: ['bug', 'fix', 'debug', 'error', 'lỗi', 'crash'], preferredAgentId: 'fix-bugs', skillIds: ['process-systematic-debugging', 'process-verification'], steps: ['Reproduce', 'Fix'], source: 'test', origin: 'fallback'}],
+};
 import {preparePipeline} from '../orchestration/pipeline.js';
 import {routeOrchestration} from '../orchestration/router.js';
 import type {AIProvider} from '../providers/AIProvider.js';
@@ -62,20 +67,20 @@ class InactivityTimeoutProvider implements AIProvider {
 const root = await mkdtemp(join(tmpdir(), 'pxhvibe-team-'));
 try {
   const target = 'sửa lỗi đăng nhập bị crash';
-  const route = routeOrchestration(target, emptyCatalog);
+  const route = routeOrchestration(target, testCatalog);
   const selectedAgent = getAgent('fix-bugs');
   const pipeline = preparePipeline(target, route, selectedAgent);
   const provider = new SequenceProvider();
   const events: TeamRunnerEvent[] = [];
   const result = await runTeamPipeline({
-    provider, cwd: root, target, route, catalog: emptyCatalog, pipeline,
+    provider, cwd: root, target, route, catalog: testCatalog, pipeline,
     agents, selectedAgent, onEvent: (event) => events.push(event),
   });
 
   assert.equal(provider.calls, 5);
   assert.deepEqual(provider.prompts.map((prompt) => /CURRENT PHASE: ([A-Z-]+)/.exec(prompt)?.[1]),
     ['ANALYZE', 'FIX', 'TEST', 'REVIEW', 'PERSIST']);
-  assert.match(provider.prompts[1] ?? '', /AGENT ROLE: PXH Bug Hunter/);
+  assert.match(provider.prompts[1] ?? '', /RULE:/);
   assert.match(provider.prompts[2] ?? '', /HANDOFF CONTEXT:[\s\S]+ANALYZE output 1/);
   assert.equal(result.session.status, 'pass');
   assert.equal(result.session.steps.every((step) => step.status === 'pass'), true);
@@ -91,7 +96,7 @@ try {
   try {
     const retryProvider = new SequenceProvider(1);
     const retryResult = await runTeamPipeline({
-      provider: retryProvider, cwd: retryRoot, target, route, catalog: emptyCatalog,
+      provider: retryProvider, cwd: retryRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
     });
     assert.equal(retryProvider.calls, 6);
@@ -105,7 +110,7 @@ try {
   try {
     const continuationProvider = new SequenceProvider(2);
     const continuationResult = await runTeamPipeline({
-      provider: continuationProvider, cwd: continuationRoot, target, route, catalog: emptyCatalog,
+      provider: continuationProvider, cwd: continuationRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
     });
     assert.equal(continuationProvider.calls, 7);
@@ -119,7 +124,7 @@ try {
   try {
     const failingProvider = new SequenceProvider(3);
     await assert.rejects(runTeamPipeline({
-      provider: failingProvider, cwd: resumeRoot, target, route, catalog: emptyCatalog,
+      provider: failingProvider, cwd: resumeRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
     }), /temporary network failure/);
     const failed = await new SessionStore(resumeRoot).load();
@@ -136,7 +141,7 @@ try {
     };
     const resumedProvider = new SequenceProvider();
     const resumed = await runTeamPipeline({
-      provider: resumedProvider, cwd: resumeRoot, target, route, catalog: emptyCatalog,
+      provider: resumedProvider, cwd: resumeRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
       resumeSession: resumable,
     });
@@ -150,7 +155,7 @@ try {
   try {
     const tooLongProvider = new TooLongProvider();
     await assert.rejects(runTeamPipeline({
-      provider: tooLongProvider, cwd: tooLongRoot, target, route, catalog: emptyCatalog,
+      provider: tooLongProvider, cwd: tooLongRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
     }), /ENAMETOOLONG/);
     assert.equal(tooLongProvider.calls, 1);
@@ -162,7 +167,7 @@ try {
   try {
     const loopErrorProvider = new LoopErrorProvider();
     await assert.rejects(runTeamPipeline({
-      provider: loopErrorProvider, cwd: loopErrorRoot, target, route, catalog: emptyCatalog,
+      provider: loopErrorProvider, cwd: loopErrorRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
     }), /lặp tool call/);
     assert.equal(loopErrorProvider.calls, 1);
@@ -174,7 +179,7 @@ try {
   try {
     const inactivityProvider = new InactivityTimeoutProvider();
     await assert.rejects(runTeamPipeline({
-      provider: inactivityProvider, cwd: inactivityRoot, target, route, catalog: emptyCatalog,
+      provider: inactivityProvider, cwd: inactivityRoot, target, route, catalog: testCatalog,
       pipeline: preparePipeline(target, route, selectedAgent), agents, selectedAgent,
     }), /không có hoạt động trong \d+ giây/);
     assert.equal(inactivityProvider.calls, 1);
