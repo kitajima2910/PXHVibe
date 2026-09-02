@@ -1,7 +1,7 @@
 {
   "name": "pxhvibe",
-  "version": "0.22.8",
-  "description": "Terminal coding team with Free and Custom API modes, native MCP, skills, agents, and workflows.",
+  "version": "0.23.0",
+  "description": "Terminal coding assistant with Free and Custom API modes, native MCP, and hmcRules.",
   "license": "MIT",
   "author": "Phạm Xuân Hoài",
   "repository": {

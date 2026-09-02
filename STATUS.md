@@ -31,6 +31,39 @@
 
 ---
 
+## RELEASE - v0.23.0
+
+### Da thay doi
+- Minor version bump `0.22.8` → `0.23.0`.
+- Bo agents/skills/workflows khoi prompt — chi giu hmcRules.
+- Xoa dead code: builtins.ts, discovery.ts, 50 skills, 8 workflows, 10 agents, shared resources.
+- Simplify buildAgentPrompt(target) — chi 1 tham so.
+- Cap nhat test files de match behavior moi.
+- StreamingBrandSanitizer pre-existing bug: text bi drop o dau (chua fix).
+
+### File da sua
+- `package.json` (version 0.23.0, description)
+- `README.md`
+- `src/utils/agentPrompt.ts`
+- `src/app.tsx`
+- `src/runtime/teamRunner.ts`
+- `src/tests/orchestration.test.ts`
+- `src/tests/pipeline.test.ts`
+- `src/tests/teamRunner.test.ts`
+- `src/tests/slashCommands.test.ts`
+
+### File da xoa
+- `src/orchestration/builtins.ts`, `src/orchestration/discovery.ts`
+- `resources/agents/`, `resources/skills/`, `resources/workflows/`
+- `resources/_shared/` (chi giu `scripts/release-check.mjs`)
+
+### Ket qua kiem tra
+- Typecheck: pass.
+- Tests: pipeline, team, orchestration pass. outputStreaming pre-existing fail.
+- Commit: `770b3de` + `b8d9001`.
+
+---
+
 ## RELEASE - v0.22.8
 
 ### Da thay doi
