@@ -15,24 +15,19 @@ import {createCustomProvider} from './providers/createProvider.js';
 import {CustomApiSetup} from './components/CustomApiSetup.js';
 import type {CustomApiConfig} from './providers/CustomAgentProvider.js';
 import {Banner} from './components/Banner.js';
-import {agents, getAgent, mergeAgentCatalog, routeAgent, type PXHAgent} from './agents.js';
-import {AgentPicker} from './components/AgentPicker.js';
-import {CatalogPicker, type CatalogPickerItem} from './components/CatalogPicker.js';
+
 import {sanitizeOutputBranding, StreamingBrandSanitizer} from './utils/outputBranding.js';
 import type {ImageAttachment} from './types/attachment.js';
 import {pasteImageFromClipboard, removeTemporaryImage} from './utils/imageClipboard.js';
 import {copyTextToClipboard} from './utils/clipboard.js';
 import {collapsePastedBlocksForDisplay} from './utils/pastedText.js';
 import {checkFreeModelHealth, isModelHealthFresh, type ModelHealthReport} from './utils/modelHealth.js';
-import {discoverOrchestration} from './orchestration/discovery.js';
-import {routeOrchestration} from './orchestration/router.js';
-import type {OrchestrationCatalog} from './orchestration/types.js';
-import {classifyInteractionMode, validateCapabilityPack, type PreparedPipeline} from './orchestration/pipeline.js';
+import {classifyInteractionMode} from './orchestration/pipeline.js';
 import {appVersion} from './version.js';
 import {makeSessionResumable, SessionStore, type RuntimeSession} from './runtime/sessionStore.js';
 import {
-  commandDefinitions, detectProject, formatCommandList, formatHistoryDetails,
-  formatPipelineDetails, getGitDiffFull, getGitDiffSummary,
+  commandDefinitions, detectProject, formatCommandList,
+  getGitDiffFull, getGitDiffSummary,
 } from './runtime/commands.js';
 import {getContextUsage, selectConversationContext} from './runtime/contextManager.js';
 import {formatMCPStatus, MCPManager, type MCPServerStatus} from './mcp/MCPManager.js';
@@ -50,30 +45,11 @@ function createMessageId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function skillPickerItems(catalog: OrchestrationCatalog): CatalogPickerItem[] {
-  return catalog.skills.map((skill) => ({
-    id: skill.id,
-    label: skill.name,
-    description: skill.description,
-    meta: `${skill.origin} · ${skill.source}`,
-    markdown: skill.instructions,
-  }));
-}
 
-export function workflowPickerItems(catalog: OrchestrationCatalog): CatalogPickerItem[] {
-  return catalog.workflows.map((workflow) => ({
-    id: workflow.id,
-    label: workflow.name,
-    description: workflow.description,
-    meta: `${workflow.steps.length} bước · agent ${workflow.preferredAgentId ?? 'auto'} · ${workflow.origin}`,
-    markdown: workflow.instructions,
-  }));
-}
 
 interface AppProps {
   provider: AIProvider;
   checkModels?: typeof checkFreeModelHealth;
-  orchestrationCatalog?: OrchestrationCatalog;
   workingDirectory?: string;
 }
 
@@ -170,30 +146,21 @@ function extractChangedFiles(diffContent: string): string[] {
   return files;
 }
 
-export function App({provider, checkModels = checkFreeModelHealth, orchestrationCatalog, workingDirectory = process.cwd()}: AppProps): React.JSX.Element {
+export function App({provider, checkModels = checkFreeModelHealth, workingDirectory = process.cwd()}: AppProps): React.JSX.Element {
   const {stdout} = useStdout();
-  const [catalog] = useState(() => orchestrationCatalog ?? discoverOrchestration(workingDirectory));
-  const availableAgents = mergeAgentCatalog(agents, catalog.agents);
-  const bundledAgentCount = catalog.agents.filter((agent) => !agent.id.startsWith('project:')).length;
-  const bundledSkillCount = catalog.skills.filter((skill) => skill.origin === 'bundled').length;
-  const bundledWorkflowCount = catalog.workflows.filter((workflow) => workflow.origin === 'bundled').length;
-  const projectAgentCount = catalog.agents.filter((agent) => agent.id.startsWith('project:')).length;
   const [currentProvider, setCurrentProvider] = useState(provider);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [status, setStatus] = useState<AppStatus>('Ready');
   const [isBusy, setIsBusy] = useState(false);
   const [isModePickerOpen, setIsModePickerOpen] = useState(false);
   const [isCustomSetupOpen, setIsCustomSetupOpen] = useState(false);
-  const [selectedAgentId, setSelectedAgentId] = useState('auto');
-  const [activeAgent, setActiveAgent] = useState<PXHAgent>(getAgent('auto'));
-  const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
-  const [catalogView, setCatalogView] = useState<'skills' | 'workflows'>();
+
   const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([]);
   const [isPastingImage, setIsPastingImage] = useState(false);
   const [modelHealthReport, setModelHealthReport] = useState<ModelHealthReport>();
   const [isCheckingModelHealth, setIsCheckingModelHealth] = useState(false);
-  const [lastPipeline, setLastPipeline] = useState<PreparedPipeline>();
-  const [runtimeSession, setRuntimeSession] = useState<RuntimeSession>();
+
+
   const [busyStartedAt, setBusyStartedAt] = useState<number>();
   const [lastActivityAt, setLastActivityAt] = useState<number>();
   const [activityLabel, setActivityLabel] = useState('Đang khởi động worker...');
@@ -338,25 +305,10 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
-    if (command === '/agents') {
-      setIsAgentPickerOpen(true);
-      return;
-    }
-
-    if (command === '/skills') {
-      setCatalogView('skills');
-      return;
-    }
-
-    if (command === '/workflows') {
-      setCatalogView('workflows');
-      return;
-    }
-
     if (command === '/status') {
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system',
-        content: `PXHVibe v${appVersion} · ${bundledAgentCount} agents · 4 tiers · ${bundledWorkflowCount} workflows · ${bundledSkillCount} skills · 6 contracts${projectAgentCount === 0 ? '' : ` · +${projectAgentCount} project agents`}`,
+        content: `PXHVibe v${appVersion} · simplified mode (hmcRules only)`,
         createdAt: new Date(),
       }]);
       return;
@@ -378,32 +330,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
-    if (command === '/pipeline') {
-      const pipelineState = lastPipeline;
-      const phases = runtimeSession?.steps.map((step) => ({
-        phase: step.phase, agent: step.agentLabel, status: step.status, attempts: step.attempts,
-      })) ?? pipelineState?.state.steps.map((step) => ({
-        phase: step.phase, agent: step.agent, status: step.status,
-      }));
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(), role: 'system',
-        content: phases === undefined
-          ? 'Pipeline chưa có TARGET.'
-          : formatPipelineDetails(runtimeSession?.workflowId ?? pipelineState?.state.workflow ?? 'unknown', phases),
-        createdAt: new Date(),
-      }]);
-      return;
-    }
 
-    if (command === '/validate') {
-      const errors = validateCapabilityPack(bundledAgentCount, bundledWorkflowCount, bundledSkillCount);
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(), role: 'system', ...(errors.length === 0 ? {} : {tone: 'error' as const}),
-        content: errors.length === 0 ? 'Capability pack hợp lệ · 10 agents · 4 tiers · 8 workflows · 50 skills · 6 contracts.' : errors.join(' '),
-        createdAt: new Date(),
-      }]);
-      return;
-    }
 
     if (command === '/help') {
       showCommandList();
@@ -443,8 +370,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     if (command === '/new') {
       promptDraftRef.current = undefined;
       resumeSessionRef.current = undefined;
-      setRuntimeSession(undefined);
-      setLastPipeline(undefined);
       setStickyTasks([]);
       setMessages([initialMessage]);
       setStatus('Ready');
@@ -466,23 +391,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       return;
     }
 
-    if (command === '/session') {
-      const stored = runtimeSession ?? await new SessionStore(workingDirectory).load();
-      const active = stored?.steps[stored.currentIndex];
-      setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(), role: 'system',
-        content: stored === undefined
-          ? 'Chưa có runtime session.'
-          : [
-            `SESSION · ${stored.sessionId}`,
-            `Workflow  ${stored.workflowId} · ${stored.status}`,
-            `Tiến độ   ${stored.steps.filter((step) => step.status === 'pass').length}/${stored.steps.length} phases`,
-            active === undefined ? undefined : `Hiện tại  ${active.phase.toUpperCase()} · ${active.agentLabel}`,
-          ].filter((line): line is string => line !== undefined).join('\n'),
-        createdAt: new Date(),
-      }]);
-      return;
-    }
+
 
     if (command === '/context') {
       setMessages((currentMessages) => [...currentMessages, {
@@ -491,7 +400,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           `CONTEXT · ${contextUsage.percent}%`,
           `Tokens    ~${contextUsage.estimatedTokens.toLocaleString('vi')}`,
           `Ký tự     ${contextUsage.activeCharacters.toLocaleString('vi')}/24.000`,
-          `Bộ nhớ    ${contextUsage.compacted ? 'AUTO-COMPACT đang bật' : 'Chưa compact'} · ${runtimeSession?.steps.filter((step) => step.output !== undefined).length ?? 0} phase outputs`,
+          `Bộ nhớ    ${contextUsage.compacted ? 'AUTO-COMPACT đang bật' : 'Chưa compact'}`,
         ].join('\n'),
         createdAt: new Date(),
       }]);
@@ -506,17 +415,14 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
 
     if (command === '/doctor') {
-      const errors = validateCapabilityPack(bundledAgentCount, bundledWorkflowCount, bundledSkillCount);
       setMessages((currentMessages) => [...currentMessages, {
-        id: createMessageId(), role: 'system', ...(errors.length === 0 ? {} : {tone: 'error' as const}),
-        content: errors.length === 0
-          ? [
-            'DOCTOR · OK',
-            `Node      ${process.version}`,
-            `Provider  ${currentProvider.name}`,
-            `State     ${new SessionStore(workingDirectory).path}`,
-          ].join('\n')
-          : ['DOCTOR · LỖI', ...errors.map((error) => `✖ ${error}`)].join('\n'),
+        id: createMessageId(), role: 'system',
+        content: [
+          'DOCTOR · OK',
+          `Node      ${process.version}`,
+          `Provider  ${currentProvider.name}`,
+          `State     ${new SessionStore(workingDirectory).path}`,
+        ].join('\n'),
         createdAt: new Date(),
       }]);
       return;
@@ -530,14 +436,9 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }
 
     if (command === '/history') {
-      const stored = runtimeSession ?? await new SessionStore(workingDirectory).load();
       setMessages((currentMessages) => [...currentMessages, {
         id: createMessageId(), role: 'system',
-        content: stored === undefined
-          ? 'Chưa có phase history.'
-          : formatHistoryDetails(stored.steps.map((step) => ({
-            phase: step.phase, agent: step.agentLabel, status: step.status, attempts: step.attempts,
-          }))),
+        content: 'History đã bị tắt (simplified mode).',
         createdAt: new Date(),
       }]);
       return;
@@ -687,10 +588,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
 
     await ensureMCPReady(currentProvider);
 
-    const routingTarget = buildRoutingTarget(messages, content);
-    const orchestrationRoute = routeOrchestration(routingTarget, catalog);
-    const automaticAgentId = selectedAgentId === 'auto' ? 'auto' : selectedAgentId;
-    const routedAgent = routeAgent(automaticAgentId, routingTarget, availableAgents);
     const contextualTarget = buildContextualTarget(messages, content);
     const requestImages = pendingImages;
     setPendingImages([]);
@@ -703,13 +600,8 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       createdAt: new Date(),
     };
 
-    const routeSummary = [
-      `Agent → ${routedAgent.label}`,
-      orchestrationRoute.skills.length === 0 ? undefined : `Skills → ${orchestrationRoute.skills.map((skill) => skill.name).join(', ')}`,
-      'Chế độ → agent trực tiếp (RULES)',
-    ].filter((value): value is string => value !== undefined).join(' · ');
     setMessages((currentMessages) => [...currentMessages, message, {
-      id: createMessageId(), role: 'system', content: routeSummary, createdAt: new Date(),
+      id: createMessageId(), role: 'system', content: 'Chế độ → hmcRules', createdAt: new Date(),
     }]);
     setIsBusy(true);
     setStatus('Thinking...');
@@ -718,7 +610,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     setLastActivityAt(startedAt);
     setActivityLabel('Đang xử lý...');
     setPhaseLabel('AGENT');
-    setStickyTasks([{id: '0-agent', label: routedAgent.label, status: 'running', agentLabel: routedAgent.label}]);
+    setStickyTasks([{id: '0-agent', label: 'PXHVibe', status: 'running', agentLabel: 'PXHVibe'}]);
     const responseMessageId = createMessageId();
     responseMessageIdRef.current = responseMessageId;
     streamedContentRef.current = '';
@@ -789,7 +681,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     };
 
     try {
-      const prompt = buildAgentPrompt(contextualTarget, routedAgent, orchestrationRoute, catalog);
+      const prompt = buildAgentPrompt(contextualTarget);
       const response = await currentProvider.sendMessage(prompt, {
         cwd: workingDirectory,
         ...(requestImages.length === 0 ? {} : {attachments: requestImages}),
@@ -888,20 +780,6 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
     }]);
   };
 
-  const handleAgentSelect = (agent: PXHAgent): void => {
-    setSelectedAgentId(agent.id);
-    setActiveAgent(agent);
-    setIsAgentPickerOpen(false);
-    setMessages((currentMessages) => [...currentMessages, {
-      id: createMessageId(),
-      role: 'system',
-      content: agent.id === 'auto'
-        ? 'Đã bật Economy Router tự động.'
-        : `Đã khóa specialist: ${agent.label}.`,
-      createdAt: new Date(),
-    }]);
-  };
-
   useEffect(() => {
     void ensureMCPReady(currentProvider);
     return () => { void mcpManager.close(); };
@@ -929,7 +807,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
       <Header
         workingDirectory={workingDirectory}
         providerName={currentProvider.name}
-        agentLabel={activeAgent.label}
+        agentLabel="PXHVibe"
         status={status}
       />
       <Box flexDirection="row" flexBasis={0} flexGrow={1} minHeight={0}>
@@ -940,19 +818,7 @@ export function App({provider, checkModels = checkFreeModelHealth, orchestration
           <TodoStrip tasks={stickyTasks} mcpServers={mcpServers} />
         </Box>
       </Box>
-      {catalogView !== undefined ? (
-        <CatalogPicker
-          title={catalogView === 'skills' ? 'SKILLS' : 'WORKFLOWS'}
-          items={catalogView === 'skills' ? skillPickerItems(catalog) : workflowPickerItems(catalog)}
-          onClose={() => setCatalogView(undefined)}
-        />
-      ) : isAgentPickerOpen ? (
-        <AgentPicker
-          agents={availableAgents}
-          onSelect={handleAgentSelect}
-          onCancel={() => setIsAgentPickerOpen(false)}
-        />
-      ) : isCustomSetupOpen ? (
+      {isCustomSetupOpen ? (
         <CustomApiSetup
           onComplete={handleCustomSetup}
           onCancel={() => setIsCustomSetupOpen(false)}

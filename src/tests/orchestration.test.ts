@@ -73,13 +73,10 @@ Không chỉnh migration đã chạy production.
   const fullAgentCatalog = mergeAgentCatalog(agents, catalog.agents);
   const gameAgent = routeAgent(gameRoute.workflow?.preferredAgentId ?? 'auto', gameTarget, fullAgentCatalog);
   const gamePipeline = preparePipeline(gameTarget, gameRoute, gameAgent);
-  const fullGamePrompt = buildAgentPrompt(gameTarget, gameAgent, gameRoute, catalog, gamePipeline);
-  assert.match(fullGamePrompt, /AGENT ROLE: PXH Expert/);
-  assert.match(fullGamePrompt, /Bạn là cỗ máy vibe coding/);
-  assert.match(fullGamePrompt, /ACTIVE SKILLS: [\s\S]*?Game Development: /);
-  assert.match(fullGamePrompt, /TEAM: /);
-  assert.match(fullGamePrompt, /Không chạy command runtime hệ thống tham khảo/);
-  assert.ok(fullGamePrompt.length < 100_000);
+  const fullGamePrompt = buildAgentPrompt(gameTarget);
+  assert.match(fullGamePrompt, /RULE:/);
+  assert.match(fullGamePrompt, /TARGET:/);
+  assert.ok(fullGamePrompt.length < 10_000);
 
   const route = routeOrchestration('sửa lỗi postgresql migration', catalog);
   assert.equal(route.workflow?.name, 'Database Recovery');
@@ -89,13 +86,9 @@ Không chỉnh migration đã chạy production.
   const availableAgents = [...agents, ...catalog.agents];
   const projectAgent = routeAgent('project:database-specialist', 'sửa migration', availableAgents);
   assert.equal(projectAgent.label, 'PXH Database');
-  const prompt = buildAgentPrompt('sửa migration', projectAgent, route, catalog);
-  assert.match(prompt, /PROJECT INSTRUCTIONS \(AGENTS\.md\):/);
-  assert.match(prompt, /Preserve database migrations/);
-  assert.doesNotMatch(prompt, /WORKFLOW:/);
-  assert.match(prompt, /ACTIVE SKILLS:/);
-  assert.match(prompt, /database-debug: /);
-  assert.match(prompt, /AGENT ROLE: PXH Database/);
+  const prompt = buildAgentPrompt('sửa migration');
+  assert.match(prompt, /RULE:/);
+  assert.match(prompt, /TARGET:/);
 } finally {
   await rm(root, {recursive: true, force: true});
 }

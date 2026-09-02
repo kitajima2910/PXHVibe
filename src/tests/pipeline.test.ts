@@ -43,13 +43,9 @@ assert.equal(validateContract('result', {version: contractVersion, status: 'pass
 assert.equal(validateContract('response', {version: contractVersion, status: 'ok', summary: 'done'}).length, 0);
 assert.ok(validateContract('request', {version: '0', target: ''}).length >= 2);
 
-const prompt = buildAgentPrompt('sửa lỗi đăng nhập bị crash', worker, route, emptyCatalog, pipeline);
-assert.match(prompt, /PIPELINE: 1\. \[ANALYZE\]/);
-assert.match(prompt, /\[ANALYZE\] PXH PM \(Auto\)/);
-assert.match(prompt, /\[FIX\] PXH Bug Hunter/);
-assert.match(prompt, /\[TEST\] PXH QA/);
-assert.match(prompt, /\[REVIEW\] PXH Reviewer/);
-assert.match(prompt, /\[PERSIST\] PXH Historian/);
+const prompt = buildAgentPrompt('sửa lỗi đăng nhập bị crash');
+assert.match(prompt, /RULE:/);
+assert.match(prompt, /TARGET:/);
 
 // Smart pipeline gating: request ngắn/hỏi không cần chạy full 8 phase.
 assert.equal(classifyComplexity('giải thích file này là gì'), 'simple');

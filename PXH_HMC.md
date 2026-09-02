@@ -33,3 +33,23 @@
 - Typecheck: ✅ Pass (`tsc --noEmit` exit code 0)
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (3)
+
+### Thay đổi: Bỏ agents/skills/workflows — chỉ giữ hmcRules
+
+**Phân tích:** PXHVibe CLI đọc ~69 files markdown (10 agents + 50 skills + 8 workflows) lúc startup. Skills/workflows inject vào prompt → tăng token LLM. Bỏ chúng để giảm startup I/O và prompt size.
+
+**File đã sửa:**
+- `src/utils/agentPrompt.ts` — `buildAgentPrompt(target)` giờ chỉ nhận 1 tham số, bỏ route/catalog/pipeline
+- `src/app.tsx` — Bỏ orchestration discovery, agent routing, skill/workflow pickers, `/agents` `/skills` `/workflows` `/pipeline` `/validate` commands
+- `src/runtime/teamRunner.ts` — Cập nhật call `buildAgentPrompt`
+- `src/tests/orchestration.test.ts` — Cập nhật assertions
+- `src/tests/pipeline.test.ts` — Cập nhật assertions
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit` exit code 0)
+
+**Vấn đề còn lại:** Không có.

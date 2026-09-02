@@ -17,9 +17,7 @@ const hmcRules = `RULE:
 - Cập nhật PXH_HMC.md sau khi hoàn thành.
 - Không tự ý mở rộng phạm vi task.`;
 
-import type {PXHAgent} from '../agents.js';
-import type {OrchestrationCatalog, OrchestrationRoute} from '../orchestration/types.js';
-import {agentIdForPhase, formatPipelineForPrompt, type PreparedPipeline} from '../orchestration/pipeline.js';
+
 
 const identityRules = `IDENTITY:
 
@@ -53,23 +51,6 @@ USER MESSAGE:
 ${target}`;
 }
 
-export function buildAgentPrompt(
-  target: string,
-  agent: PXHAgent,
-  route?: OrchestrationRoute,
-  catalog?: OrchestrationCatalog,
-  pipeline?: PreparedPipeline,
-): string {
-  const projectRules = catalog?.projectInstructions.length
-    ? `\n\nPROJECT INSTRUCTIONS (AGENTS.md):\n\n${catalog.projectInstructions.join('\n\n---\n\n')}`
-    : '';
-  const skills = route?.skills.length
-    ? `\n\nACTIVE SKILLS: ${route.skills.map((skill) => `${skill.name}: ${skill.description}`).join('; ')}`
-    : '';
-  const phases = pipeline === undefined ? '' : `\n\nPIPELINE: ${formatPipelineForPrompt(pipeline)}`;
-  const teamAgents = pipeline === undefined || catalog === undefined ? [] : [...new Set(pipeline.tasks.map((task) => agentIdForPhase(task.phase)))]
-    .filter((id) => id !== agent.id)
-    .flatMap((id) => catalog.agents.filter((candidate) => candidate.id === id));
-  const handoffs = teamAgents.length === 0 ? '' : `\n\nTEAM: ${teamAgents.map((member) => `${member.label}: ${member.description}`).join('; ')}`;
-  return `${hmcRules}\n\n${identityRules}\n\n${resourceCompatibility}${projectRules}\n\nAGENT ROLE: ${agent.label}\n${agent.instruction}${skills}${phases}${handoffs}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
+export function buildAgentPrompt(target: string): string {
+  return `${hmcRules}\n\n${identityRules}\n\n${resourceCompatibility}\n\n${outputFormatRules}\n\nTARGET:\n\n${target}`;
 }

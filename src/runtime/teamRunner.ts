@@ -158,7 +158,7 @@ function resolvePhaseAgent(step: RuntimeStepState, agents: readonly PXHAgent[], 
 }
 
 function buildPhasePrompt(options: TeamRunOptions, agent: PXHAgent, phase: TaskPhase, handoff: string): string {
-  const base = buildAgentPrompt(options.target, agent, options.route, options.catalog);
+  const base = buildAgentPrompt(options.target);
   return `${base}\n\nCURRENT PHASE: ${phase.toUpperCase()}\nChỉ hoàn thành trách nhiệm của phase này. Dùng tools thật, tạo evidence và trả kết quả ngắn cho specialist tiếp theo.${handoff.length === 0 ? '' : `\n\nHANDOFF CONTEXT:\n${handoff}`}`;
 }
 
