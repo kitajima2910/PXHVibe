@@ -1,5 +1,36 @@
 # STATUS
 
+## FIX - Bo workflow, chi ap dung agentPrompt.ts voi RULES
+
+### Nguyen nhan goc
+- `buildAgentPrompt` trong `agentPrompt.ts` nhung `WORKFLOW: name — instructions` vao moi prompt, lam CLI theo workflow instructions qua lau.
+- `app.tsx` dung `preferredAgentId` tu workflow de chon agent, gan bo voi workflow.
+
+### Da thay đổi
+- `agentPrompt.ts`: Xoa bien `workflow` va khong nhung workflow instructions vao prompt. Prompt chi con RULES, IDENTITY, COMPATIBILITY, AGENT ROLE, SKILLS, PIPELINE, TEAM, OUTPUT FORMAT.
+- `app.tsx`: Don gian hoa chon agent — bo logic `preferredAgentId` tu workflow, dung truc tiep `selectedAgentId` (default `auto`).
+- `orchestration.test.ts`: Doi `assert.match(prompt, /WORKFLOW: ...)` thanh `assert.doesNotMatch`.
+- `outputStreaming.test.ts`: Fix loi syntax (thieu dong ngoac `')'` tren dong console.error).
+
+### File da sua
+- `src/utils/agentPrompt.ts`
+- `src/app.tsx`
+- `src/tests/orchestration.test.ts`
+- `src/tests/outputStreaming.test.ts`
+
+### Ket qua kiem tra
+- `npm run typecheck`: pass.
+- `test:orchestration`: pass.
+- `test:pipeline`: pass.
+- `test:team`: pass.
+- `test:commands`: pass.
+
+### Van de con lai
+- `test:streaming` loi pre-existing (brand sanitizer buffer 2 tu cuoi, khong phai workflow).
+- Workflow routing van hoat dong cho skills va pipeline phases — chi bo viec nhung workflow instructions vao prompt.
+
+---
+
 ## RELEASE - v0.22.8
 
 ### Da thay doi
