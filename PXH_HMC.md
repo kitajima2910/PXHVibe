@@ -53,3 +53,27 @@
 - Typecheck: ✅ Pass (`tsc --noEmit` exit code 0)
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (4)
+
+### Thay đổi: Xóa dead code orchestration + dọn resources
+
+**File đã xóa:**
+- `src/orchestration/builtins.ts` — 50 builtin skills + 8 builtin workflows (dead code)
+- `src/orchestration/discovery.ts` — filesystem scanning (dead code)
+- `resources/agents/` — 10 bundled agent markdown files
+- `resources/skills/` — 50 skill directories + SKILL.md
+- `resources/workflows/` — 8 workflow markdown files
+- `resources/_shared/` — 13 files + 3 dirs (chỉ giữ `scripts/release-check.mjs`)
+
+**File đã sửa:**
+- `src/tests/orchestration.test.ts` — Thay thế discovery tests bằng inline catalog
+- `src/tests/pipeline.test.ts` — Inline `emptyCatalog`, bỏ assertions về builtin counts
+- `src/tests/teamRunner.test.ts` — Inline `emptyCatalog`
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit` exit code 0)
+
+**Vấn đề còn lại:** Không có.

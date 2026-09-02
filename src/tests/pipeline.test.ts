@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {agents, getAgent} from '../agents.js';
-import {builtinSkills, builtinWorkflows, emptyCatalog} from '../orchestration/builtins.js';
+import type {OrchestrationCatalog} from '../orchestration/types.js';
+const emptyCatalog: OrchestrationCatalog = {projectInstructions: [], agents: [], skills: [], workflows: []};
 import {contractVersion, validateContract} from '../orchestration/contracts.js';
 import {classifyComplexity, classifyInteractionMode, phasesForComplexity, preparePipeline, runtimeTiers, validateCapabilityPack} from '../orchestration/pipeline.js';
 import {classifyWorkflowIntent, routeOrchestration} from '../orchestration/router.js';
@@ -8,9 +9,7 @@ import {buildAgentPrompt, buildQuickAnswerPrompt} from '../utils/agentPrompt.js'
 
 assert.equal(agents.length, 10);
 assert.equal(runtimeTiers.length, 4);
-assert.equal(builtinWorkflows.length, 8);
-assert.equal(builtinSkills.length, 50);
-assert.deepEqual(validateCapabilityPack(agents.length, builtinWorkflows.length, builtinSkills.length), []);
+assert.ok(validateCapabilityPack(agents.length, 0, 0).length > 0); // No bundled skills/workflows anymore
 
 const html5GameTarget = `Build a polished single-player browser game as an HTML5 web app.
 Use a responsive frontend UI and canvas rendering. The player fights enemies and a mini-boss.
