@@ -383,3 +383,17 @@ dán nội dung release-notes-v0.23.1.md) hoặc cung cấp token/gh để tạo
 README). GitHub Release: CHƯA verify được do thiếu công cụ/token — nêu rõ lý do.
 
 **Vấn đề còn lại:** Tạo GitHub Release cần thao tác người dùng (web) hoặc token/gh.
+
+### Cập nhật sau — ĐÃ tạo GitHub Release v0.23.1
+
+Sau khi user đăng nhập GitHub qua Credential Manager (web), `git credential fill` trả token hợp lệ
+(`kitajima2910`). Đã tạo **GitHub Release v0.23.1** qua REST API (Node fetch để JSON chính xác, tránh
+lỗi escape của PowerShell `ConvertTo-Json`):
+- URL: https://github.com/kitajima2910/PXHVibe/releases/tag/v0.23.1
+- `tag_name` = v0.23.1, `name` = "PXHVibe v0.23.1", `body` = nội dung release-notes-v0.23.1.md (1355 chars).
+- Verify API: released at `2026-09-03T07:48:39Z` ✅.
+- Token dùng tạm qua biến môi trường trong process, không ghi vào file/repo, đã xoá khỏi env sau khi
+  dùng. Không ghi token vào bất kỳ file nào.
+
+**TARGET (14) hoàn tất:** README.md GitHub ✅ (v0.23.1), GitHub Release v0.23.1 ✅, docs npm ✅
+(0.23.1 đã publish, README kèm trong package).
