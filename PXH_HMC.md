@@ -97,3 +97,31 @@
 - Pre-existing: outputStreaming test fail (StreamingBrandSanitizer bug)
 
 **Vấn đề còn lại:** outputStreaming test có pre-existing bug.
+
+---
+
+## 2026-09-03 (6)
+
+### Thay đổi: Sync README.md với source simplified mode hiện tại
+
+**TARGET:** Cập nhật `README.md` cho khớp với `src` PXHVibe CLI hiện tại.
+
+**Nguyên nhân:** Source đã chuyển sang simplified mode (chỉ `hmcRules`, bỏ pipeline, 
+agents/skills/workflows, AGENTS.md) nhưng README vẫn mô tả kiến trúc cũ (team runtime, 
+pipeline 8 phase, checkpoint, capability pack, 24 lệnh với `/agents` `/skills` `/workflows` `/pipeline`).
+
+**File đã sửa:** `README.md`
+
+**Thay đổi gì:**
+- Intro & "Điểm nổi bật": mô tả single-agent `hmcRules` thay vì pipeline/specialist routing; bỏ claim `AGENTS.md`/skills/agents/workflows.
+- "Bắt đầu trong 60 giây": bỏ `/pipeline`, `/history` khỏi bước kiểm tra.
+- "Lệnh trong TUI": liệt kê lệnh thực tế hoạt động (theo handler trong `src/app.tsx`), note `/history` tắt và các lệnh cũ không còn hỗ trợ.
+- "Team runtime" → "Runtime (simplified mode)": mô tả đúng `buildAgentPrompt(target)` + `QUICK`/coding, bỏ 8 workflow/50 skill/10 agents/pipeline/checkpoint.
+- "Mở rộng theo project": bỏ bảng skills/agents/workflows discovery + AGENTS.md, thay bằng phần MCP.
+- "Giao diện": đổi "worker"/"phase" sang agent/single lượt.
+- License/attribution: bỏ nhắc "Economy Router, capability assets".
+
+**Kết quả kiểm tra:**
+- `README.md` là tài liệu, không nằm trong `tsc`/test coverage.
+
+**Vấn đề còn lại:** Không có.
