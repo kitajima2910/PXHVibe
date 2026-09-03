@@ -93,6 +93,17 @@ await new Promise((resolve) => setTimeout(resolve, 30));
 assert.match(stripAnsi(rendered), /1920×1080 · 2 KB/);
 instance.unmount();
 
+// Poll until the async Ink render output contains the expected sequence, instead
+// of relying on a fixed sleep (timing varies on slow CI runners where the
+// bracketed-paste enable `\x1b[?2004h` written by Ink may be flushed first).
+async function waitForMatch(haystack: string, pattern: RegExp, timeoutMs = 3000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (pattern.test(haystack)) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+}
+
 const editorInput = new PassThrough();
 Object.assign(editorInput, {
   isTTY: true,
@@ -120,7 +131,7 @@ const editor = render(React.createElement(PromptInput, {
   stderr: editorOutput as unknown as NodeJS.WriteStream,
   exitOnCtrlC: false,
 });
-await new Promise((resolve) => setTimeout(resolve, 80));
+await waitForMatch(editorFrame, /\x1b\[1A\x1b\[5G\x1b\[\?25h/);
 assert.match(editorFrame, /\x1b\[1A\x1b\[5G\x1b\[\?25h/);
 editorInput.write('\x1b[200~one\ntwo\nthree\nfour\x1b[201~');
 await new Promise((resolve) => setTimeout(resolve, 30));

@@ -274,3 +274,38 @@ tồn tại thì phải chứa `v${version}` (tức `v0.23.1`). Khi bump version
   (unpacked 284.2 kB), không còn FAIL.
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (12)
+
+### Thay đổi: Fix CI fail `test:image` — race timing của Ink render trên windows-latest
+
+**TARGET:** GitHub Actions `verify (windows-latest)` fail ở `test:image`:
+`imageClipboard.test.js:98` — `AssertionError: The input did not match /\\x1b\\[1A\\x1b\\[5G\\x1b\\[?25h/`.
+Actual input chỉ là `'\\x1B[?2004h'`.
+
+**Nguyên nhân gốc:** Không phải lỗi logic — là **race/timing** trong test. `\x1b[?2004h` (enable
+bracketed paste) do **Ink tự sinh** qua `usePaste` (PromptInput line 102) và được viết lên stdout
+lúc mount, cạnh tranh thứ tự/độ trễ với frame render đầu `\x1b[1A\x1b[5G\x1b[?25h`. Test dùng
+`await setTimeout(..., 80)` rồi assert `editorFrame` — trên runner CI chậm, 80ms chưa đủ nên
+`editorFrame` mới chỉ có `\x1b[?2004h` → fail. Local pass vì máy nhanh. Không có `2004` trong source
+(grep xác nhận) → 100% do Ink.
+
+**File đã sửa:** `src/tests/imageClipboard.test.ts` (chỉ test, KHÔNG đổi production).
+
+**Thay đổi gì:** Thay `await setTimeout(80ms)` + assert cố định thành helper `waitForMatch(...)`
+poll (mặc định 3s, bước 20ms) chờ đến khi `editorFrame` chứa pattern mong muốn, rồi mới assert —
+khắc phục cả thứ tự lẫn độ trễ, không che lỗi logic (assert vẫn giữ nguyên pattern).
+
+**Kết quả kiểm tra:**
+- Build + `test:image` chạy 5 lần liên tiếp: ✅ pass cả 5 (ổn định, hết flaky).
+- Typecheck: ✅ (`tsc --noEmit`)
+- `npm test`: ✅ 23/23 suites pass (gồm Image clipboard tests passed).
+
+**Vấn đề còn lại:** Không có. Lưu ý: test vẫn phụ thuộc timing của Ink nên có giới hạn 3s poll;
+nếu CI cực chậm có thể cần tăng timeout, nhưng hiện ổn.
+
+---
+
+*(history trước: mục (1)-(11) xem phía trên)*
