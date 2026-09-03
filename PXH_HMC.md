@@ -279,32 +279,42 @@ tồn tại thì phải chứa `v${version}` (tức `v0.23.1`). Khi bump version
 
 ## 2026-09-03 (12)
 
-### Thay đổi: Fix CI fail `test:image` — race timing của Ink render trên windows-latest
+### Thay đổi: Fix CI fail `test:image` — assert escape sequence Ink fragile + thiếu `debug:true`
 
 **TARGET:** GitHub Actions `verify (windows-latest)` fail ở `test:image`:
-`imageClipboard.test.js:98` — `AssertionError: The input did not match /\\x1b\\[1A\\x1b\\[5G\\x1b\\[?25h/`.
+`imageClipboard.test.js` — `AssertionError: The input did not match /\\x1b\\[1A\\x1b\\[5G\\x1b\\[?25h/`.
 Actual input chỉ là `'\\x1B[?2004h'`.
 
-**Nguyên nhân gốc:** Không phải lỗi logic — là **race/timing** trong test. `\x1b[?2004h` (enable
-bracketed paste) do **Ink tự sinh** qua `usePaste` (PromptInput line 102) và được viết lên stdout
-lúc mount, cạnh tranh thứ tự/độ trễ với frame render đầu `\x1b[1A\x1b[5G\x1b[?25h`. Test dùng
-`await setTimeout(..., 80)` rồi assert `editorFrame` — trên runner CI chậm, 80ms chưa đủ nên
-`editorFrame` mới chỉ có `\x1b[?2004h` → fail. Local pass vì máy nhanh. Không có `2004` trong source
-(grep xác nhận) → 100% do Ink.
+**Nguyên nhân gốc (rút lại lần chẩn đoán trước):** Ban đầu nhầm là race/timing và thêm `waitForMatch`
+poll 3s — nhưng CI VẪN fail với actual `'\\x1B[?2004h'` sau khi poll hết. Chẩn đoán đúng:
+
+1. **Assertion sai đối tượng:** `assert.match(editorFrame, /\\x1b\\[1A\\x1b\\[5G\\x1b\\[?25h/)` assert chuỗi
+   **escape reposition nội bộ của Ink** (di chuyển cursor). Chuỗi này KHÔNG ổn định giữa môi trường:
+   chỉ xuất hiện khi Ink render theo đường không-deterministic (không `debug:true`), nên không nên
+   assert cứng.
+2. **Editor block thiếu `debug: true`:** 2 block PromptInput khác trong cùng test (`commandEditor`,
+   `busyEditor`) đều có `debug: true` và pass CI; riêng `editor` block thiếu. Không có `debug:true`,
+   Ink đi vào đường render phụ thuộc môi trường TTY → trên CI runner (khác local) `editorFrame` chỉ
+   nhận được `\x1b[?2004h` (Ink bật bracketed paste qua `usePaste`) chứ không có frame text.
 
 **File đã sửa:** `src/tests/imageClipboard.test.ts` (chỉ test, KHÔNG đổi production).
 
-**Thay đổi gì:** Thay `await setTimeout(80ms)` + assert cố định thành helper `waitForMatch(...)`
-poll (mặc định 3s, bước 20ms) chờ đến khi `editorFrame` chứa pattern mong muốn, rồi mới assert —
-khắc phục cả thứ tự lẫn độ trễ, không che lỗi logic (assert vẫn giữ nguyên pattern).
+**Thay đổi gì:**
+- Thêm `debug: true` vào options render của `editor` block — nhất quán với `commandEditor`/`busyEditor`
+  (line 175/218), giúp Ink render text deterministic trực tiếp vào stdout.
+- Đổi assertion từ escape reposition fragile sang **assert text ổn định**: chờ + kiểm tra
+  `stripAnsi(editorFrame)` chứa `Nhập TARGET` (PromptInput render box nhập đúng). Giữ helper
+  `waitForMatch` poll 3s cho tính bất đồng bộ.
 
 **Kết quả kiểm tra:**
-- Build + `test:image` chạy 5 lần liên tiếp: ✅ pass cả 5 (ổn định, hết flaky).
+- Build + `test:image` chạy 6 lần liên tiếp: ✅ pass cả 6 (ổn định).
 - Typecheck: ✅ (`tsc --noEmit`)
 - `npm test`: ✅ 23/23 suites pass (gồm Image clipboard tests passed).
 
-**Vấn đề còn lại:** Không có. Lưu ý: test vẫn phụ thuộc timing của Ink nên có giới hạn 3s poll;
-nếu CI cực chậm có thể cần tăng timeout, nhưng hiện ổn.
+**Vấn đề còn lại:** Chưa tái hiện đúng môi trường CI runner (Node 22.23.2; máy local chạy
+Node 24.18.0). Nhưng `debug:true` khiến Ink render deterministic và assert dựa trên text (không phụ
+thuộc escape nội bộ Ink/version) nên khả năng cao pass CI. Nếu CI vẫn fail, kiểm tra lại chuỗi đầu ra
+cụ thể của runner.
 
 ---
 
