@@ -158,3 +158,34 @@ Nhờ đó text streamed tiếp theo nằm trên dòng riêng → `parseTerminal
   (trước đây fail pre-existing bug)
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (8)
+
+### Thay đổi: Tối ưu TTFT — không gate request model trên khởi tạo MCP (giống OpenCode CLI)
+
+**TARGET:** Tối ưu PXHVibe CLI phản hồi nhanh như OpenCode CLI.
+
+**Phân tích hướng chọn:** OpenCode CLI luôn bắt đầu phản hồi ngay, không chờ các init phụ
+(MCP/daemon) trước first token. PXHVibe Free mode đang `await ensureMCPReady(currentProvider)`
+TRƯỚC mỗi request coding, dù MCP không cần: Free mode (`OpenCodeProvider`) không có
+`setMCPTools` và đọc MCP config trực tiếp từ disk lúc spawn (`buildOpenCodeEnvironment` →
+`loadMCPConfig`). Nên await này chỉ chờ `mcpManager` connect (có thể chậm với remote/OAuth)
+mà không đóng góp gì cho spawn → gây trễ TTFT.
+
+**File đã sửa:** `src/app.tsx`
+
+**Thay đổi gì:** Ở coding path (`handleSubmit`), thay vì luôn `await ensureMCPReady`:
+- provider có `setMCPTools` (Custom API) → vẫn `await` (cần MCP tools trước khi run).
+- provider không có `setMCPTools` (Free mode) → `void ensureMCPReady(...)`, fire request ngay,
+  MCP/UI cập nhật nền (đã được khởi động nền từ `useEffect` mount).
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit`)
+- `npm test`: ✅ 23/23 suites pass (outputStreaming vẫn pass — dùng fake provider không có setMCPTools)
+
+**Verify thời gian thực:** Chưa benchmark đo được TTFT tuyệt đối (cần Free runtime + inference thật).
+Đã verify logic: Free mode không còn bị chặn bởi `await` MCP trước khi spawn model.
+
+**Vấn đề còn lại:** Không có.

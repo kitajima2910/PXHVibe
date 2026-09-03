@@ -586,7 +586,14 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
       return;
     }
 
-    await ensureMCPReady(currentProvider);
+    // Chỉ chờ MCP khởi tạo khi provider thực sự tiêu thụ MCP tools (Custom API).
+    // Free mode đọc MCP trực tiếp từ disk lúc spawn nên không cần chờ mcpManager;
+    // fire request ngay để TTFT nhanh như OpenCode, MCP/UI cập nhật nền.
+    if (typeof currentProvider.setMCPTools === 'function') {
+      await ensureMCPReady(currentProvider);
+    } else {
+      void ensureMCPReady(currentProvider);
+    }
 
     const contextualTarget = buildContextualTarget(messages, content);
     const requestImages = pendingImages;
