@@ -125,3 +125,36 @@ pipeline 8 phase, checkpoint, capability pack, 24 lệnh với `/agents` `/skill
 - `README.md` là tài liệu, không nằm trong `tsc`/test coverage.
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (7)
+
+### Thay đổi: Fix outputStreaming test chặn `npm publish --dry-run`
+
+**TARGET:** `npm publish --dry-run` fail ở `test:streaming` (`npm run prepublishOnly`).
+
+**Nguyên nhân gốc:** Assistant message có content dạng `...12 dòng\n\`\`\`` + streamed text
+glu liền sau closing fence (không có newline) — ví dụ `\`\`\`Đã sửa lỗi đăng nhập...`.
+Trong `src/utils/terminalFormat.ts:16`, `parseTerminalBlocks` chỉ nhận diện code fence khi `\`\`\``
+đứng đầu dòng (`^```...`). Vì text dính sau fence nên dòng đó bị coi là dòng đóng fence mở khác,
+và toàn bộ text sau nó bị nuốt mất → không render ra frame. Do đó assertion
+`frame.includes('Đã sửa lỗi đăng nhập.')` (và `File đã sửa: src/login.ts.`) fail.
+
+Đã xác minh: khi bỏ tool block (chỉ còn text_delta), test pass; khi có tool block + text, text biến mất
+— kết luận là lỗi gluing fence, không phải viewport clipping (tăng rows lên 500 vẫn fail).
+
+**File đã sửa:** `src/app.tsx`
+
+**Thay đổi gì:** Thêm `\n` sau closing fence `\`\`\`` khi đóng tool block, ở cả 2 nhánh `tool_complete`:
+- Gộp summary vào block `tool_start`: `${event.summary}\n\`\`\`\n`
+- Fallback block: `\n\`\`\`\n[...]\nsummary\n\`\`\`\n`
+
+Nhờ đó text streamed tiếp theo nằm trên dòng riêng → `parseTerminalBlocks` render đúng, không bị nuốt.
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit`)
+- `npm test`: ✅ 23/23 suites pass, trong đó `Output streaming tests: passed`
+  (trước đây fail pre-existing bug)
+
+**Vấn đề còn lại:** Không có.

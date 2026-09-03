@@ -666,13 +666,13 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
       }
 
       // tool_complete: cập nhật summary vào block tool vừa mở.
-      const toolBlock = `\n\`\`\`\n[${event.toolName}]\n${event.summary}\n\`\`\``;
+      const toolBlock = `\n\`\`\`\n[${event.toolName}]\n${event.summary}\n\`\`\`\n`;
       const lastToolKey = lastToolKeyRef.current;
       if (lastToolKey === event.toolName) {
         // Gộp summary vào block tool_start liền trước.
         setMessages((currentMessages) => currentMessages.map((item) => {
           if (item.id !== responseMessageId || !item.content.endsWith(`[${lastToolKey}]\n`)) return item;
-          return {...item, content: item.content + `${event.summary}\n\`\`\``};
+          return {...item, content: item.content + `${event.summary}\n\`\`\`\n`};
         }));
         lastToolKeyRef.current = undefined;
         return;
