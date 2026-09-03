@@ -2,7 +2,8 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
-import {TodoStrip, type TodoItem} from './components/TodoStrip.js';
+import {TodoStrip} from './components/TodoStrip.js';
+import {logTaskToHmc} from './utils/hmcLog.js';
 import {MessageList} from './components/MessageList.js';
 import {PromptInput, type PromptDraft} from './components/PromptInput.js';
 import type {AIProvider} from './providers/AIProvider.js';
@@ -165,7 +166,6 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
   const [lastActivityAt, setLastActivityAt] = useState<number>();
   const [activityLabel, setActivityLabel] = useState('Đang khởi động worker...');
   const [phaseLabel, setPhaseLabel] = useState('khởi động');
-  const [stickyTasks, setStickyTasks] = useState<TodoItem[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const suggestionHistoryRef = useRef<string[]>([]);
   const lastChangedFilesRef = useRef<string[]>([]);
@@ -372,7 +372,6 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
     if (command === '/new') {
       promptDraftRef.current = undefined;
       resumeSessionRef.current = undefined;
-      setStickyTasks([]);
       setMessages([initialMessage]);
       setStatus('Ready');
       return;
@@ -619,7 +618,6 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
     setLastActivityAt(startedAt);
     setActivityLabel('Đang xử lý...');
     setPhaseLabel('AGENT');
-    setStickyTasks([{id: '0-agent', label: 'PXHVibe', status: 'running', agentLabel: 'PXHVibe'}]);
     const responseMessageId = createMessageId();
     responseMessageIdRef.current = responseMessageId;
     streamedContentRef.current = '';
@@ -661,9 +659,6 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
       if (event.type === 'activity') {
         const visibleActivity = sanitizeOutputBranding(event.content);
         setActivityLabel(visibleActivity);
-        setStickyTasks((current) => current.map((task) => task.status === 'running'
-          ? {...task, detail: visibleActivity}
-          : task));
         return;
       }
 
@@ -718,13 +713,10 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
         }
       }
 
-      setStickyTasks((current) => current.map((task) => ({...task, status: 'pass'})));
       setStatus('Ready');
+      logTaskToHmc(workingDirectory, contextualTarget);
     } catch (error: unknown) {
       if (isCancellationError(error)) {
-        setStickyTasks((current) => current.map((task) => task.status === 'running'
-          ? {...task, status: 'cancelled', detail: 'Đã dừng bởi người dùng.'}
-          : task));
         setMessages((currentMessages) => [...currentMessages, {
           id: createMessageId(),
           role: 'system',
@@ -741,7 +733,6 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
           content: errorMessage,
           createdAt: new Date(),
         }]);
-        setStickyTasks((current) => current.map((task) => ({...task, status: 'fail'})));
         setStatus('Error');
       }
     } finally {
@@ -824,7 +815,7 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
           <MessageList messages={messages} />
         </Box>
         <Box flexDirection="column" flexBasis={0} flexGrow={1} minWidth={20}>
-          <TodoStrip tasks={stickyTasks} mcpServers={mcpServers} />
+          <TodoStrip mcpServers={mcpServers} />
         </Box>
       </Box>
       {isCustomSetupOpen ? (

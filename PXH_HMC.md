@@ -397,3 +397,61 @@ lỗi escape của PowerShell `ConvertTo-Json`):
 
 **TARGET (14) hoàn tất:** README.md GitHub ✅ (v0.23.1), GitHub Release v0.23.1 ✅, docs npm ✅
 (0.23.1 đã publish, README kèm trong package).
+
+---
+
+## 2026-09-03 (15)
+
+### Thay đổi: Xóa phần PIPELINE khỏi layout + tự động tạo PXH_HMC.md sau mỗi task
+
+**TARGET (2 phần từ người dùng):**
+1. Phần PIPELINE trên layout không có nội dung → xoá đi.
+2. Khi chạy PXHVibe CLI với "Tạo giúp tôi game bắn xe tank 2D HTML5", không thấy PXH_HMC.md được tạo khi xong task.
+
+**Nguyên nhân gốc (phần 2):** PXHVibe KHÔNG tự tạo/cập nhật PXH_HMC.md. File này chỉ được nhắc trong
+prompt (`hmcRules` trong `src/utils/agentPrompt.ts`) như chỉ dẫn mềm cho LLM; không có code nào ghi
+file. Model chạy qua `opencode run --pure --agent build` không tuân thủ ⇒ không có file xuất hiện.
+
+**File đã sửa:**
+- `src/components/TodoStrip.tsx` — Bỏ toàn bộ section PIPELINE (header, progress bar, task list), chỉ giữ MCP. Xóa helpers không còn dùng (`TodoStatus`, `TodoItem`, `phaseTodoLabel`, `compactTodoDetail`, `todoSymbol`, `todoColor`, `renderProgressBar`) và `tasks` prop.
+- `src/app.tsx` — Xóa state `stickyTasks` và mọi `setStickyTasks` (chỉ nuôi section PIPELINE); bỏ `TodoItem` import; đổi `<TodoStrip tasks={...}>` → `<TodoStrip mcpServers={...}>`; thêm `import {logTaskToHmc}` và gọi `logTaskToHmc(workingDirectory, contextualTarget)` khi task hoàn thành (sau `setStatus('Ready')`).
+- `src/utils/hmcLog.ts` — (mới) `logTaskToHmc(cwd, target)`: tạo `PXH_HMC.md` trong working directory của user nếu chưa có (kèm header `# PXH_HMC.md - Change Log`) rồi append entry `## <date> / ### Task hoàn thành` với thời gian và TARGET; nếu file đã có thì append cuối file.
+- `src/tests/todoStrip.test.ts` — Bỏ assertion PIPELINE/task list, chỉ test MCP + các helper còn lại.
+- `src/tests/hmcLog.test.ts` — (mới) test tạo file mới + append file đã có (dùng temp dir).
+- `package.json` — thêm script `test:hmc` và thêm vào chuỗi `test`.
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit`)
+- `npm test`: ✅ 24/24 suites pass (gồm `test:todo`, `test:hmc` mới).
+
+**Verify behavior:** Chưa verify bằng cách chạy thực tế với Free runtime + inference thật (chỉ verify
+logic). `logTaskToHmc` được gọi ngay sau khi agent trả về thành công; nó ghi file đồng bộ (appendFileSync)
+nên file PXH_HMC.md sẽ có mặt trong working directory khi task xong. Hướng còn lại: nếu model vẫn tự tạo
+PXH_HMC.md theo prompt, hàm này sẽ append thêm entry — không ghi đè thay đổi của user.
+
+**Vấn đề còn lại:** Không.
+
+---
+
+## 2026-09-03 (16)
+
+### Thay đổi: Release v0.24.0 — bump version + sync + commit/push + GitHub Release
+
+**TARGET:** Update version PXHVibe CLI, sync với CLI, commit + push lên github, tạo release mới trên github.
+
+**Quyết định version:** Các thay đổi từ task (15) gồm tính năng mới (tự động tạo PXH_HMC.md) và thay đổi
+UI (bỏ section PIPELINE) → theo semver là **minor** bump từ `0.23.1` → **`0.24.0`**.
+
+**File đã sửa:**
+- `package.json` — `"version": "0.23.1"` → `"0.24.0"`.
+- `README.md` — "Bản phát hành hiện tại: v0.23.1" → v0.24.0.
+- `STATUS.md` — thêm mục `## RELEASE - v0.24.0` (chứa `v0.24.0` để release-check pass), giữ nguyên mục v0.23.1.
+- `release-notes-v0.24.0.md` — (mới) ghi tính năng auto PXH_HMC.md + bỏ PIPELINE sidebar.
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit`)
+- `node resources/_shared/scripts/release-check.mjs`: ✅ `[OK] Release integrity v0.24.0`
+- `npm test`: ✅ 24/24 suites pass (build log `pxhvibe@0.24.0`)
+- `node dist/cli.js --version`: ✅ `PXHVibe v0.24.0`
+
+**Vấn đề còn lại:** Không.

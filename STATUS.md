@@ -1,5 +1,30 @@
 # STATUS
 
+## RELEASE - v0.24.0
+
+### Da thay doi
+- Minor version bump `0.23.1` → `0.24.0`.
+- Xoa phan PIPELINE khoi layout (TodoStrip chi con MCP).
+- Tinh nang moi: tu dong tao/cap nhat `PXH_HMC.md` trong working directory sau moi task hoan thanh (`src/utils/hmcLog.ts` + goi trong `src/app.tsx`).
+- Sync README.md version.
+
+### File da sua
+- `package.json` (version 0.24.0)
+- `README.md`
+- `src/app.tsx`
+- `src/components/TodoStrip.tsx`
+- `src/utils/hmcLog.ts` (moi)
+- `src/tests/todoStrip.test.ts`
+- `src/tests/hmcLog.test.ts` (moi)
+- `STATUS.md`
+
+### Ket qua kiem tra
+- Typecheck: pass.
+- Tests: 24/24 pass (gồm test:todo cap nhat + test:hmc moi).
+- release-check: pass.
+
+---
+
 ## RELEASE - v0.23.1
 
 ### Da thay doi
