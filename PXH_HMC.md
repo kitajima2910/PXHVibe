@@ -189,3 +189,30 @@ mà không đóng góp gì cho spawn → gây trễ TTFT.
 Đã verify logic: Free mode không còn bị chặn bởi `await` MCP trước khi spawn model.
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (9)
+
+### Thay đổi: Tối ưu render khi streaming — memoize `getContextUsage` (giống OpenCode CLI)
+
+**TARGET:** Tiếp tục tối ưu PXHVibe CLI giống OpenCode CLI (mượt khi stream response).
+
+**Nguyên nhân gốc:** `const contextUsage = getContextUsage(messages)` chạy trên MỌI render
+của `App`. Trong lúc streaming, mỗi `activity` event (`setActivityLabel`...) gây re-render
+DÙ `messages` không đổi → `countTokens` (regex quét toàn bộ turn) bị tính lặp vô ích nhiều lần mỗi
+giây, gây tốn CPU/render, làm TUI kém mượt. Giá trị này chỉ thực sự cần khi gõ `/context`.
+
+**File đã sửa:** `src/app.tsx`
+
+**Thay đổi gì:**
+- Import thêm `useMemo`.
+- `getContextUsage(messages)` → `useMemo(() => getContextUsage(messages), [messages])`.
+  Chỉ recompute khi mảng `messages` thay đổi; re-render do activity/status churn không tính lại.
+  `/context` handler vẫn nhận giá trị tươi vì nó phụ thuộc `messages` (memo tự cập nhật).
+
+**Kết quả kiểm tra:**
+- Typecheck: ✅ Pass (`tsc --noEmit`)
+- `npm test`: ✅ 23/23 suites pass (gồm slashCommands test `getContextUsage` và outputStreaming)
+
+**Vấn đề còn lại:** Không có.

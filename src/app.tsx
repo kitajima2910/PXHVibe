@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Box, useStdout} from 'ink';
 import {Footer} from './components/Footer.js';
 import {Header} from './components/Header.js';
@@ -179,7 +179,9 @@ export function App({provider, checkModels = checkFreeModelHealth, workingDirect
   const streamedContentRef = useRef('');
   const streamingSanitizerRef = useRef<StreamingBrandSanitizer | undefined>(undefined);
   const lastToolKeyRef = useRef<string | undefined>(undefined);
-  const contextUsage = getContextUsage(messages);
+  // Chỉ tính token-count khi messages thay đổi, không phải mỗi lần re-render
+  // (activity/status churn khi streaming). countTokens chạy regex qua mọi turn.
+  const contextUsage = useMemo(() => getContextUsage(messages), [messages]);
 
   const configureMCP = async (targetProvider: AIProvider, forceConnect = false): Promise<readonly MCPServerStatus[]> => {
     try {
