@@ -248,3 +248,29 @@ không cần sửa nội dung mô tả.
 "PXH_HMC.md") — KHÔNG đụng tới (giữ nguyên thay đổi người dùng, ngoài TARGET).
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (11)
+
+### Thay đổi: Fix `npm publish --dry-run` fail — STATUS version stale
+
+**TARGET:** `npm publish --dry-run` sau turn (10) vẫn fail ở `release-check`:
+`[FAIL] STATUS version is stale`.
+
+**Nguyên nhân gốc:** `resources/_shared/scripts/release-check.mjs` line 18 yêu cầu: nếu `STATUS.md`
+tồn tại thì phải chứa `v${version}` (tức `v0.23.1`). Khi bump version 0.23.0 → 0.23.1 (mục 10),
+`STATUS.md` chưa được cập nhật nên chỉ còn chứa `v0.23.0` → release-check fail, làm publish chặn lại.
+
+**File đã sửa:** `STATUS.md`
+
+**Thay đổi gì:** Thêm mục `## RELEASE - v0.23.1` ngay sau tiêu đề `# STATUS`, ghi nhận patch bump
+0.23.0→0.23.1, fix test:streaming, tối ưu TTFT Free mode, tối ưu render streaming, sync README — khiến
+`STATUS.md` chứa `v0.23.1` để release-check pass. Không đụng các mục log cũ.
+
+**Kết quả kiểm tra:**
+- `node resources/_shared/scripts/release-check.mjs`: ✅ `[OK] Release integrity v0.23.1`
+- `npm publish --dry-run`: ✅ prepublishOnly (typecheck + 23 tests + release-check) pass, đóng gói ok
+  (unpacked 284.2 kB), không còn FAIL.
+
+**Vấn đề còn lại:** Không có.

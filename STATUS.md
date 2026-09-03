@@ -1,5 +1,27 @@
 # STATUS
 
+## RELEASE - v0.23.1
+
+### Da thay doi
+- Patch version bump `0.23.0` → `0.23.1`.
+- Fix test:streaming (them `\n` sau closing fence trong tool_complete).
+- Toi uu TTFT Free mode: non-blocking MCP truoc khi spawn.
+- Toi uu render streaming: memoize `getContextUsage` (bo token-count tinh lai moi render).
+- Sync README.md version.
+
+### File da sua
+- `package.json` (version 0.23.1)
+- `README.md`
+- `src/app.tsx`
+- `STATUS.md`
+
+### Ket qua kiem tra
+- Typecheck: pass.
+- Tests: 23/23 pass (gồm outputStreaming đã fix).
+- release-check: pass.
+
+---
+
 ## FIX - Bo workflow, chi ap dung agentPrompt.ts voi RULES
 
 ### Nguyen nhan goc
