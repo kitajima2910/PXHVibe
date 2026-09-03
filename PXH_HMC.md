@@ -216,3 +216,35 @@ giây, gây tốn CPU/render, làm TUI kém mượt. Giá trị này chỉ thự
 - `npm test`: ✅ 23/23 suites pass (gồm slashCommands test `getContextUsage` và outputStreaming)
 
 **Vấn đề còn lại:** Không có.
+
+---
+
+## 2026-09-03 (10)
+
+### Thay đổi: Update version `0.23.0` → `0.23.1` và sync README.md
+
+**TARGET:** Update version cho src PXHVibe CLI và sync README.md với src hiện tại.
+
+**Quyết định version:** Các thay đổi sau `v0.23.0` gồm (7) fix output streaming test, (8) tối ưu TTFT
+Free mode (non-blocking MCP), (9) tối ưu render streaming (memoize `getContextUsage`) — đều là
+bugfix + tối ưu nội bộ hiệu năng, KHÔNG phá vỡ API/behavior người dùng → bump **patch** theo semver
+thành **`0.23.1`**.
+
+**File đã sửa:**
+- `package.json` — `"version": "0.23.0"` → `"0.23.1"`.
+- `README.md` — dòng "Bản phát hành hiện tại: **v0.23.0**" → **v0.23.1**.
+
+**Sync README với src:** Nội dung README đã khớp src simplified mode (đã sync ở mục (6)); các thay
+đổi (7)(8)(9) là nội bộ hiệu năng, không đổi behavior người dùng nên README chỉ cần cập nhật version,
+không cần sửa nội dung mô tả.
+
+**Kết quả kiểm tra:**
+- Build: ✅ (`npm run build`, version in build log `pxhvibe@0.23.1`)
+- `appVersion` từ `src/version.ts`: ✅ `0.23.1` (CLI `--version`/`/version`/`/about` sẽ hiện 0.23.1)
+- `npm test`: ✅ 23/23 suites pass
+- Không có test nào hardcode `0.23.0`.
+
+**Ghi chú:** `src/utils/agentPrompt.ts` có thay đổi chưa commit của người dùng (đổi "STATUS.md" →
+"PXH_HMC.md") — KHÔNG đụng tới (giữ nguyên thay đổi người dùng, ngoài TARGET).
+
+**Vấn đề còn lại:** Không có.

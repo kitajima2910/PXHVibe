@@ -11,7 +11,7 @@ single agent trong terminal, với bộ rule `hmcRules` (Tiếng Việt, patch t
 Bạn có thể dùng Free mode đi kèm hoặc kết nối Custom API hỗ trợ OpenAI, Anthropic và Google Gemini,
 đồng thời mở rộng khả năng bằng MCP của project.
 
-Bản phát hành hiện tại: **v0.23.0**.
+Bản phát hành hiện tại: **v0.23.1**.
 
 ## Điểm nổi bật
 

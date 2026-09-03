@@ -42,7 +42,7 @@ export function buildQuickAnswerPrompt(target: string, conversation: readonly st
 QUICK ANSWER MODE:
 
 - Trả lời trực tiếp câu hỏi hoặc trò chuyện của người dùng.
-- Không chạy tool, không đọc hay sửa file, không tạo pipeline/checkpoint và không cập nhật STATUS.md.
+- Không chạy tool, không đọc hay sửa file, không tạo pipeline/checkpoint và không cập nhật PXH_HMC.md.
 - Không áp dụng quy trình vibe coding trừ khi người dùng yêu cầu rõ một thao tác lên project.
 - Ngắn gọn, hữu ích; dùng Markdown khi cần.${context}
 
