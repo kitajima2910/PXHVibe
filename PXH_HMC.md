@@ -349,3 +349,37 @@ npm error 404 The requested resource 'pxhvibe@0.23.1' could not be found or you 
 
 **Vấn đề còn lại:** Token cũ trong `~/.npmrc` cần thay mới; sau đăng nhập/đổi token phải chạy lại
 `npm publish` để xác nhận.
+
+---
+
+## 2026-09-03 (14)
+
+### Thay đổi: Update README GitHub + release + docs npm cho bản đã release v0.23.1
+
+**TARGET:** Update README.md trên GitHub, thêm release, và docs npm cho bản đã release (0.23.1).
+
+**Trạng thái trước khi làm (xác minh thực tế):**
+- npm đã publish `0.23.1` thành công (sau mục 13, user đã đăng nhập/đổi token): `npm view pxhvibe` = 0.23.1.
+- Git: branch `main` đã push hết; README.md trên GitHub đã ghi `v0.23.1` (từ mục 10, commit be8990d).
+- Chưa có tag/release `v0.23.1` (git tags chỉ đến v0.23.0).
+
+**Đã thực hiện:**
+1. Tạo `release-notes-v0.23.1.md` (theo format cũ release-notes-v0.23.0.md) ghi các thay đổi 0.23.1
+   (perf TTFT non-blocking MCP, memoize getContextUsage, fix streaming fence \n, fix CI imageClipboard,
+   sync version/STATUS/README) + link compare v0.23.0...v0.23.1.
+2. Commit `docs: add v0.23.1 release notes` (`a1a7864`) → push `origin main`.
+3. Tạo **annotated tag `v0.23.1`** → push `origin v0.23.1`.
+
+**Về README và docs npm:**
+- README.md trên GitHub đã khớp src (`v0.23.1`, simplified mode) và đã push — không cần sửa thêm.
+- Docs npm: `README.md` nằm trong `files` của package → bản 0.23.1 trên npmjs đã kèm README này.
+
+**Block — chưa tạo GitHub Release v0.23.1:** Máy không có `gh` CLI và không có `GITHUB_TOKEN`/`GH_TOKEN`
+env; `git credential fill` không trả được token GitHub API (auth 401). Nên không thể tự tạo Release qua
+API. Vì tag `v0.23.1` đã push, user tạo release trên web (GitHub → Tags → v0.23.1 → "Create release",
+dán nội dung release-notes-v0.23.1.md) hoặc cung cấp token/gh để tạo qua API.
+
+**Verify:** README GitHub ✅ (v0.23.1 push), tag v0.23.1 ✅ push, npm docs ✅ (0.23.1 đã publish kèm
+README). GitHub Release: CHƯA verify được do thiếu công cụ/token — nêu rõ lý do.
+
+**Vấn đề còn lại:** Tạo GitHub Release cần thao tác người dùng (web) hoặc token/gh.
