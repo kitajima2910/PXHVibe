@@ -318,4 +318,34 @@ cụ thể của runner.
 
 ---
 
-*(history trước: mục (1)-(11) xem phía trên)*
+## 2026-09-03 (13)
+
+### Chẩn đoán: `npm publish` E404 — token npm hết hạn (không phải lỗi code)
+
+**TARGET:** `npm publish` (thật, không dry-run) fail:
+```
+npm error 404 Not Found - PUT https://registry.npmjs.org/pxhvibe - Not found
+npm error 404 The requested resource 'pxhvibe@0.23.1' could not be found or you do not have permission
+```
+
+**Nguyên nhân gốc (chẩn đoán, KHÔNG phải lỗi code/không patch):**
+- `npm whoami` → `401 Unauthorized`: chưa xác thực được với registry.
+- Registry đúng (`https://registry.npmjs.org/`); package `pxhvibe` CÓ tồn tại, version mới nhất
+  `0.22.8`, maintainer `pxh291095 <pxh2910@gmail.com>` (chính người dùng) — tên KHÔNG bị chiếm.
+- `~/.npmrc` có `//registry.npmjs.org/:_authToken=...` nhưng token này đã **hết hạn/không hợp lệ**
+  (npm whoami 401). Khi publish, npm PUT nhưng không xác nhận quyền → registry che giấu bằng E404
+  ("not have permission").
+
+**Vì sao v0.22.8 publish được còn v0.23.1 không:** token dùng lúc ấy còn hạn, hiện đã hết hạn.
+
+**Kết luận:** Vấn đề xác thực tài khoản npm, không phải code — không có file nào cần sửa.
+
+**Hướng xử lý (người dùng thao tác tài khoản; tôi không tự chạy đăng nhập tương tác):**
+1. `npm login` — username `pxh291095` / password / OTP; sau đó `npm whoami` phải trả về username.
+2. Hoặc tạo **Access Token mới** trên npmjs.com → `npm config set //registry.npmjs.org/:_authToken=<TOKEN>`.
+3. Xác nhận `npm whoami` = `pxh291095`, rồi `npm publish` lại.
+
+**Verify:** Chưa verify được publish vì cần xác thực tài khoản người dùng — nêu rõ lý do.
+
+**Vấn đề còn lại:** Token cũ trong `~/.npmrc` cần thay mới; sau đăng nhập/đổi token phải chạy lại
+`npm publish` để xác nhận.
